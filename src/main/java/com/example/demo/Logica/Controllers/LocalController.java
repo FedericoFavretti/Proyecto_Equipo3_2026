@@ -4,12 +4,16 @@ import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.Interfaces.iLocalController;
+import com.example.demo.Logica.Service.LocalService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/locales")
 public class LocalController implements iLocalController {
+    @Autowired
+    private LocalService localService;
 
     @PostMapping("")
     public ResponseEntity<Plato> gestionarPlatoAlta(@RequestBody DtPlato dtPlato) {
