@@ -1,0 +1,15 @@
+package com.example.demo.Persistencia.Repositorios;
+
+import com.example.demo.Logica.Clases.Calificacion;
+
+
+import java.util.List;
+import java.util.Optional;
+
+public interface CalificacionRepositorio {
+    List<Calificacion> listarTodos();
+    Optional<Calificacion> buscarPorId(long id);
+    void guardar(Calificacion calificacion);
+    void actualizar(Calificacion calificacion);
+    void eliminar(long id);
+}
