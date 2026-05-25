@@ -17,7 +17,7 @@ public class LocalController implements iLocalController {
 
     @PostMapping("")
     public ResponseEntity<Plato> gestionarPlatoAlta(@RequestBody DtPlato dtPlato) {
-        Plato plato = localService.gestionarPlatoAlta(dtPlato);
+        Plato plato = localService.altaPlato(dtPlato);
         return ResponseEntity.ok(plato);
     }
 

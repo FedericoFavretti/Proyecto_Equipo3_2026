@@ -11,4 +11,5 @@ public interface PlatoRepositorio {
     Plato guardar(Plato plato);
     Plato actualizar(Plato plato);
     void eliminar(long id);
+    Optional<Plato> buscarPorNombre(String nombre);
 }
