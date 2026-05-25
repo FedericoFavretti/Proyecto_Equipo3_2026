@@ -19,17 +19,23 @@ public class LocalService {
     private PlatoRepositorio platoRepositorio;
 
     @Transactional
-    public Plato gestionarPlatoAlta(DtPlato dtPlato) {
-       if(dtPlato.getNombre() == null || dtPlato.getNombre().isEmpty() || dtPlato.getDescripcion() == null || dtPlato.getDescripcion().isEmpty() || dtPlato.getPrecio() == 0.0 || dtPlato.getImagenes().isEmpty() || dtPlato.getDisponible() == null ) {
+    public Plato altaPlato(DtPlato dtPlato) {
+        if(platoRepositorio.buscarPorNombre(dtPlato.getNombre()).isPresent()){
+            throw  new IllegalArgumentException("El nombre del plato ya existe.");
+        }
+        if(dtPlato.getNombre() == null || dtPlato.getNombre().isEmpty() || dtPlato.getDescripcion() == null || dtPlato.getDescripcion().isEmpty() || dtPlato.getPrecio() == 0.0 || dtPlato.getImagenes().isEmpty() || dtPlato.getDisponible() == null ) {
             throw  new IllegalArgumentException("Debe completar todos los datos del plato.");
-       }
-       Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId()).orElseThrow(() -> new RuntimeException("Local no encontrado"));
-       Plato plato = Plato.builder().nombre(dtPlato.getNombre()).descripcion(dtPlato.getDescripcion()).precio(dtPlato.getPrecio()).imagenes(dtPlato.getImagenes()).disponible(dtPlato.getDisponible()).local(local).build();
+        }
+        Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId()).orElseThrow(() -> new RuntimeException("Local no encontrado"));
+        Plato plato = Plato.builder().nombre(dtPlato.getNombre()).descripcion(dtPlato.getDescripcion()).precio(dtPlato.getPrecio()).imagenes(dtPlato.getImagenes()).disponible(dtPlato.getDisponible()).local(local).build();
        return platoRepositorio.guardar(plato);
     }
 
     @Transactional
     public Plato gestionarPlatoModificacion(DtPlato dtPlato) {
+        if(platoRepositorio.buscarPorNombre(dtPlato.getNombre()).isPresent()){
+            throw  new IllegalArgumentException("El nombre del plato ya existe.");
+        }
         if(dtPlato.getNombre() == null || dtPlato.getNombre().isEmpty() || dtPlato.getDescripcion() == null || dtPlato.getDescripcion().isEmpty() || dtPlato.getPrecio() == 0.0 || dtPlato.getImagenes().isEmpty() || dtPlato.getDisponible() == null ) {
             throw  new IllegalArgumentException("Debe modificar un dato para poder actualizar el plato.");
         }

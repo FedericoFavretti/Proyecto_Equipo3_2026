@@ -102,4 +102,19 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     public void eliminar(long id) {
         jdbcTemplate.update("DELETE FROM Plato WHERE id = ?", id);
     }
+
+    @Override
+    public Optional<Plato> buscarPorNombre(String nombre) {
+        return jdbcTemplate.query("SELECT * FROM Plato WHERE nombre = ?",
+                (rs, row)-> new Plato(
+                        rs.getLong("id"),
+                        rs.getString("nombre"),
+                        rs.getString("descripcion"),
+                        rs.getDouble("precio"),
+                        new ArrayList<>(Collections.singleton(rs.getString("imagenes"))),
+                        rs.getBoolean("disponible"),
+                        localRepositorio.buscarPorId(rs.getLong("idLocal")).orElseThrow(() -> new RuntimeException("Plato no encontrado"))
+                ),nombre
+        ).stream().findFirst();
+    }
 }
