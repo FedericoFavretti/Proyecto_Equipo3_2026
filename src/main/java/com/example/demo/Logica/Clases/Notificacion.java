@@ -19,4 +19,6 @@ public class Notificacion {
     private CanalNotificacion canal;
     private Boolean leida;
     private Date fecha;
+    private Reclamo reclamo;
+    private Pedido pedido;
 }

@@ -18,26 +18,31 @@ public class PedidoController implements iPedidoController {
 
     @PostMapping("")
     public ResponseEntity<Pedido> confirmarPedido(@RequestBody long idPedido) {
-        return null;
+        Pedido pedido = pedidoService.confirmarPedido(idPedido);
+        return ResponseEntity.ok(pedido);
     }
 
     @PostMapping("")
     public ResponseEntity<Void> rechazarPedido(@RequestBody long idPedido) {
-        return null;
+        pedidoService.rechazarPedido(idPedido);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("")
     public ResponseEntity<Pedido> realizarPedido(@RequestBody DtPedido dtPedido) {
-        return null;
+        Pedido pedido = pedidoService.realizarPedido(dtPedido);
+        return ResponseEntity.ok(pedido);
     }
 
     @PostMapping("")
     public ResponseEntity<Void> cancelarPedido(@RequestBody long idPedido) {
-        return null;
+        pedidoService.cancelarPedido(idPedido);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("")
     public ResponseEntity<List<Pedido>> listarPedidos(@RequestBody long idLocal) {
-        return null;
+        List<Pedido> pedidos = pedidoService.listarPedidos(idLocal);
+        return ResponseEntity.ok(pedidos);
     }
 }

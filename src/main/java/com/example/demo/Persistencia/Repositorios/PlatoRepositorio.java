@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface PlatoRepositorio {
     List<Plato> listarTodos();
     Optional<Plato> buscarPorId(long id);
-    void guardar(Plato plato);
-    void actualizar(Plato plato);
+    Plato guardar(Plato plato);
+    Plato actualizar(Plato plato);
     void eliminar(long id);
 }

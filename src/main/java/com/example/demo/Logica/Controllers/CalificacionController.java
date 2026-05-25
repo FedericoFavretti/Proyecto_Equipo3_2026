@@ -1,6 +1,5 @@
 package com.example.demo.Logica.Controllers;
 
-import com.example.demo.Logica.Interfaces.iAdminController;
 import com.example.demo.Logica.Interfaces.iCalificacionController;
 import com.example.demo.Logica.Service.CalificacionService;
 import org.springframework.beans.factory.annotation.Autowired;

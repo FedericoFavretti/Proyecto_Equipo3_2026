@@ -17,4 +17,6 @@ public class DtCalificacion {
     private String comentario;
     private Date fecha;
     private TipoCalificacion tipo;
+    private DtCliente dtCliente;
+    private DtLocal dtLocal;
 }

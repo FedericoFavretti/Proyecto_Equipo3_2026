@@ -15,4 +15,6 @@ public class Calificacion {
     private String comentario;
     private Date fecha;
     private TipoCalificacion tipo;
+    private Cliente cliente;
+    private Local local;
 }

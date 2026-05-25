@@ -18,6 +18,7 @@ public class UsuarioController implements iUsuarioController {
 
     @PostMapping("")
     public ResponseEntity<DtLoginResponse> login(@RequestBody DtLoginRequest dtLogin) {
-        return null;
+        DtLoginResponse dtLoginResponse = usuarioService.login(dtLogin);
+        return ResponseEntity.ok(dtLoginResponse);
     }
 }

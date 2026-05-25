@@ -17,5 +17,4 @@ public class Reclamo {
     private Double montoReintegro;
     private Date fecha;
     private Pedido pedido;
-
 }

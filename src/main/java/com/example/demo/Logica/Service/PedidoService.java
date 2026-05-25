@@ -2,6 +2,8 @@ package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.DtPedido;
+import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
+import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,10 @@ import java.util.List;
 public class PedidoService {
     @Autowired
     private PedidoRepositorio pedidoRepositorio;
+    @Autowired
+    private ClienteRepositorio clienteRepositorio;
+    @Autowired
+    private LocalRepositorio localRepositorio;
 
     @Transactional
     public Pedido confirmarPedido (long idPedido) {
@@ -19,8 +25,8 @@ public class PedidoService {
     }
 
     @Transactional
-    public Void rechazarPedido(long idPedido) {
-        return null;
+    public void rechazarPedido(long idPedido) {
+
     }
 
     @Transactional
@@ -29,8 +35,8 @@ public class PedidoService {
     }
 
     @Transactional
-    public Void cancelarPedido(long idPedido) {
-        return null;
+    public void cancelarPedido(long idPedido) {
+
     }
 
     @Transactional

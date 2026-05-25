@@ -19,4 +19,6 @@ public class DtNotificacion {
     private CanalNotificacion canal;
     private Boolean leida;
     private Date fecha;
+    private DtPedido dtPedido;
+    private DtReclamo dtReclamo;
 }

@@ -1,5 +1,6 @@
 package com.example.demo.Logica.Service;
 
+import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -8,4 +9,6 @@ import org.springframework.stereotype.Service;
 public class ReclamoService {
     @Autowired
     private ReclamoRepositorio reclamoRepositorio;
+    @Autowired
+    private PedidoRepositorio pedidoRepositorio;
 }

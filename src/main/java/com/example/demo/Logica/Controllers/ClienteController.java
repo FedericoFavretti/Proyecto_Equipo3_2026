@@ -21,19 +21,24 @@ public class ClienteController implements iClienteController {
 
     @PostMapping("")
     public ResponseEntity<Cliente> registrarUsuario(@RequestBody DtCliente dtCliente) {
-        return null;
+        Cliente cliente = clienteService.registrarUsuario(dtCliente);
+        return ResponseEntity.ok(cliente);
     }
+
     @PostMapping("")
     public ResponseEntity<Cliente> registrarUsuarioGoogle(@RequestBody DtCliente dtCliente){
-        return null;
+        Cliente cliente = clienteService.registrarUsuarioGoogle(dtCliente);
+        return ResponseEntity.ok(cliente);
     }
     @GetMapping("/{filtro}")
     public ResponseEntity<List<Plato>> buscarPlatos(@PathVariable DtFiltro dtFiltro) {
-        return null;
+        List<Plato> platos = clienteService.buscarPlatos(dtFiltro);
+        return ResponseEntity.ok(platos);
     }
 
     @GetMapping("")
     public ResponseEntity<List<Local>> listarLocales() {
-        return null;
+        List<Local> locales = clienteService.listarLocales();
+        return ResponseEntity.ok(locales);
     }
 }

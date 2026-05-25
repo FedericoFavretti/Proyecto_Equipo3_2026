@@ -17,34 +17,37 @@ public class LocalController implements iLocalController {
 
     @PostMapping("")
     public ResponseEntity<Plato> gestionarPlatoAlta(@RequestBody DtPlato dtPlato) {
-
-            return null;
+        Plato plato = localService.gestionarPlatoAlta(dtPlato);
+        return ResponseEntity.ok(plato);
     }
 
     @PutMapping("")
     public ResponseEntity<Plato> gestionarPlatoModificacion(@RequestBody DtPlato dtPlato) {
-
-        return null;
+        Plato plato = localService.gestionarPlatoModificacion(dtPlato);
+        return ResponseEntity.ok(plato);
     }
 
-    @DeleteMapping("/{nombre}")
-    public ResponseEntity<Void> gestionarPlatoBaja(@RequestBody String nombre) {
-
-        return null;
+    @DeleteMapping("/{idPlato}")
+    public ResponseEntity<Void> gestionarPlatoBaja(@RequestBody long idPlato) {
+        localService.gestionarPlatoBaja(idPlato);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("")
     public ResponseEntity<Void> solicitarHabilitacion(@RequestBody DtLocal dtLocal){
-        return null;
+        localService.solicitarHabilitacion(dtLocal);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("")
     public ResponseEntity<Void> registrarApertura(@RequestBody long idLocal){
-        return null;
+        localService.registrarApertura(idLocal);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("")
     public ResponseEntity<Void> regitrarCierre(@RequestBody long idLocal){
-        return null;
+        localService.regitrarCierre(idLocal);
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,7 +1,6 @@
 package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,7 +12,7 @@ public class AdminService {
     private LocalRepositorio localRepositorio;
 
     @Transactional
-    public Void resolverSolicitud(DtLocal dtLocal) {
-        return null;
+    public void resolverSolicitud(DtLocal dtLocal) {
+
     }
 }

@@ -18,6 +18,7 @@ public class AdminController implements iAdminController {
 
     @PostMapping("")
     public ResponseEntity<Void> resolverSolicitud(@RequestBody DtLocal dtLocal) {
-        return null;
+        adminService.resolverSolicitud(dtLocal);
+        return ResponseEntity.ok().build();
     }
 }

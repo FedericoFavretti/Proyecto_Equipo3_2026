@@ -16,6 +16,6 @@ public class DtPlato {
     private String descripcion;
     private Double precio;
     private List<String> imagenes;
-    private boolean disponible;
+    private Boolean disponible;
     private DtLocal dtLocal;
 }
