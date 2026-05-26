@@ -8,6 +8,7 @@ import java.util.Optional;
 public interface UsuarioRepositorio {
     List<Usuario> listarTodos();
     Optional<Usuario> buscarPorId(long id);
+    Optional<Usuario> buscarPorEmail(String email);
     void guardar(Usuario usuario);
     void actualizar(Usuario usuario);
     void eliminar(long id);
