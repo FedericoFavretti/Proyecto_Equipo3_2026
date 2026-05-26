@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.time.Instant;
 
 @Builder
 @Data
@@ -20,4 +21,18 @@ public class DtLocal {
     private Double calificacionGlobal;
     private boolean estaAbierto;
     private List<String> imagenes;
+    private Instant fechaSolicitudAprobacion;
+    private Instant fechaAprobacion;
+
+    public DtLocal(long id, String nombre, DtDireccion direccion, String descripcion, EstadoLocal estado,
+                   Double calificacionGlobal, boolean estaAbierto, List<String> imagenes) {
+        this.id = id;
+        this.nombre = nombre;
+        this.direccion = direccion;
+        this.descripcion = descripcion;
+        this.estado = estado;
+        this.calificacionGlobal = calificacionGlobal;
+        this.estaAbierto = estaAbierto;
+        this.imagenes = imagenes;
+    }
 }

@@ -72,7 +72,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     public void guardar(Pedido pedido) {
         jdbcTemplate.update("INSERT INTO Pedido (fecha, tiempoEstEntrega, total, calle, numero, ciudad, codigoPostal, medioPago, idLocal, idCliente) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 pedido.getFecha(),
-                pedido.getTiepoEstEntrega(),
+                pedido.getTiempoEstEntrega(),
                 pedido.getTotal(),
                 pedido.getTotal(),
                 pedido.getDomicilioEntrega().getCalle(),
@@ -90,7 +90,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     public void actualizar(Pedido pedido) {
         jdbcTemplate.update("UPDATE Pedido SET fecha = ?, tiempoEstEntrega = ?, total = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, medioPago = ?, idLocal = ?, idCliente = ? WHERE id = ?",
                 pedido.getFecha(),
-                pedido.getTiepoEstEntrega(),
+                pedido.getTiempoEstEntrega(),
                 pedido.getTotal(),
                 pedido.getTotal(),
                 pedido.getDomicilioEntrega().getCalle(),

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.List;
+import java.time.Instant;
 @Builder
 @Data
 @NoArgsConstructor
@@ -19,4 +20,18 @@ public class Local extends Usuario {
     private Double calificacionGlobal;
     private Boolean estaAbierto;
     private List<String> imagenes;
+    private Instant fechaSolicitudAprobacion;
+    private Instant fechaAprobacion;
+
+    public Local(long id, String nombre, DtDireccion direccion, String descripcion, EstadoLocal estado,
+                 Double calificacionGlobal, Boolean estaAbierto, List<String> imagenes) {
+        this.id = id;
+        this.nombre = nombre;
+        this.direccion = direccion;
+        this.descripcion = descripcion;
+        this.estado = estado;
+        this.calificacionGlobal = calificacionGlobal;
+        this.estaAbierto = estaAbierto;
+        this.imagenes = imagenes;
+    }
 }

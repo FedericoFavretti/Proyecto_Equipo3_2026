@@ -11,6 +11,16 @@ import lombok.NoArgsConstructor;
 public class DtDireccion {
     private String calle;
     private String numero;
+    private String apartamento;
     private String ciudad;
+    private String departamento;
     private String codigoPostal;
+    private String referencia;
+
+    public DtDireccion(String calle, String numero, String ciudad, String codigoPostal) {
+        this.calle = calle;
+        this.numero = numero;
+        this.ciudad = ciudad;
+        this.codigoPostal = codigoPostal;
+    }
 }

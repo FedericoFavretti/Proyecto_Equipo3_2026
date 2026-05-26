@@ -15,7 +15,7 @@ import java.util.Date;
 public class Pedido {
     private long id;
     private Date fecha;
-    private Duration  tiepoEstEntrega;
+    private Duration tiempoEstEntrega;
     private Double total;
     private DtDireccion domicilioEntrega;
     private String medioDePago;
