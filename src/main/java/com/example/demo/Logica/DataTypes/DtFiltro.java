@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DtFiltro {
+    private String nombre;
     private String precioMasBajo;
     private String precioMasAlto;
     private String promocionActiva;
     private String alfabetico;
-    private String local;
+    private DtLocal dtLocal;
 }

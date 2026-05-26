@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DtLoginResponse {
+    private long id;
     private String token;
     private String tipo = "Bearer";
     private String email;
