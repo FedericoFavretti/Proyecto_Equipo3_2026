@@ -25,7 +25,7 @@ public class ClienteController implements iClienteController {
         return ResponseEntity.ok(cliente);
     }
 
-    @PostMapping("")
+    @PostMapping("/google")
     public ResponseEntity<Cliente> registrarUsuarioGoogle(@RequestBody DtCliente dtCliente){
         Cliente cliente = clienteService.registrarUsuarioGoogle(dtCliente);
         return ResponseEntity.ok(cliente);
