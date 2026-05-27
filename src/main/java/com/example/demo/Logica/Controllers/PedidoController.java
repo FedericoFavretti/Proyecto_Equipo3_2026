@@ -16,32 +16,32 @@ public class PedidoController implements iPedidoController {
     @Autowired
     private PedidoService pedidoService;
 
-    @PostMapping("")
-    public ResponseEntity<Pedido> confirmarPedido(@RequestBody long idPedido) {
+    @PostMapping("/{idPedido}/confirmar")
+    public ResponseEntity<Pedido> confirmarPedido(@PathVariable long idPedido) {
         Pedido pedido = pedidoService.confirmarPedido(idPedido);
         return ResponseEntity.ok(pedido);
     }
 
-    @PostMapping("")
-    public ResponseEntity<Void> rechazarPedido(@RequestBody long idPedido) {
+    @PostMapping("/{idPedido}/rechazar")
+    public ResponseEntity<Void> rechazarPedido(@PathVariable long idPedido) {
         pedidoService.rechazarPedido(idPedido);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("")
+    @PostMapping
     public ResponseEntity<Pedido> realizarPedido(@RequestBody DtPedido dtPedido) {
         Pedido pedido = pedidoService.realizarPedido(dtPedido);
         return ResponseEntity.ok(pedido);
     }
 
-    @PostMapping("")
-    public ResponseEntity<Void> cancelarPedido(@RequestBody long idPedido) {
+    @PostMapping("/{idPedido}/cancelar")
+    public ResponseEntity<Void> cancelarPedido(@PathVariable long idPedido) {
         pedidoService.cancelarPedido(idPedido);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("")
-    public ResponseEntity<List<Pedido>> listarPedidos(@RequestBody long idLocal) {
+    @GetMapping("/locales/{idLocal}")
+    public ResponseEntity<List<Pedido>> listarPedidos(@PathVariable long idLocal) {
         List<Pedido> pedidos = pedidoService.listarPedidos(idLocal);
         return ResponseEntity.ok(pedidos);
     }

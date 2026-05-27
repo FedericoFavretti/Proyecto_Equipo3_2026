@@ -1,0 +1,62 @@
+package com.example.demo.Logica.Service;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+
+import com.example.demo.Logica.Clases.Local;
+
+@Service
+public class CorreoRegistroLocalNotificador implements RegistroLocalNotificador {
+
+    private static final Logger logger = LoggerFactory.getLogger(CorreoRegistroLocalNotificador.class);
+
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final String correoAdministrador;
+    private final String correoRemitente;
+
+    public CorreoRegistroLocalNotificador(
+            ObjectProvider<JavaMailSender> mailSenderProvider,
+            @Value("${app.registro-local.admin-email:admin@foodly.local}") String correoAdministrador,
+            @Value("${app.email.from:no-reply@foodly.local}") String correoRemitente) {
+        this.mailSenderProvider = mailSenderProvider;
+        this.correoAdministrador = correoAdministrador;
+        this.correoRemitente = correoRemitente;
+    }
+
+    @Override
+    public void notificarAdministradorSolicitudPendiente(Local local) {
+        enviarCorreo(
+                correoAdministrador,
+                "Nueva solicitud de registro de local",
+                "El local " + local.getNombre() + " envió una solicitud de habilitación pendiente de revisión.");
+    }
+
+    @Override
+    public void notificarLocalResolucionSolicitud(Local local) {
+        enviarCorreo(
+                local.getEmail(),
+                "Resolución de solicitud de registro de local",
+                "La solicitud del local " + local.getNombre() + " fue resuelta con estado " + local.getEstadoLocal() + ".");
+    }
+
+    private void enviarCorreo(String destinatario, String asunto, String cuerpo) {
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            logger.warn("No hay JavaMailSender configurado; no se pudo enviar correo '{}' a {}", asunto, destinatario);
+            return;
+        }
+
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom(correoRemitente);
+        mensaje.setTo(destinatario);
+        mensaje.setSubject(asunto);
+        mensaje.setText(cuerpo);
+
+        mailSender.send(mensaje);
+    }
+}

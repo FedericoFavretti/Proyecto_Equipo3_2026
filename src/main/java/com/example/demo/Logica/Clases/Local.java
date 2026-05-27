@@ -16,20 +16,20 @@ public class Local extends Usuario {
     private String nombre;
     private DtDireccion direccion;
     private String descripcion;
-    private EstadoLocal estado;
+    private EstadoLocal estadoLocal;
     private Double calificacionGlobal;
     private Boolean estaAbierto;
     private List<String> imagenes;
     private Instant fechaSolicitudAprobacion;
     private Instant fechaAprobacion;
 
-    public Local(long id, String nombre, DtDireccion direccion, String descripcion, EstadoLocal estado,
+    public Local(long id, String nombre, DtDireccion direccion, String descripcion, EstadoLocal estadoLocal,
                  Double calificacionGlobal, Boolean estaAbierto, List<String> imagenes) {
         this.id = id;
         this.nombre = nombre;
         this.direccion = direccion;
         this.descripcion = descripcion;
-        this.estado = estado;
+        this.estadoLocal = estadoLocal;
         this.calificacionGlobal = calificacionGlobal;
         this.estaAbierto = estaAbierto;
         this.imagenes = imagenes;

@@ -28,7 +28,9 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
                         rs.getString("mensaje"),
                         CanalNotificacion.valueOf(rs.getString("canal")),
                         rs.getBoolean("leida"),
-                        rs.getDate("fecha")
+                        rs.getDate("fecha"),
+                        null,
+                        null
                 )
         );
     }
@@ -42,7 +44,9 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
                         rs.getString("mensaje"),
                         CanalNotificacion.valueOf(rs.getString("canal")),
                         rs.getBoolean("leida"),
-                        rs.getDate("fecha")
+                        rs.getDate("fecha"),
+                        null,
+                        null
                 ),id
         ).stream().findFirst();
     }

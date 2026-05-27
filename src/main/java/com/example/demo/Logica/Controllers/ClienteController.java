@@ -19,13 +19,13 @@ public class ClienteController implements iClienteController {
     @Autowired
     private ClienteService  clienteService;
 
-    @PostMapping("")
+    @PostMapping
     public ResponseEntity<Cliente> registrarUsuario(@RequestBody DtCliente dtCliente) {
         Cliente cliente = clienteService.registrarUsuario(dtCliente);
         return ResponseEntity.ok(cliente);
     }
 
-    @PostMapping("")
+    @PostMapping("/google")
     public ResponseEntity<Cliente> registrarUsuarioGoogle(@RequestBody DtCliente dtCliente){
         Cliente cliente = clienteService.registrarUsuarioGoogle(dtCliente);
         return ResponseEntity.ok(cliente);
@@ -36,7 +36,7 @@ public class ClienteController implements iClienteController {
         return ResponseEntity.ok(platos);
     }
 
-    @GetMapping("")
+    @GetMapping
     public ResponseEntity<List<Local>> listarLocales() {
         List<Local> locales = clienteService.listarLocales();
         return ResponseEntity.ok(locales);
