@@ -147,4 +147,29 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
             return null;
         }
     }
+
+    @Override
+    public void guardarTokenActivacion(long id, String token, java.time.Instant expira) {
+        jdbcTemplate.update(
+                "UPDATE usuarios SET token_activacion = ?, token_activacion_expira = ? WHERE id = ?",
+                token, java.sql.Timestamp.from(expira), id
+        );
+    }
+
+    @Override
+    public void activarCuenta(long id) {
+        jdbcTemplate.update(
+                "UPDATE usuarios SET estado = ?, token_activacion = NULL, token_activacion_expira = NULL WHERE id = ?",
+                EstadoCuenta.Activo.name(), id
+        );
+    }
+
+    @Override
+    public Optional<Usuario> buscarPorTokenActivacion(String token) {
+        return jdbcTemplate.query(
+                "SELECT * FROM usuarios WHERE token_activacion = ?",
+                (rs, row) -> mapUsuarioParaAutenticacion(rs),
+                token
+        ).stream().findFirst();
+    }
 }

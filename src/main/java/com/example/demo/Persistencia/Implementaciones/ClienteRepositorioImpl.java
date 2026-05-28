@@ -61,7 +61,10 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
 
     @Override
     public void guardar(Cliente cliente) {
-        jdbcTemplate.update("INSERT INTO Cliente (documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        jdbcTemplate.update(
+                "INSERT INTO clientes (id, documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                cliente.getId(),
+                cliente.getDocumento(),
                 cliente.getNombre(),
                 cliente.getApellido(),
                 cliente.getDireccion().getCalle(),
@@ -92,5 +95,44 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public void eliminar(long id) {
         jdbcTemplate.update("DELETE FROM Cliente WHERE id = ?", id);
+    }
+
+    @Override
+    public Optional<Cliente> buscarPorEmail(String email) {
+        return jdbcTemplate.query(
+                "SELECT u.*, c.* FROM usuarios u JOIN clientes c ON u.id = c.id WHERE u.email = ?",
+                (rs, row) -> new Cliente(
+                        rs.getLong("id"),
+                        rs.getString("documento"),
+                        rs.getString("nombre"),
+                        rs.getString("apellido"),
+                        new DtDireccion(
+                                rs.getString("calle"),
+                                rs.getString("numero"),
+                                rs.getString("ciudad"),
+                                rs.getString("codigoPostal")
+                        ),
+                        rs.getDouble("calificacionGlobal"),
+                        rs.getBoolean("activo")
+                ), email
+        ).stream().findFirst();
+    }
+
+    @Override
+    public boolean existeCorreo(String email) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM usuarios WHERE email = ?",
+                Integer.class, email
+        );
+        return count != null && count > 0;
+    }
+
+    @Override
+    public boolean existeDocumento(String documento) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM clientes WHERE documento = ?",
+                Integer.class, documento
+        );
+        return count != null && count > 0;
     }
 }
