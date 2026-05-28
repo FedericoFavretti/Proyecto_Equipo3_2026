@@ -41,7 +41,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public Optional<Cliente> buscarPorId(long id) {
         return jdbcTemplate.query(
-                "SELECT u.*, c.* FROM usuario u JOIN clientes c ON u.id = c.id  WHERE u.id = ?",
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id  WHERE u.id = ?",
                 (rs, row) -> new Cliente(
                         rs.getLong("id"),
                         rs.getString("documento"),
