@@ -99,7 +99,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public Optional<Cliente> buscarPorEmail(String email) {
         return jdbcTemplate.query(
-                "SELECT u.*, c.* FROM usuario u JOIN clientes c ON u.id = c.id WHERE u.email = ?",
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE u.email = ?",
                 (rs, row) -> new Cliente(
                         rs.getLong("id"),
                         rs.getString("documento"),
