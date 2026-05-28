@@ -26,7 +26,9 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                         rs.getInt("puntaje"),
                         rs.getString("comentario"),
                         rs.getDate("fecha"),
-                        TipoCalificacion.valueOf(rs.getString("tipo"))
+                        TipoCalificacion.valueOf(rs.getString("tipo")),
+                        null,
+                        null
                 )
         );
     }
@@ -39,7 +41,9 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                         rs.getInt("puntaje"),
                         rs.getString("comentario"),
                         rs.getDate("fecha"),
-                        TipoCalificacion.valueOf(rs.getString("tipo"))
+                        TipoCalificacion.valueOf(rs.getString("tipo")),
+                        null,
+                        null
                 ), id
         ).stream().findFirst();
     }

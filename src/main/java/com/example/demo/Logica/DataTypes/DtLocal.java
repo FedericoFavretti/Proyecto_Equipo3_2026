@@ -14,6 +14,7 @@ import java.time.Instant;
 @AllArgsConstructor
 public class DtLocal {
     private long id;
+    private String email;
     private String nombre;
     private DtDireccion direccion;
     private String descripcion;

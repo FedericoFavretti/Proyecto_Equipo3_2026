@@ -15,38 +15,40 @@ public class LocalController implements iLocalController {
     @Autowired
     private LocalService localService;
 
-    @PostMapping("")
+    @PostMapping("/platos")
     public ResponseEntity<Plato> gestionarPlatoAlta(@RequestBody DtPlato dtPlato) {
         Plato plato = localService.altaPlato(dtPlato);
         return ResponseEntity.ok(plato);
     }
 
-    @PutMapping("")
-    public ResponseEntity<Plato> gestionarPlatoModificacion(@RequestBody DtPlato dtPlato) {
-        Plato plato = localService.gestionarPlatoModificacion(dtPlato);
+    @PutMapping("/platos/{idPlato}")
+    public ResponseEntity<Plato> gestionarPlatoModificacion(
+            @PathVariable("idPlato") long idPlato,
+            @RequestBody DtPlato dtPlato) {
+        Plato plato = localService.gestionarPlatoModificacion(idPlato, dtPlato);
         return ResponseEntity.ok(plato);
     }
 
-    @DeleteMapping("/{idPlato}")
-    public ResponseEntity<Void> gestionarPlatoBaja(@RequestBody long idPlato) {
+    @DeleteMapping("/platos/{idPlato}")
+    public ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") long idPlato) {
         localService.gestionarPlatoBaja(idPlato);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("")
-    public ResponseEntity<Void> solicitarHabilitacion(@RequestBody DtLocal dtLocal){
+    @PostMapping("/solicitudes-habilitacion")
+    public ResponseEntity<Void> solicitarHabilitacion(@RequestBody DtLocal dtLocal) {
         localService.solicitarHabilitacion(dtLocal);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("")
-    public ResponseEntity<Void> registrarApertura(@RequestBody long idLocal){
+    @PutMapping("/{idLocal}/apertura")
+    public ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") long idLocal) {
         localService.registrarApertura(idLocal);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("")
-    public ResponseEntity<Void> regitrarCierre(@RequestBody long idLocal){
+    @PutMapping("/{idLocal}/cierre")
+    public ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") long idLocal) {
         localService.regitrarCierre(idLocal);
         return ResponseEntity.ok().build();
     }
