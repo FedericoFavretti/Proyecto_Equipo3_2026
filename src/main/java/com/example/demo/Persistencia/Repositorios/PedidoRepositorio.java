@@ -11,4 +11,5 @@ public interface PedidoRepositorio {
     void guardar(Pedido pedido);
     void actualizar(Pedido pedido);
     void eliminar(long id);
+    List<Pedido> listarPorLocal(long idLocal);
 }

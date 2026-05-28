@@ -2,7 +2,6 @@ package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.DtPedido;
-import com.example.demo.Logica.Interfaces.iPedidoController;
 import com.example.demo.Logica.Service.PedidoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,21 +11,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/pedidos")
-public class PedidoController implements iPedidoController {
+public class PedidoController {
+
     @Autowired
     private PedidoService pedidoService;
-
-    @PostMapping("")
-    public ResponseEntity<Pedido> confirmarPedido(@RequestBody long idPedido) {
-        Pedido pedido = pedidoService.confirmarPedido(idPedido);
-        return ResponseEntity.ok(pedido);
-    }
-
-    @PostMapping("")
-    public ResponseEntity<Void> rechazarPedido(@RequestBody long idPedido) {
-        pedidoService.rechazarPedido(idPedido);
-        return ResponseEntity.ok().build();
-    }
 
     @PostMapping("")
     public ResponseEntity<Pedido> realizarPedido(@RequestBody DtPedido dtPedido) {
@@ -35,13 +23,25 @@ public class PedidoController implements iPedidoController {
     }
 
     @PostMapping("")
-    public ResponseEntity<Void> cancelarPedido(@RequestBody long idPedido) {
-        pedidoService.cancelarPedido(idPedido);
+    public ResponseEntity<Pedido> confirmarPedido(@PathVariable long id) {
+        Pedido pedido = pedidoService.confirmarPedido(id);
+        return ResponseEntity.ok(pedido);
+    }
+
+    @PostMapping("")
+    public ResponseEntity<Void> rechazarPedido(@PathVariable long id) {
+        pedidoService.rechazarPedido(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("")
+    public ResponseEntity<Void> cancelarPedido(@PathVariable long id) {
+        pedidoService.cancelarPedido(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("")
-    public ResponseEntity<List<Pedido>> listarPedidos(@RequestBody long idLocal) {
+    public ResponseEntity<List<Pedido>> listarPedidos(@PathVariable long idLocal) {
         List<Pedido> pedidos = pedidoService.listarPedidos(idLocal);
         return ResponseEntity.ok(pedidos);
     }

@@ -20,6 +20,8 @@ public class Pedido {
     private DtDireccion domicilioEntrega;
     private String medioDePago;
     private Boolean pagoSimulado;
+    private EstadoPedido estado;
+    private List<DetallePedido> detalles;
     private Local local;
     private Cliente cliente;
 }
