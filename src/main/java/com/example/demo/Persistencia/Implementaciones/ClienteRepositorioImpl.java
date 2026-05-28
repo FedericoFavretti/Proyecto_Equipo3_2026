@@ -41,7 +41,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public Optional<Cliente> buscarPorId(long id) {
         return jdbcTemplate.query(
-                "SELECT u.*, c.* FROM usuarios u JOIN clientes c ON u.id = c.id  WHERE u.id = ?",
+                "SELECT u.*, c.* FROM usuario u JOIN clientes c ON u.id = c.id  WHERE u.id = ?",
                 (rs, row) -> new Cliente(
                         rs.getLong("id"),
                         rs.getString("documento"),
@@ -62,8 +62,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public void guardar(Cliente cliente) {
         jdbcTemplate.update(
-                "INSERT INTO clientes (id, documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                cliente.getId(),
+                "INSERT INTO Cliente (documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 cliente.getDocumento(),
                 cliente.getNombre(),
                 cliente.getApellido(),
@@ -100,7 +99,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public Optional<Cliente> buscarPorEmail(String email) {
         return jdbcTemplate.query(
-                "SELECT u.*, c.* FROM usuarios u JOIN clientes c ON u.id = c.id WHERE u.email = ?",
+                "SELECT u.*, c.* FROM usuario u JOIN clientes c ON u.id = c.id WHERE u.email = ?",
                 (rs, row) -> new Cliente(
                         rs.getLong("id"),
                         rs.getString("documento"),
@@ -121,7 +120,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public boolean existeCorreo(String email) {
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM usuarios WHERE email = ?",
+                "SELECT COUNT(*) FROM usuario WHERE email = ?",
                 Integer.class, email
         );
         return count != null && count > 0;
@@ -130,7 +129,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public boolean existeDocumento(String documento) {
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM clientes WHERE documento = ?",
+                "SELECT COUNT(*) FROM cliente WHERE documento = ?",
                 Integer.class, documento
         );
         return count != null && count > 0;
