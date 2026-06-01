@@ -15,7 +15,7 @@ public abstract class DtUsuario {
     private String email;
     private String passwd;
     private String foto;
-    private EstadoCuenta estado;
+    private EstadoCuenta estadoCuenta;
     private RolUsuario tipo;
     private Instant createdAt;
     private Instant updatedAt;

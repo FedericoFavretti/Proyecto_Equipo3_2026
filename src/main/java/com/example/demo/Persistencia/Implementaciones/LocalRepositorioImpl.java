@@ -109,7 +109,9 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                 mapearEstadoLocal(rs.getString("estado")),
                 rs.getDouble("calificacionGlobal"),
                 rs.getBoolean("estaAbierto"),
-                mapearImagenes(rs.getString("imagenes"))
+                mapearImagenes(rs.getString("imagenes")),
+                null,
+                null
         );
         local.setEmail(rs.getString("email"));
         return local;
