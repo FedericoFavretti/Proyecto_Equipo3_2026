@@ -12,7 +12,5 @@ public interface ClienteRepositorio {
     void guardar(Cliente cliente);
     void actualizar(Cliente cliente);
     void eliminar(long id);
-    Optional<Cliente> buscarPorEmail(String email);
-    boolean existeCorreo(String email);
     boolean existeDocumento(String documento);
 }

@@ -12,7 +12,6 @@ public interface UsuarioRepositorio {
     void guardar(Usuario usuario);
     void actualizar(Usuario usuario);
     void eliminar(long id);
-    void guardarTokenActivacion(long id, String token, java.time.Instant expira);
     void activarCuenta(long id);
-    Optional<Usuario> buscarPorTokenActivacion(String token);
+    boolean existeCorreo(String email);
 }

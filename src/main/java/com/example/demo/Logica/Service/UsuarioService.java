@@ -17,9 +17,6 @@ public class UsuarioService {
     private UsuarioRepositorio usuarioRepositorio;
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @Autowired
     private EmailService emailService;
 
     @Transactional
@@ -28,26 +25,11 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void activarCuenta(String token) {
-        Optional<Usuario> usuarioOpt = usuarioRepositorio.buscarPorTokenActivacion(token);
+    public void activarCuenta(String email) {
+        Optional<Usuario> usuarioOpt = usuarioRepositorio.buscarPorEmail(email);
         if (usuarioOpt.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "El enlace de activación ha expirado. Se ha enviado uno nuevo a su correo.");
+            throw new IllegalArgumentException("Usuario no encontrado.");
         }
-        Usuario usuario = usuarioOpt.get();
-        java.time.Instant expira = jdbcTemplate.queryForObject(
-                "SELECT token_activacion_expira FROM usuarios WHERE id = ?",
-                java.sql.Timestamp.class, usuario.getId()
-        ).toInstant();
-        if (java.time.Instant.now().isAfter(expira)) {
-            String nuevoToken = java.util.UUID.randomUUID().toString();
-            java.time.Instant nuevaExpira = java.time.Instant.now()
-                    .plus(24, java.time.temporal.ChronoUnit.HOURS);
-            usuarioRepositorio.guardarTokenActivacion(usuario.getId(), nuevoToken, nuevaExpira);
-            emailService.enviarMailDeActivacion(usuario.getEmail(), nuevoToken);
-            throw new IllegalArgumentException(
-                    "El enlace de activación ha expirado. Se ha enviado uno nuevo a su correo.");
-        }
-        usuarioRepositorio.activarCuenta(usuario.getId());
+        usuarioRepositorio.activarCuenta(usuarioOpt.get().getId());
     }
 }

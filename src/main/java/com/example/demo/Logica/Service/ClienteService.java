@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.RolUsuario;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 @Service
@@ -26,12 +25,10 @@ public class ClienteService {
     private UsuarioRepositorio usuarioRepositorio;
     @Autowired
     private EmailService emailService;
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @Transactional
     public Cliente registrarUsuario(DtCliente dtCliente) {
-        if (clienteRepositorio.existeCorreo(dtCliente.getEmail())) {
+        if (usuarioRepositorio.existeCorreo(dtCliente.getEmail())) {
             throw new IllegalArgumentException(
                     "El correo ya está asociado a una cuenta. ¿Desea iniciar sesión?");
         }
@@ -53,16 +50,8 @@ public class ClienteService {
         cliente.setEstado(EstadoCuenta.PendienteAprobacion);
         cliente.setTipo(RolUsuario.CUSTOMER);
         usuarioRepositorio.guardar(cliente);
-        Long idGenerado = jdbcTemplate.queryForObject(
-                "SELECT id FROM usuarios WHERE email = ?",
-                Long.class, cliente.getEmail()
-        );
-        cliente.setId(idGenerado);
         clienteRepositorio.guardar(cliente);
-        String tokenActivacion = java.util.UUID.randomUUID().toString();
-        java.time.Instant expira = java.time.Instant.now().plus(24, java.time.temporal.ChronoUnit.HOURS);
-        usuarioRepositorio.guardarTokenActivacion(cliente.getId(), tokenActivacion, expira);
-        emailService.enviarMailDeActivacion(cliente.getEmail(), tokenActivacion);
+        emailService.enviarMailDeActivacion(cliente.getEmail());
         return cliente;
     }
 

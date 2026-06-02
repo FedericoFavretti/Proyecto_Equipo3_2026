@@ -11,12 +11,12 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void enviarMailDeActivacion(String email, String tokenActivacion) {
+    public void enviarMailDeActivacion(String email) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
         mensaje.setTo(email);
         mensaje.setSubject("Activá tu cuenta en Foodly");
         mensaje.setText("Hacé clic en el siguiente enlace para activar tu cuenta: "
-                + "http://localhost:8082/api/v1/usuarios/activar?token=" + tokenActivacion);
+                + "http://localhost:8082/api/v1/usuarios/activar?email=" + email);
         mailSender.send(mensaje);
     }
 }

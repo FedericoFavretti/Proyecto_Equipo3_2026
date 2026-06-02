@@ -20,8 +20,8 @@ public class UsuarioController implements iUsuarioController {
     }
 
     @GetMapping("/activar")
-    public ResponseEntity<String> activarCuenta(@RequestParam String token) {
-        usuarioService.activarCuenta(token);
+    public ResponseEntity<String> activarCuenta(@RequestParam String email) {
+        usuarioService.activarCuenta(email);
         return ResponseEntity.ok("Cuenta activada correctamente.");
     }
 }

@@ -97,36 +97,6 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     }
 
     @Override
-    public Optional<Cliente> buscarPorEmail(String email) {
-        return jdbcTemplate.query(
-                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE u.email = ?",
-                (rs, row) -> new Cliente(
-                        rs.getLong("id"),
-                        rs.getString("documento"),
-                        rs.getString("nombre"),
-                        rs.getString("apellido"),
-                        new DtDireccion(
-                                rs.getString("calle"),
-                                rs.getString("numero"),
-                                rs.getString("ciudad"),
-                                rs.getString("codigoPostal")
-                        ),
-                        rs.getDouble("calificacionGlobal"),
-                        rs.getBoolean("activo")
-                ), email
-        ).stream().findFirst();
-    }
-
-    @Override
-    public boolean existeCorreo(String email) {
-        Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM usuario WHERE email = ?",
-                Integer.class, email
-        );
-        return count != null && count > 0;
-    }
-
-    @Override
     public boolean existeDocumento(String documento) {
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM cliente WHERE documento = ?",
