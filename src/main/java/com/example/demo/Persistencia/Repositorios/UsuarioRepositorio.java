@@ -12,5 +12,7 @@ public interface UsuarioRepositorio {
     void guardar(Usuario usuario);
     void actualizar(Usuario usuario);
     void eliminar(long id);
-    
+    void activarCuenta(long id);
+    boolean existeCorreo(String email);
+
 }

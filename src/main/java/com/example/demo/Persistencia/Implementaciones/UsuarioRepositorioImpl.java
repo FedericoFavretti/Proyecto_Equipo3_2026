@@ -106,4 +106,25 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
             }
         }
     }
+
+
+
+
+    @Override
+    public void activarCuenta(long id) {
+        jdbcTemplate.update(
+                "UPDATE usuarios SET estado = ?, token_activacion = NULL, token_activacion_expira = NULL WHERE id = ?",
+                EstadoCuenta.Activo.name(), id
+        );
+    }
+
+    @Override
+    public boolean existeCorreo(String email) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM usuarios WHERE email = ?",
+                Integer.class, email
+        );
+        return count != null && count > 0;
+    }
+
 }
