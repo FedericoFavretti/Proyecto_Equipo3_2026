@@ -14,4 +14,5 @@ public interface UsuarioRepositorio {
     void eliminar(long id);
     void activarCuenta(long id);
     boolean existeCorreo(String email);
+
 }

@@ -97,7 +97,6 @@ public class LocalRepositorioImpl implements LocalRepositorio {
 
     private Local mapearLocal(ResultSet rs) throws SQLException {
         Local local = new Local(
-                rs.getLong("id"),
                 rs.getString("nombre"),
                 new DtDireccion(
                         rs.getString("calle"),

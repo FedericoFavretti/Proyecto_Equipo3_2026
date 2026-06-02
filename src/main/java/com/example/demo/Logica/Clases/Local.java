@@ -5,14 +5,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.sql.Time;
 import java.util.List;
 import java.time.Instant;
+
 @Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Local extends Usuario {
-    private long id;
     private String nombre;
     private DtDireccion direccion;
     private String descripcion;
@@ -20,6 +22,4 @@ public class Local extends Usuario {
     private Double calificacionGlobal;
     private Boolean estaAbierto;
     private List<String> imagenes;
-    private Instant fechaSolicitudAprobacion;
-    private Instant fechaAprobacion;
 }

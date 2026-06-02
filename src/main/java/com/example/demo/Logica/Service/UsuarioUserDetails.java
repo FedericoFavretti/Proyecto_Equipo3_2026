@@ -2,7 +2,7 @@ package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.Enums.EstadoCuenta;
-import com.example.demo.Logica.Enums.RolUsuario;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -18,11 +18,10 @@ public class UsuarioUserDetails implements UserDetails {
         this.usuario = Objects.requireNonNull(usuario, "usuario no puede ser null");
     }
 
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        RolUsuario tipo = usuario.getTipo();
-        String authority = tipo != null ? tipo.getAuthority() : "ROLE_USER";
-        return List.of(new SimpleGrantedAuthority(authority));
+        return List.of();
     }
 
     @Override
@@ -42,9 +41,9 @@ public class UsuarioUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        EstadoCuenta estado = usuario.getEstado();
-        return estado == null || !estado.estaBloqueada();
+        return UserDetails.super.isAccountNonLocked();
     }
+
 
     @Override
     public boolean isCredentialsNonExpired() {
@@ -53,7 +52,8 @@ public class UsuarioUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        EstadoCuenta estado = usuario.getEstado();
-        return estado != null && estado.habilitaAutenticacion();
+        return UserDetails.super.isEnabled();
     }
+
+
 }

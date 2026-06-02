@@ -1,7 +1,8 @@
 package com.example.demo.Persistencia.Implementaciones;
 
-import com.example.demo.Logica.Clases.Local;
+
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.DataTypes.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,15 +10,12 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.sql.*;
+import java.util.*;
 
 @Repository
 public class PlatoRepositorioImpl implements PlatoRepositorio {
+
     private final LocalRepositorio localRepositorio;
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,34 +24,113 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+
+    private List<String> mapearImagenes(ResultSet rs) throws SQLException {
+        Array array = rs.getArray("imagenes");
+        if (array == null) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList((String[]) array.getArray());
+    }
+
+
     @Override
     public List<Plato> listarTodos() {
-        return jdbcTemplate.query("SELECT * FROM Plaro",
-                (rs, row)-> new Plato(
+        return jdbcTemplate.query("SELECT * FROM plato",
+                (rs, row) -> new Plato(
                         rs.getLong("id"),
                         rs.getString("nombre"),
                         rs.getString("descripcion"),
                         rs.getDouble("precio"),
-                        new ArrayList<>(Collections.singleton(rs.getString("imagenes"))),
+                        mapearImagenes(rs),
                         rs.getBoolean("disponible"),
-                        localRepositorio.buscarPorId(rs.getLong("idLocal")).orElseThrow(() -> new RuntimeException("Plato no encontrado"))
+                        localRepositorio.buscarPorId(rs.getLong("idLocal"))
+                                .orElseThrow(() -> new RuntimeException("Local no encontrado"))
                 )
         );
     }
 
     @Override
     public Optional<Plato> buscarPorId(long id) {
-        return jdbcTemplate.query("SELECT * FROM Plato WHERE id = ?",
-                (rs, row)-> new Plato(
+        return jdbcTemplate.query("SELECT * FROM plato WHERE id = ?",
+                (rs, row) -> new Plato(
                         rs.getLong("id"),
                         rs.getString("nombre"),
                         rs.getString("descripcion"),
                         rs.getDouble("precio"),
-                        new ArrayList<>(Collections.singleton(rs.getString("imagenes"))),
+                        mapearImagenes(rs),
                         rs.getBoolean("disponible"),
-                        localRepositorio.buscarPorId(rs.getLong("idLocal")).orElseThrow(() -> new RuntimeException("Plato no encontrado"))
-                ),id
+                        localRepositorio.buscarPorId(rs.getLong("idLocal"))
+                                .orElseThrow(() -> new RuntimeException("Local no encontrado"))
+                ), id
         ).stream().findFirst();
+    }
+
+
+    @Override
+    public Optional<Plato> buscarPorNombre(String nombre) {
+        return jdbcTemplate.query("SELECT * FROM plato WHERE nombre = ?",
+                (rs, row) -> new Plato(
+                        rs.getLong("id"),
+                        rs.getString("nombre"),
+                        rs.getString("descripcion"),
+                        rs.getDouble("precio"),
+                        mapearImagenes(rs),
+                        rs.getBoolean("disponible"),
+                        localRepositorio.buscarPorId(rs.getLong("idLocal"))
+                                .orElseThrow(() -> new RuntimeException("Local no encontrado"))
+                ), nombre
+        ).stream().findFirst();
+    }
+
+    @Override
+    public List<Plato> buscarConFiltros(DtFiltro filtro) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT p.id, p.nombre, p.descripcion, p.precio, " +
+                        "p.imagenes, p.disponible, p.idLocal FROM plato p WHERE 1=1"
+        );
+        List<Object> params = new ArrayList<>();
+
+        if (filtro.getNombre() != null && !filtro.getNombre().isEmpty()) {
+            sql.append(" AND p.nombre LIKE ?");
+            params.add("%" + filtro.getNombre() + "%");
+        }
+
+        if (filtro.getDtLocal() != null) {
+            sql.append(" AND p.idLocal = ?");
+            params.add(filtro.getDtLocal().getId());
+        }
+
+        List<String> orden = new ArrayList<>();
+
+        if (Boolean.TRUE.equals(filtro.getPrecioMasBajo())) {
+            orden.add("p.precio ASC");
+        } else if (Boolean.TRUE.equals(filtro.getPrecioMasAlto())) {
+            orden.add("p.precio DESC");
+        }
+
+        if (Boolean.TRUE.equals(filtro.getAlfabetico())) {
+            orden.add("p.nombre ASC");
+        }
+
+        if (!orden.isEmpty()) {
+            sql.append(" ORDER BY ");
+            sql.append(String.join(", ", orden));
+        }
+
+        return jdbcTemplate.query(sql.toString(),
+                (rs, row) -> new Plato(
+                        rs.getLong("id"),
+                        rs.getString("nombre"),
+                        rs.getString("descripcion"),
+                        rs.getDouble("precio"),
+                        mapearImagenes(rs),
+                        rs.getBoolean("disponible"),
+                        localRepositorio.buscarPorId(rs.getLong("idLocal"))
+                                .orElseThrow(() -> new RuntimeException("Local no encontrado"))
+                ),
+                params.toArray()
+        );
     }
 
     @Override
@@ -62,13 +139,14 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO Plato (nombre, descripcion, precio, imagenes, disponible, idLocal) VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO plato (nombre, descripcion, precio, imagenes, disponible, idLocal) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS
             );
             ps.setString(1, plato.getNombre());
             ps.setString(2, plato.getDescripcion());
             ps.setDouble(3, plato.getPrecio());
-            ps.setString(4, String.join(",", plato.getImagenes()));
+            ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray())); // ✅ array PostgreSQL
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
             return ps;
@@ -80,41 +158,26 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
     @Override
     public Plato actualizar(Plato plato) {
-        int filasAfectadas = jdbcTemplate.update(
-                "UPDATE Plato SET nombre = ?, descripcion = ?, precio = ?, imagenes = ?, disponible = ?, idLocal = ? WHERE id = ?",
-                plato.getNombre(),
-                plato.getDescripcion(),
-                plato.getPrecio(),
-                String.join(",", plato.getImagenes()),
-                plato.getDisponible(),
-                plato.getLocal().getId(),
-                plato.getId()
-        );
-
-        if (filasAfectadas == 0) {
-            throw new RuntimeException("El plato con nombre "+plato.getNombre()+" no fue encontrado.");
-        }
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE plato SET nombre = ?, descripcion = ?, precio = ?, " +
+                            "imagenes = ?, disponible = ?, idLocal = ? WHERE id = ?"
+            );
+            ps.setString(1, plato.getNombre());
+            ps.setString(2, plato.getDescripcion());
+            ps.setDouble(3, plato.getPrecio());
+            ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
+            ps.setBoolean(5, plato.getDisponible());
+            ps.setLong(6, plato.getLocal().getId());
+            ps.setLong(7, plato.getId());
+            return ps;
+        });
 
         return plato;
     }
 
     @Override
     public void eliminar(long id) {
-        jdbcTemplate.update("DELETE FROM Plato WHERE id = ?", id);
-    }
-
-    @Override
-    public Optional<Plato> buscarPorNombre(String nombre) {
-        return jdbcTemplate.query("SELECT * FROM Plato WHERE nombre = ?",
-                (rs, row)-> new Plato(
-                        rs.getLong("id"),
-                        rs.getString("nombre"),
-                        rs.getString("descripcion"),
-                        rs.getDouble("precio"),
-                        new ArrayList<>(Collections.singleton(rs.getString("imagenes"))),
-                        rs.getBoolean("disponible"),
-                        localRepositorio.buscarPorId(rs.getLong("idLocal")).orElseThrow(() -> new RuntimeException("Plato no encontrado"))
-                ),nombre
-        ).stream().findFirst();
+        jdbcTemplate.update("DELETE FROM plato WHERE id = ?", id);
     }
 }

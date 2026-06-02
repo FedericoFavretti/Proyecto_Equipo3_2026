@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.Logica.Enums.EstadoCuenta;
-import com.example.demo.Logica.Enums.RolUsuario;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+
 
 import java.util.List;
 @Service
@@ -47,8 +49,8 @@ public class ClienteService {
         cliente.setEmail(dtCliente.getEmail());
         cliente.setPasswd(dtCliente.getPasswd());
         cliente.setFoto(dtCliente.getFoto());
-        cliente.setEstado(EstadoCuenta.PendienteAprobacion);
-        cliente.setTipo(RolUsuario.CUSTOMER);
+        cliente.setEstado(EstadoCuenta.Activo);
+        cliente.setTipo("Cliente");
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);
         emailService.enviarMailDeActivacion(cliente.getEmail());

@@ -1,6 +1,5 @@
 package com.example.demo.Logica.Clases;
 import com.example.demo.Logica.Enums.EstadoCuenta;
-import com.example.demo.Logica.Enums.RolUsuario;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,7 +15,6 @@ public abstract class Usuario {
     private String passwd;
     private String foto;
     private EstadoCuenta estado;
-    private RolUsuario tipo;
-    private Instant createdAt;
-    private Instant updatedAt;
+    private String tipo;
+
 }

@@ -13,15 +13,11 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DtLocal extends DtUsuario {
-    private long id;
-    private String email;
     private String nombre;
     private DtDireccion direccion;
     private String descripcion;
-    private EstadoLocal estado;
+    private EstadoLocal estadoLocal;
     private Double calificacionGlobal;
     private boolean estaAbierto;
     private List<String> imagenes;
-    private Instant fechaSolicitudAprobacion;
-    private Instant fechaAprobacion;
 }

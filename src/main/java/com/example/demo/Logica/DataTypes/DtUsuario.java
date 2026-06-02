@@ -1,6 +1,5 @@
 package com.example.demo.Logica.DataTypes;
 import com.example.demo.Logica.Enums.EstadoCuenta;
-import com.example.demo.Logica.Enums.RolUsuario;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,8 +14,8 @@ public abstract class DtUsuario {
     private String email;
     private String passwd;
     private String foto;
-    private EstadoCuenta estado;
-    private RolUsuario tipo;
+    private EstadoCuenta estadoCuenta;
+    private String tipo;
     private Instant createdAt;
     private Instant updatedAt;
 }

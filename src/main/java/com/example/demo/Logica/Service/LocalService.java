@@ -1,5 +1,6 @@
 package com.example.demo.Logica.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -102,16 +103,16 @@ public class LocalService {
             throw new IllegalArgumentException("El nombre del local ya se encuentra registrado.");
         }
 
+
         Local local = new Local(
-                dtLocal.getId(),
-                dtLocal.getNombre().trim(),
+                dtLocal.getNombre(),
                 dtLocal.getDireccion(),
-                dtLocal.getDescripcion().trim(),
+                dtLocal.getDescripcion(),
                 EstadoLocal.PENDIENTE,
                 0.0,
                 false,
-                new ArrayList<>(dtLocal.getImagenes()));
-        local.setEmail(dtLocal.getEmail().trim());
+                new ArrayList<>(dtLocal.getImagenes())
+        );
 
         localRepositorio.guardar(local);
         registroLocalNotificador.notificarAdministradorSolicitudPendiente(local);

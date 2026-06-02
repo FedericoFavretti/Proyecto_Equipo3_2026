@@ -19,16 +19,16 @@ public class AdminService {
 
     @Transactional
     public void resolverSolicitud(DtLocal dtLocal) {
-        if (dtLocal == null || dtLocal.getEstado() == null) {
+        if (dtLocal == null || dtLocal.getEstadoLocal() == null) {
             return;
         }
 
-        if (dtLocal.getEstado() == EstadoLocal.HABILITADO) {
+        if (dtLocal.getEstadoLocal() == EstadoLocal.HABILITADO) {
             aprobarSolicitudRegistroLocal(dtLocal.getId());
             return;
         }
 
-        if (dtLocal.getEstado() == EstadoLocal.RECHAZADO) {
+        if (dtLocal.getEstadoLocal() == EstadoLocal.RECHAZADO) {
             rechazarSolicitudRegistroLocal(dtLocal.getId());
             return;
         }

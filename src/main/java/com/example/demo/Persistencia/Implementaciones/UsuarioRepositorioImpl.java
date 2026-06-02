@@ -5,7 +5,6 @@ import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.Enums.EstadoCuenta;
-import com.example.demo.Logica.Enums.RolUsuario;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
@@ -19,6 +18,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 @Repository
 public class UsuarioRepositorioImpl implements UsuarioRepositorio {
@@ -55,22 +55,34 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
     @Override
     public Optional<Usuario> buscarPorEmail(String email) {
-        return jdbcTemplate.query(
-                "SELECT * FROM usuarios WHERE email = ?",
-                (rs, row) -> mapUsuarioParaAutenticacion(rs),
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                "SELECT id, tipo FROM usuario WHERE email = ?",
                 email
-        ).stream().findFirst();
+        );
+
+        if (rows.isEmpty()) return Optional.empty();
+
+        Map<String, Object> row = rows.get(0);
+        String tipo = (String) row.get("tipo");
+        Long id = (Long) row.get("id");
+
+        if (tipo.equals("local")) {
+            return localRepositorio.buscarPorId(id).map(u -> u);
+        } else if (tipo.equals("cliente")) {
+            return clienteRepositorio.buscarPorId(id).map(u -> u);
+        }
+        return Optional.empty();
     }
 
     @Override
     public void guardar(Usuario usuario) {
         jdbcTemplate.update(
-                "INSERT INTO usuarios (email, passwd, foto, estado, tipo) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO usuario (email, passwd, foto, estado, tipo) VALUES (?, ?, ?, ?, ?)",
                 usuario.getEmail(),
                 usuario.getPasswd(),
                 usuario.getFoto(),
                 usuario.getEstado() != null ? usuario.getEstado().name() : null,
-                tipoPersistido(usuario)
+                usuario.getTipo()
         );
     }
 
@@ -95,58 +107,8 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
         }
     }
 
-    private Usuario mapUsuarioParaAutenticacion(ResultSet rs) throws SQLException {
-        RolUsuario tipo = RolUsuario.desdeTipo(getNullableString(rs, "tipo"));
-        Usuario usuario = switch (tipo) {
-            case ADMIN -> new Administrador();
-            case LOCAL -> new Local();
-            case CUSTOMER -> new Cliente();
-        };
 
-        usuario.setId(rs.getLong("id"));
-        usuario.setEmail(getNullableString(rs, "email"));
-        usuario.setPasswd(getNullableString(rs, "passwd"));
-        usuario.setFoto(getNullableString(rs, "foto"));
-        usuario.setEstado(EstadoCuenta.desdeValor(getNullableString(rs, "estado", "esado")));
-        usuario.setTipo(tipo);
-        usuario.setCreatedAt(getNullableInstant(rs, "created_at"));
-        usuario.setUpdatedAt(getNullableInstant(rs, "updated_at"));
 
-        return usuario;
-    }
-
-    private String tipoPersistido(Usuario usuario) {
-        if (usuario.getTipo() != null) {
-            return usuario.getTipo().getTipoPersistido();
-        }
-        if (usuario instanceof Administrador) {
-            return RolUsuario.ADMIN.getTipoPersistido();
-        }
-        if (usuario instanceof Local) {
-            return RolUsuario.LOCAL.getTipoPersistido();
-        }
-        return RolUsuario.CUSTOMER.getTipoPersistido();
-    }
-
-    private String getNullableString(ResultSet rs, String... columnNames) {
-        for (String columnName : columnNames) {
-            try {
-                return rs.getString(columnName);
-            } catch (SQLException ignored) {
-                // Compatibilidad con esquemas anteriores mientras se consolida la persistencia horizontal.
-            }
-        }
-        return null;
-    }
-
-    private Instant getNullableInstant(ResultSet rs, String columnName) {
-        try {
-            Timestamp timestamp = rs.getTimestamp(columnName);
-            return timestamp != null ? timestamp.toInstant() : null;
-        } catch (SQLException ignored) {
-            return null;
-        }
-    }
 
     @Override
     public void activarCuenta(long id) {
@@ -164,4 +126,5 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
         );
         return count != null && count > 0;
     }
+
 }
