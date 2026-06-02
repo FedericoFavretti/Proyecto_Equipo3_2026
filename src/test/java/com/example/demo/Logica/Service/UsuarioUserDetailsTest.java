@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Enums.EstadoCuenta;
-import com.example.demo.Logica.Enums.RolUsuario;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 

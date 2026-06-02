@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cliente extends Usuario{
-    private long id;
     private String documento;
     private String nombre;
     private String apellido;

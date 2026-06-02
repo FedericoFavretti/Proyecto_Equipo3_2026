@@ -105,17 +105,13 @@ public class LocalService {
 
 
         Local local = new Local(
-                
-                dtLocal.getId(),
                 dtLocal.getNombre(),
                 dtLocal.getDireccion(),
                 dtLocal.getDescripcion(),
                 EstadoLocal.PENDIENTE,
                 0.0,
                 false,
-                new ArrayList<>(dtLocal.getImagenes()),
-                dtLocal.getFechaSolicitudAprobacion(),
-                dtLocal.getFechaAprobacion()
+                new ArrayList<>(dtLocal.getImagenes())
         );
 
         localRepositorio.guardar(local);
