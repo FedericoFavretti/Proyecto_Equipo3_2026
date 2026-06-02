@@ -22,7 +22,6 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
         return jdbcTemplate.query(
                 "SELECT * FROM Cliente",
                 (rs, row)-> new Cliente(
-                        rs.getLong("id"),
                         rs.getString("documento"),
                         rs.getString("nombre"),
                         rs.getString("apellido"),
@@ -43,7 +42,6 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
         return jdbcTemplate.query(
                 "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id  WHERE u.id = ?",
                 (rs, row) -> new Cliente(
-                        rs.getLong("id"),
                         rs.getString("documento"),
                         rs.getString("nombre"),
                         rs.getString("apellido"),
