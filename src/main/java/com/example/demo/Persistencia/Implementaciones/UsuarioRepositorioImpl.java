@@ -10,11 +10,11 @@ import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     }
 
     @Override
-    public Optional<Usuario> buscarPorId(long id) {
+    public Optional<Usuario> buscarPorId(Long id) {
         Optional<Usuario> local = localRepositorio.buscarPorId(id)
                 .map(u -> u);
         if (local.isPresent()) {
@@ -76,14 +76,24 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
     @Override
     public void guardar(Usuario usuario) {
-        jdbcTemplate.update(
-                "INSERT INTO usuario (email, passwd, foto, estado, tipo) VALUES (?, ?, ?, ?, ?)",
-                usuario.getEmail(),
-                usuario.getPasswd(),
-                usuario.getFoto(),
-                usuario.getEstado() != null ? usuario.getEstado().name() : null,
-                usuario.getTipo()
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO usuario (email, passwd, foto, estado, tipo) VALUES (?, ?, ?, ?, ?)",
+                    new String[]{"id"}
+            );
+            ps.setString(1, usuario.getEmail());
+            ps.setString(2, usuario.getPasswd());
+            ps.setString(3, usuario.getFoto());
+            ps.setString(4, usuario.getEstado() != null ? usuario.getEstado().name() : null);
+            ps.setString(5, usuario.getTipo());
+            return ps;
+        }, keyHolder);
+
+        Number id = keyHolder.getKey();
+        if (id != null) {
+            usuario.setId(id.longValue());
+        }
     }
 
     @Override
@@ -96,7 +106,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         Optional<Usuario> usuario = buscarPorId(id);
         if (usuario.isPresent()) {
             if (usuario.get() instanceof Local) {
@@ -111,7 +121,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
 
     @Override
-    public void activarCuenta(long id) {
+    public void activarCuenta(Long id) {
         jdbcTemplate.update(
                 "UPDATE usuarios SET estado = ?, token_activacion = NULL, token_activacion_expira = NULL WHERE id = ?",
                 EstadoCuenta.Activo.name(), id

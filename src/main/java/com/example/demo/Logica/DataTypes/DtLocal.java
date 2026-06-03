@@ -18,6 +18,6 @@ public class DtLocal extends DtUsuario {
     private String descripcion;
     private EstadoLocal estadoLocal;
     private Double calificacionGlobal;
-    private boolean estaAbierto;
+    private Boolean estaAbierto;
     private List<String> imagenes;
 }

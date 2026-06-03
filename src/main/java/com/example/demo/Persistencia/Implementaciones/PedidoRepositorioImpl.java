@@ -41,13 +41,13 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                         rs.getString("medioDePago"),
                         rs.getBoolean("pagoSimulado"),
                         localRepositorio.buscarPorId(rs.getLong("idLocal")).orElseThrow(() -> new RuntimeException("Local no encontrado")),
-                        clienteRepositorio.buscarPorId(rs.getInt("idCliente")).orElseThrow(() -> new RuntimeException("Cliente no encontrado"))
+                        clienteRepositorio.buscarPorId(rs.getLong("idCliente")).orElseThrow(() -> new RuntimeException("Cliente no encontrado"))
                 )
         );
     }
 
     @Override
-    public Optional<Pedido> buscarPorId(long id) {
+    public Optional<Pedido> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM Pedido WHERE id = ?",
                 (rs, row)-> new Pedido(
                         rs.getLong("id"),
@@ -63,7 +63,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                         rs.getString("medioDePago"),
                         rs.getBoolean("pagoSimulado"),
                         localRepositorio.buscarPorId(rs.getLong("idLocal")).orElseThrow(() -> new RuntimeException("Local no encontrado")),
-                        clienteRepositorio.buscarPorId(rs.getInt("idCliente")).orElseThrow(() -> new RuntimeException("Cliente no encontrado"))
+                        clienteRepositorio.buscarPorId(rs.getLong("idCliente")).orElseThrow(() -> new RuntimeException("Cliente no encontrado"))
                 ),id
         ).stream().findFirst();
     }
@@ -106,7 +106,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Pedido WHERE id = ?", id);
     }
 }

@@ -8,9 +8,9 @@ import java.util.Optional;
 public interface LocalRepositorio {
     List<Local> listarTodos();
     List<Local> listarPendientes();
-    Optional<Local> buscarPorId(long id);
+    Optional<Local> buscarPorId(Long id);
     Optional<Local> buscarPorNombre(String nombre);
     void guardar(Local local);
     void actualizar(Local local);
-    void eliminar(long id);
+    void eliminar(Long id);
 }

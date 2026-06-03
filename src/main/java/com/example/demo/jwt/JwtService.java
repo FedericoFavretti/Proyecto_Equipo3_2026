@@ -1,5 +1,5 @@
-package com.example.demo.jwt;
 
+package com.example.demo.jwt;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,11 +21,11 @@ import io.jsonwebtoken.security.Keys;
 public class JwtService {
 
     private final String secretKey;
-    private final long jwtExpirationMs;
+    private final Long jwtExpirationMs;
 
     public JwtService(
             @Value("${security.jwt.secret}") String secretKey,
-            @Value("${security.jwt.expiration-ms}") long jwtExpirationMs) {
+            @Value("${security.jwt.expiration-ms}") Long jwtExpirationMs) {
         this.secretKey = secretKey;
         this.jwtExpirationMs = jwtExpirationMs;
     }

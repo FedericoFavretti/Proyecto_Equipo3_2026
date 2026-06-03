@@ -34,7 +34,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
     }
 
     @Override
-    public Optional<Calificacion> buscarPorId(long id) {
+    public Optional<Calificacion> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM Calificacion WHERE id = ? ",
                 (rs, row)-> new Calificacion(
                         rs.getLong("id"),
@@ -70,7 +70,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Calificacion WHERE id = ?", id);
     }
 }

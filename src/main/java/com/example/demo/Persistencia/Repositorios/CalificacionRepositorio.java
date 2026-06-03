@@ -8,8 +8,8 @@ import java.util.Optional;
 
 public interface CalificacionRepositorio {
     List<Calificacion> listarTodos();
-    Optional<Calificacion> buscarPorId(long id);
+    Optional<Calificacion> buscarPorId(Long id);
     void guardar(Calificacion calificacion);
     void actualizar(Calificacion calificacion);
-    void eliminar(long id);
+    void eliminar(Long id);
 }

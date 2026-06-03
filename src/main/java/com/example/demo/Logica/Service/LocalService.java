@@ -3,15 +3,18 @@ package com.example.demo.Logica.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,14 +29,16 @@ public class LocalService {
     private final LocalRepositorio localRepositorio;
     private final PlatoRepositorio platoRepositorio;
     private final RegistroLocalNotificador registroLocalNotificador;
+    private final UsuarioRepositorio usuarioRepositorio;
 
     public LocalService(
             LocalRepositorio localRepositorio,
             PlatoRepositorio platoRepositorio,
-            RegistroLocalNotificador registroLocalNotificador) {
+            RegistroLocalNotificador registroLocalNotificador, UsuarioRepositorio usuarioRepositorio) {
         this.localRepositorio = localRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;
+        this.usuarioRepositorio = usuarioRepositorio;
     }
 
     @Transactional
@@ -49,6 +54,7 @@ public class LocalService {
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
         validarLocalHabilitado(local);
+        local.setId(dtPlato.getDtLocal().getId());
         Plato plato = Plato.builder()
                 .nombre(dtPlato.getNombre())
                 .descripcion(dtPlato.getDescripcion())
@@ -90,10 +96,6 @@ public class LocalService {
         platoRepositorio.eliminar(idPlato);
     }
 
-    @Transactional
-    public void solicitarHabilitacion(DtLocal dtLocal){
-        solicitarRegistroComoLocalHabilitado(dtLocal);
-    }
 
     @Transactional
     public void solicitarRegistroComoLocalHabilitado(DtLocal dtLocal) {
@@ -103,17 +105,21 @@ public class LocalService {
             throw new IllegalArgumentException("El nombre del local ya se encuentra registrado.");
         }
 
+        Local local = Local.builder()
+                .email(dtLocal.getEmail())
+                .passwd(dtLocal.getPasswd())
+                .foto(dtLocal.getFoto())
+                .tipo("Local")
+                .nombre(dtLocal.getNombre())
+                .direccion(dtLocal.getDireccion())
+                .descripcion(dtLocal.getDescripcion())
+                .estadoLocal(EstadoLocal.Pendiente)
+                .calificacionGlobal(0.0)
+                .estaAbierto(false)
+                .imagenes(new ArrayList<>(dtLocal.getImagenes()))
+                .build();
 
-        Local local = new Local(
-                dtLocal.getNombre(),
-                dtLocal.getDireccion(),
-                dtLocal.getDescripcion(),
-                EstadoLocal.PENDIENTE,
-                0.0,
-                false,
-                new ArrayList<>(dtLocal.getImagenes())
-        );
-
+        usuarioRepositorio.guardar(local);
         localRepositorio.guardar(local);
         registroLocalNotificador.notificarAdministradorSolicitudPendiente(local);
     }
@@ -216,7 +222,7 @@ public class LocalService {
     }
 
     private void validarLocalHabilitado(Local local) {
-        if (local.getEstadoLocal() != EstadoLocal.HABILITADO) {
+        if (local.getEstadoLocal() != EstadoLocal.Habilitado) {
             throw new IllegalStateException("El local debe estar habilitado para realizar esta operación.");
         }
     }

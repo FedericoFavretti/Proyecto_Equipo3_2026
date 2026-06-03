@@ -9,13 +9,11 @@ import java.time.Instant;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class DtUsuario {
+public  class DtUsuario {
     private Long id;
     private String email;
     private String passwd;
     private String foto;
     private EstadoCuenta estadoCuenta;
     private String tipo;
-    private Instant createdAt;
-    private Instant updatedAt;
 }

@@ -7,8 +7,8 @@ import java.util.Optional;
 
 public interface NotificacionRepositorio {
     List<Notificacion> listarTodos();
-    Optional<Notificacion> buscarPorId(long id);
+    Optional<Notificacion> buscarPorId(Long id);
     void guardar(Notificacion notificacion);
     void actualizar(Notificacion notificacion);
-    void eliminar(long id);
+    void eliminar(Long id);
 }

@@ -8,9 +8,9 @@ import java.util.Optional;
 
 public interface ClienteRepositorio {
     List<Cliente> listarTodos();
-    Optional<Cliente> buscarPorId(long id);
+    Optional<Cliente> buscarPorId(Long id);
     void guardar(Cliente cliente);
     void actualizar(Cliente cliente);
-    void eliminar(long id);
+    void eliminar(Long id);
     boolean existeDocumento(String documento);
 }

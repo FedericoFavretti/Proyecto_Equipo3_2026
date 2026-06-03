@@ -36,7 +36,7 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
     }
 
     @Override
-    public Optional<Notificacion> buscarPorId(long id) {
+    public Optional<Notificacion> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM Notificacion WHERE id = ?",
                 (rs, row) -> new Notificacion(
                         rs.getLong("id"),
@@ -75,7 +75,7 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Notificacion WHERE id = ?", id);
     }
 }

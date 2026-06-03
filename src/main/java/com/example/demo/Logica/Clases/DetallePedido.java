@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DetallePedido {
-    private long id;
+    private Long id;
     private int cantidad;
     private Double precioUnitario;
     private Double subtotal;

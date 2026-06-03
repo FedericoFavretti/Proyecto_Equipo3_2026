@@ -23,32 +23,32 @@ public class LocalController implements iLocalController {
 
     @PutMapping("/platos/{idPlato}")
     public ResponseEntity<Plato> gestionarPlatoModificacion(
-            @PathVariable("idPlato") long idPlato,
+            @PathVariable("idPlato") Long idPlato,
             @RequestBody DtPlato dtPlato) {
         Plato plato = localService.gestionarPlatoModificacion(idPlato, dtPlato);
         return ResponseEntity.ok(plato);
     }
 
     @DeleteMapping("/platos/{idPlato}")
-    public ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") long idPlato) {
+    public ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") Long idPlato) {
         localService.gestionarPlatoBaja(idPlato);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/solicitudes-habilitacion")
     public ResponseEntity<Void> solicitarHabilitacion(@RequestBody DtLocal dtLocal) {
-        localService.solicitarHabilitacion(dtLocal);
+        localService.solicitarRegistroComoLocalHabilitado(dtLocal);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{idLocal}/apertura")
-    public ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") long idLocal) {
+    public ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") Long idLocal) {
         localService.registrarApertura(idLocal);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{idLocal}/cierre")
-    public ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") long idLocal) {
+    public ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") Long idLocal) {
         localService.regitrarCierre(idLocal);
         return ResponseEntity.ok().build();
     }

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Factura {
-    private long id;
+    private Long id;
     private String numero;
     private Double monto;
     private String archivoPdf;

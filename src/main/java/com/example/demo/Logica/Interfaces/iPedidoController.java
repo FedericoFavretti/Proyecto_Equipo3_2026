@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 public interface iPedidoController {
-    ResponseEntity<Pedido> confirmarPedido(@PathVariable long idPedido);
-    ResponseEntity<Void> rechazarPedido(@PathVariable long idPedido);
+    ResponseEntity<Pedido> confirmarPedido(@PathVariable Long idPedido);
+    ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido);
     ResponseEntity<Pedido> realizarPedido(@RequestBody DtPedido dtPedido);
-    ResponseEntity<Void> cancelarPedido(@PathVariable long idPedido);
-    ResponseEntity<List<Pedido>> listarPedidos(@PathVariable long idLocal);
+    ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido);
+    ResponseEntity<List<Pedido>> listarPedidos(@PathVariable Long idLocal);
 }

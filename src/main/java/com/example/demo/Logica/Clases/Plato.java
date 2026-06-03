@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Plato {
-    private long id;
+    private Long id;
     private String nombre;
     private String descripcion;
     private Double precio;

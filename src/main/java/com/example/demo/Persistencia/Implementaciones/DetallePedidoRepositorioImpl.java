@@ -38,7 +38,7 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
     }
 
     @Override
-    public Optional<DetallePedido> buscarPorId(long id) {
+    public Optional<DetallePedido> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM DetallePedido WHERE id = ?",
                 (rs, row)-> new DetallePedido(
                         rs.getLong("id"),
@@ -75,7 +75,7 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM DetallePedido WHERE id = ?", id);
     }
 }

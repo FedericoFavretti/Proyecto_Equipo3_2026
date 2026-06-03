@@ -11,14 +11,14 @@ public interface iLocalController {
     ResponseEntity<Plato> gestionarPlatoAlta(@RequestBody DtPlato dtPlato);
 
     ResponseEntity<Plato> gestionarPlatoModificacion(
-            @PathVariable("idPlato") long idPlato,
+            @PathVariable("idPlato") Long idPlato,
             @RequestBody DtPlato dtPlato);
 
-    ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") long idPlato);
+    ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") Long idPlato);
 
     ResponseEntity<Void> solicitarHabilitacion(@RequestBody DtLocal dtLocal);
 
-    ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") long idLocal);
+    ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") Long idLocal);
 
-    ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") long idLocal);
+    ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") Long idLocal);
 }

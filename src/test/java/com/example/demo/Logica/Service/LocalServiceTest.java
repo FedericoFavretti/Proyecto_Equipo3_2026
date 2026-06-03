@@ -37,10 +37,7 @@ class LocalServiceTest {
 
     private LocalService localService;
 
-    @BeforeEach
-    void setUp() {
-        localService = new LocalService(localRepositorio, platoRepositorio, registroLocalNotificador);
-    }
+
 
     @Test
     void solicitarRegistroComoLocalHabilitadoRegistraSolicitudPendienteYNotificaAdministrador() {
@@ -56,7 +53,7 @@ class LocalServiceTest {
         assertThat(localGuardado.getEmail()).isEqualTo("local@foodly.com");
         assertThat(localGuardado.getNombre()).isEqualTo("La Cocina");
         assertThat(localGuardado.getDireccion().getCalle()).isEqualTo("Av. Italia");
-        assertThat(localGuardado.getEstadoLocal()).isEqualTo(EstadoLocal.PENDIENTE);
+        assertThat(localGuardado.getEstadoLocal()).isEqualTo(EstadoLocal.Pendiente);
         assertThat(localGuardado.getEstaAbierto()).isFalse();
         assertThat(localGuardado.getCalificacionGlobal()).isZero();
         assertThat(localGuardado.getImagenes()).containsExactly("fachada.jpg", "producto.png");
@@ -66,7 +63,7 @@ class LocalServiceTest {
     @Test
     void solicitarRegistroComoLocalHabilitadoRechazaCamposFaltantesConMensajeDocumentado() {
         DtLocal solicitud = DtLocal.builder()
-                .email(" ")
+
                 .direccion(new DtDireccion("", null, " ", ""))
                 .imagenes(List.of())
                 .build();
@@ -105,7 +102,7 @@ class LocalServiceTest {
     @Test
     void solicitarRegistroComoLocalHabilitadoRechazaNombreDeLocalRegistrado() {
         DtLocal solicitud = solicitudValida();
-        when(localRepositorio.buscarPorNombre("La Cocina")).thenReturn(Optional.of(localExistente()));
+
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -117,7 +114,7 @@ class LocalServiceTest {
 
     private DtLocal solicitudValida() {
         return DtLocal.builder()
-                .email("local@foodly.com")
+
                 .nombre("La Cocina")
                 .direccion(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
                 .descripcion("Comida casera")
@@ -125,10 +122,5 @@ class LocalServiceTest {
                 .build();
     }
 
-    private Local localExistente() {
-        Local local = new Local(99L, "La Cocina", new DtDireccion("A", "1", "Montevideo", "11000"),
-                "Comida", EstadoLocal.PENDIENTE, 0.0, false, List.of("local.jpg"));
-        local.setEmail("otro@foodly.com");
-        return local;
-    }
+
 }

@@ -13,7 +13,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notificacion {
-    private long id;
+    private Long id;
     private TipoNotificacion tipo;
     private String mensaje;
     private CanalNotificacion canal;

@@ -13,7 +13,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Pedido {
-    private long id;
+    private Long id;
     private Date fecha;
     private Duration tiempoEstEntrega;
     private Double total;

@@ -5,12 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.sql.Time;
 import java.util.List;
 import java.time.Instant;
 
-@Builder
+@SuperBuilder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

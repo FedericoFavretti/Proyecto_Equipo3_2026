@@ -8,10 +8,10 @@ import java.util.Optional;
 
 public interface PlatoRepositorio {
     List<Plato> listarTodos();
-    Optional<Plato> buscarPorId(long id);
+    Optional<Plato> buscarPorId(Long id);
     Plato guardar(Plato plato);
     Plato actualizar(Plato plato);
-    void eliminar(long id);
+    void eliminar(Long id);
     Optional<Plato> buscarPorNombre(String nombre);
     List<Plato> buscarConFiltros(DtFiltro filtro);
 }

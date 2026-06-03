@@ -1,5 +1,7 @@
 package com.example.demo.Persistencia.Implementaciones;
 
+import java.sql.Array;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -34,12 +36,12 @@ public class LocalRepositorioImpl implements LocalRepositorio {
         return jdbcTemplate.query(
                 "SELECT * FROM Local WHERE estado = ?",
                 (rs, row) -> mapearLocal(rs),
-                EstadoLocal.PENDIENTE.name()
+                EstadoLocal.Pendiente.name()
         );
     }
 
     @Override
-    public Optional<Local> buscarPorId(long id) {
+    public Optional<Local> buscarPorId(Long id) {
         return jdbcTemplate.query(
                 "SELECT * FROM Local WHERE id = ?",
                 (rs, row) -> mapearLocal(rs), id
@@ -56,42 +58,50 @@ public class LocalRepositorioImpl implements LocalRepositorio {
 
     @Override
     public void guardar(Local local) {
-        jdbcTemplate.update("INSERT INTO Local (email, nombre, calle, numero, ciudad, codigoPostal, descripcion, estado, calificacionGlobal, estaAbierto, imagenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                local.getEmail(),
-                local.getNombre(),
-                local.getDireccion().getCalle(),
-                local.getDireccion().getNumero(),
-                local.getDireccion().getCiudad(),
-                local.getDireccion().getCodigoPostal(),
-                local.getDescripcion(),
-                local.getEstadoLocal().name(),
-                local.getCalificacionGlobal(),
-                local.getEstaAbierto(),
-                String.join(",", local.getImagenes())
-        );
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO Local (id, nombre, calle, numero, ciudad, codigoPostal, descripcion, estado, calificacionGlobal, estaAbierto, imagenes) VALUES (? ,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            ps.setLong(1, local.getId());
+            ps.setString(2, local.getNombre());
+            ps.setString(3, local.getDireccion().getCalle());
+            ps.setString(4, local.getDireccion().getNumero());
+            ps.setString(5, local.getDireccion().getCiudad());
+            ps.setString(6, local.getDireccion().getCodigoPostal());
+            ps.setString(7, local.getDescripcion());
+            ps.setString(8, local.getEstadoLocal().name());
+            ps.setDouble(9, local.getCalificacionGlobal());
+            ps.setBoolean(10, local.getEstaAbierto());
+            Array imagenesArray = connection.createArrayOf("varchar", local.getImagenes().toArray());
+            ps.setArray(11, imagenesArray);
+            return ps;
+        });
     }
 
     @Override
     public void actualizar(Local local) {
-        jdbcTemplate.update(
-                "UPDATE Local SET email = ?, nombre = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, descripcion = ?, estado = ?, calificacionGlobal = ?, estaAbierto = ?, imagenes = ? WHERE id = ?",
-                local.getEmail(),
-                local.getNombre(),
-                local.getDireccion().getCalle(),
-                local.getDireccion().getNumero(),
-                local.getDireccion().getCiudad(),
-                local.getDireccion().getCodigoPostal(),
-                local.getDescripcion(),
-                local.getEstadoLocal().name(),
-                local.getCalificacionGlobal(),
-                local.getEstaAbierto(),
-                String.join(",", local.getImagenes()),
-                local.getId()
-        );
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE Local SET  nombre = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, descripcion = ?, estado = ?, calificacionGlobal = ?, estaAbierto = ?, imagenes = ? WHERE id = ?"
+            );
+            ps.setString(1, local.getNombre());
+            ps.setString(2, local.getDireccion().getCalle());
+            ps.setString(3, local.getDireccion().getNumero());
+            ps.setString(4, local.getDireccion().getCiudad());
+            ps.setString(5, local.getDireccion().getCodigoPostal());
+            ps.setString(6, local.getDescripcion());
+            ps.setString(7, local.getEstadoLocal().name());
+            ps.setDouble(8, local.getCalificacionGlobal());
+            ps.setBoolean(9, local.getEstaAbierto());
+            Array imagenesArray = connection.createArrayOf("varchar", local.getImagenes().toArray());
+            ps.setArray(10, imagenesArray);
+            ps.setLong(11, local.getId());
+            return ps;
+        });
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Local WHERE id = ?", id);
     }
 
@@ -105,18 +115,15 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                         rs.getString("codigoPostal")
                 ),
                 rs.getString("descripcion"),
-                mapearEstadoLocal(rs.getString("estado")),
+                EstadoLocal.valueOf(rs.getString("estado")),
                 rs.getDouble("calificacionGlobal"),
                 rs.getBoolean("estaAbierto"),
                 mapearImagenes(rs.getString("imagenes"))
         );
-        local.setEmail(rs.getString("email"));
         return local;
     }
 
-    private EstadoLocal mapearEstadoLocal(String estado) {
-        return EstadoLocal.valueOf(estado.trim().toUpperCase());
-    }
+
 
     private List<String> mapearImagenes(String imagenes) {
         if (imagenes == null || imagenes.isBlank()) {

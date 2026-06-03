@@ -10,7 +10,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Calificacion {
-    private long id;
+    private Long id;
     private int puntaje;
     private String comentario;
     private Date fecha;

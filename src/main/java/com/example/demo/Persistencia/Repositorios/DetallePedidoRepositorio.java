@@ -7,8 +7,8 @@ import java.util.Optional;
 
 public interface DetallePedidoRepositorio {
     List<DetallePedido> listarTodos();
-    Optional<DetallePedido> buscarPorId(long id);
+    Optional<DetallePedido> buscarPorId(Long id);
     void guardar(DetallePedido detallePedido);
     void actualizar(DetallePedido detallePedido);
-    void eliminar(long id);
+    void eliminar(Long id);
 }

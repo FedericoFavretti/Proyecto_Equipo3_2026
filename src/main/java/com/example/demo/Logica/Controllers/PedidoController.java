@@ -17,13 +17,13 @@ public class PedidoController implements iPedidoController {
     private PedidoService pedidoService;
 
     @PostMapping("/{idPedido}/confirmar")
-    public ResponseEntity<Pedido> confirmarPedido(@PathVariable long idPedido) {
+    public ResponseEntity<Pedido> confirmarPedido(@PathVariable Long idPedido) {
         Pedido pedido = pedidoService.confirmarPedido(idPedido);
         return ResponseEntity.ok(pedido);
     }
 
     @PostMapping("/{idPedido}/rechazar")
-    public ResponseEntity<Void> rechazarPedido(@PathVariable long idPedido) {
+    public ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido) {
         pedidoService.rechazarPedido(idPedido);
         return ResponseEntity.ok().build();
     }
@@ -35,13 +35,13 @@ public class PedidoController implements iPedidoController {
     }
 
     @PostMapping("/{idPedido}/cancelar")
-    public ResponseEntity<Void> cancelarPedido(@PathVariable long idPedido) {
+    public ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido) {
         pedidoService.cancelarPedido(idPedido);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/locales/{idLocal}")
-    public ResponseEntity<List<Pedido>> listarPedidos(@PathVariable long idLocal) {
+    public ResponseEntity<List<Pedido>> listarPedidos(@PathVariable Long idLocal) {
         List<Pedido> pedidos = pedidoService.listarPedidos(idLocal);
         return ResponseEntity.ok(pedidos);
     }

@@ -51,7 +51,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     }
 
     @Override
-    public Optional<Plato> buscarPorId(long id) {
+    public Optional<Plato> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM plato WHERE id = ?",
                 (rs, row) -> new Plato(
                         rs.getLong("id"),
@@ -141,12 +141,12 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
             PreparedStatement ps = connection.prepareStatement(
                     "INSERT INTO plato (nombre, descripcion, precio, imagenes, disponible, idLocal) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                    Statement.RETURN_GENERATED_KEYS
+                    new String[]{"id"}
             );
             ps.setString(1, plato.getNombre());
             ps.setString(2, plato.getDescripcion());
             ps.setDouble(3, plato.getPrecio());
-            ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray())); // ✅ array PostgreSQL
+            ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
             return ps;
@@ -177,7 +177,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM plato WHERE id = ?", id);
     }
 }

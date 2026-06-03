@@ -7,8 +7,8 @@ import java.util.Optional;
 
 public interface FacturaRepositorio {
     List<Factura> listarTodos();
-    Optional<Factura> buscarPorId(long id);
+    Optional<Factura> buscarPorId(Long id);
     void guardar(Factura factura);
     void actualizar(Factura factura);
-    void eliminar(long id);
+    void eliminar(Long id);
 }

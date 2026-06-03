@@ -7,8 +7,8 @@ import java.util.Optional;
 
 public interface PedidoRepositorio {
     List<Pedido> listarTodos();
-    Optional<Pedido> buscarPorId(long id);
+    Optional<Pedido> buscarPorId(Long id);
     void guardar(Pedido pedido);
     void actualizar(Pedido pedido);
-    void eliminar(long id);
+    void eliminar(Long id);
 }

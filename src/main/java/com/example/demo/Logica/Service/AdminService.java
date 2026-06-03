@@ -23,12 +23,12 @@ public class AdminService {
             return;
         }
 
-        if (dtLocal.getEstadoLocal() == EstadoLocal.HABILITADO) {
+        if (dtLocal.getEstadoLocal() == EstadoLocal.Habilitado) {
             aprobarSolicitudRegistroLocal(dtLocal.getId());
             return;
         }
 
-        if (dtLocal.getEstadoLocal() == EstadoLocal.RECHAZADO) {
+        if (dtLocal.getEstadoLocal() == EstadoLocal.Rechazado) {
             rechazarSolicitudRegistroLocal(dtLocal.getId());
             return;
         }
@@ -37,22 +37,23 @@ public class AdminService {
     }
 
     @Transactional
-    public void aprobarSolicitudRegistroLocal(long idLocal) {
-        resolverSolicitudRegistroLocal(idLocal, EstadoLocal.HABILITADO);
+    public void aprobarSolicitudRegistroLocal(Long idLocal) {
+        resolverSolicitudRegistroLocal(idLocal, EstadoLocal.Habilitado);
     }
 
     @Transactional
-    public void rechazarSolicitudRegistroLocal(long idLocal) {
-        resolverSolicitudRegistroLocal(idLocal, EstadoLocal.RECHAZADO);
+    public void rechazarSolicitudRegistroLocal(Long idLocal) {
+        resolverSolicitudRegistroLocal(idLocal, EstadoLocal.Rechazado);
     }
 
-    private void resolverSolicitudRegistroLocal(long idLocal, EstadoLocal nuevoEstado) {
+    public void resolverSolicitudRegistroLocal(Long idLocal, EstadoLocal nuevoEstado) {
         Local local = localRepositorio.buscarPorId(idLocal)
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
 
-        if (local.getEstadoLocal() != EstadoLocal.PENDIENTE) {
+        if (local.getEstadoLocal() != EstadoLocal.Pendiente) {
             throw new IllegalStateException("Solo se pueden resolver solicitudes en estado Pendiente.");
         }
+        local.setId(idLocal);
 
         local.setEstadoLocal(nuevoEstado);
         local.setEstaAbierto(false);

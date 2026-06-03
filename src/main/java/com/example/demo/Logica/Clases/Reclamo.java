@@ -11,7 +11,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Reclamo {
-    private long id;
+    private Long id;
     private String motivo;
     private String tipoCompensacion;
     private Double montoReintegro;

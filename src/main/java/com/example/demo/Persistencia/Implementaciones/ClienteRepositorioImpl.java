@@ -38,7 +38,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     }
 
     @Override
-    public Optional<Cliente> buscarPorId(long id) {
+    public Optional<Cliente> buscarPorId(Long id) {
         return jdbcTemplate.query(
                 "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id  WHERE u.id = ?",
                 (rs, row) -> new Cliente(
@@ -90,7 +90,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Cliente WHERE id = ?", id);
     }
 

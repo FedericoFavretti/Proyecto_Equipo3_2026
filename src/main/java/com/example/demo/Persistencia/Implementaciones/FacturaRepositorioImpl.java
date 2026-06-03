@@ -34,7 +34,7 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
     }
 
     @Override
-    public Optional<Factura> buscarPorId(long id) {
+    public Optional<Factura> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM Factura WHERE id = ?",
                 (rs, row) -> new Factura(
                         rs.getLong("id"),
@@ -68,7 +68,7 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
     }
 
     @Override
-    public void eliminar(long id) {
+    public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Factura WHERE id = ?", id);
     }
 }

@@ -7,12 +7,12 @@ import java.util.Optional;
 
 public interface UsuarioRepositorio {
     List<Usuario> listarTodos();
-    Optional<Usuario> buscarPorId(long id);
+    Optional<Usuario> buscarPorId(Long id);
     Optional<Usuario> buscarPorEmail(String email);
     void guardar(Usuario usuario);
     void actualizar(Usuario usuario);
-    void eliminar(long id);
-    void activarCuenta(long id);
+    void eliminar(Long id);
+    void activarCuenta(Long id);
     boolean existeCorreo(String email);
 
 }
