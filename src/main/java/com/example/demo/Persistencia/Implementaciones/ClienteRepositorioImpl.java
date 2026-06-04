@@ -60,7 +60,8 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public void guardar(Cliente cliente) {
         jdbcTemplate.update(
-                "INSERT INTO Cliente (documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Cliente (id, documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                cliente.getId(),
                 cliente.getDocumento(),
                 cliente.getNombre(),
                 cliente.getApellido(),
@@ -73,21 +74,22 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
         );
     }
 
-    @Override
-    public void actualizar(Cliente cliente) {
-        jdbcTemplate.update(
-                "UPDATE Cliente SET documento = ?, nombre = ?, apellido = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, calificacionGlobal = ?, activo = ?, WHERE id = ?",
-                cliente.getNombre(),
-                cliente.getApellido(),
-                cliente.getDireccion().getCalle(),
-                cliente.getDireccion().getNumero(),
-                cliente.getDireccion().getCiudad(),
-                cliente.getDireccion().getCodigoPostal(),
-                cliente.getCalificacionGlobal(),
-                cliente.getActivo(),
-                cliente.getId()
-        );
-    }
+        @Override
+        public void actualizar(Cliente cliente) {
+                jdbcTemplate.update(
+                        "UPDATE Cliente SET documento = ?, nombre = ?, apellido = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, calificacionGlobal = ?, activo = ? WHERE id = ?",
+                        cliente.getDocumento(),
+                        cliente.getNombre(),
+                        cliente.getApellido(),
+                        cliente.getDireccion().getCalle(),
+                        cliente.getDireccion().getNumero(),
+                        cliente.getDireccion().getCiudad(),
+                        cliente.getDireccion().getCodigoPostal(),
+                        cliente.getCalificacionGlobal(),
+                        cliente.getActivo(),
+                        cliente.getId()
+                );
+        }
 
     @Override
     public void eliminar(Long id) {
