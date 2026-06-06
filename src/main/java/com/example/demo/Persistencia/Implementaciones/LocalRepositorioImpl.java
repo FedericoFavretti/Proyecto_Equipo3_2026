@@ -120,6 +120,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                 rs.getBoolean("estaAbierto"),
                 mapearImagenes(rs.getString("imagenes"))
         );
+        local.setId(rs.getLong("id"));
         return local;
     }
 

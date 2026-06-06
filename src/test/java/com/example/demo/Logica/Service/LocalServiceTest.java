@@ -2,6 +2,7 @@ package com.example.demo.Logica.Service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -21,7 +22,9 @@ import com.example.demo.Logica.DataTypes.DtDireccion;
 import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
+import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 
 @ExtendWith(MockitoExtension.class)
 class LocalServiceTest {
@@ -35,9 +38,23 @@ class LocalServiceTest {
     @Mock
     private RegistroLocalNotificador registroLocalNotificador;
 
+    @Mock
+    private UsuarioRepositorio usuarioRepositorio;
+
+    @Mock
+    private PedidoRepositorio pedidoRepositorio;
+
     private LocalService localService;
 
-
+    @BeforeEach
+    void setUp() {
+        localService = new LocalService(
+                localRepositorio,
+                platoRepositorio,
+                registroLocalNotificador,
+                usuarioRepositorio,
+                pedidoRepositorio);
+    }
 
     @Test
     void solicitarRegistroComoLocalHabilitadoRegistraSolicitudPendienteYNotificaAdministrador() {
@@ -63,14 +80,13 @@ class LocalServiceTest {
     @Test
     void solicitarRegistroComoLocalHabilitadoRechazaCamposFaltantesConMensajeDocumentado() {
         DtLocal solicitud = DtLocal.builder()
-
                 .direccion(new DtDireccion("", null, " ", ""))
                 .imagenes(List.of())
                 .build();
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Los siguientes campos son requeridos: email, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes. Por favor, complételos antes de enviar.");
+                .hasMessage("Los siguientes campos son requeridos: email, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes. Por favor, completelos antes de enviar.");
 
         verifyNoInteractions(localRepositorio, registroLocalNotificador);
     }
@@ -82,7 +98,7 @@ class LocalServiceTest {
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("El correo electrónico ingresado no tiene un formato válido.");
+                .hasMessage("El correo electronico ingresado no tiene un formato valido.");
 
         verifyNoInteractions(localRepositorio, registroLocalNotificador);
     }
@@ -94,7 +110,7 @@ class LocalServiceTest {
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Solo se aceptan imágenes en formato JPG o PNG de hasta 10 MB cada una.");
+                .hasMessage("Solo se aceptan imagenes en formato JPG o PNG de hasta 10 MB cada una.");
 
         verifyNoInteractions(localRepositorio, registroLocalNotificador);
     }
@@ -102,7 +118,7 @@ class LocalServiceTest {
     @Test
     void solicitarRegistroComoLocalHabilitadoRechazaNombreDeLocalRegistrado() {
         DtLocal solicitud = solicitudValida();
-
+        when(localRepositorio.buscarPorNombre("La Cocina")).thenReturn(Optional.of(localHabilitado(false)));
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -112,15 +128,93 @@ class LocalServiceTest {
         verifyNoInteractions(registroLocalNotificador);
     }
 
-    private DtLocal solicitudValida() {
-        return DtLocal.builder()
+    @Test
+    void registrarAperturaAbreLocalHabilitadoQueEstabaCerrado() {
+        Local local = localHabilitado(false);
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
 
+        localService.registrarApertura(10L);
+
+        assertThat(local.getEstaAbierto()).isTrue();
+        verify(localRepositorio).actualizar(local);
+        verifyNoInteractions(pedidoRepositorio);
+    }
+
+    @Test
+    void registrarAperturaRechazaCuandoLocalYaEstaAbierto() {
+        Local local = localHabilitado(true);
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+
+        assertThatThrownBy(() -> localService.registrarApertura(10L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("El local ya se encuentra registrado como abierto para el dia de hoy.");
+
+        verify(localRepositorio, never()).actualizar(local);
+        verifyNoInteractions(pedidoRepositorio);
+    }
+
+    @Test
+    void registrarCierreCierraLocalSinPedidosPendientes() {
+        Local local = localHabilitado(true);
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+        when(pedidoRepositorio.existePedidoPendientePorLocal(10L)).thenReturn(false);
+
+        localService.regitrarCierre(10L);
+
+        assertThat(local.getEstaAbierto()).isFalse();
+        verify(localRepositorio).actualizar(local);
+        verify(pedidoRepositorio).existePedidoPendientePorLocal(10L);
+    }
+
+    @Test
+    void registrarCierreRechazaCuandoLocalYaEstaCerrado() {
+        Local local = localHabilitado(false);
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+
+        assertThatThrownBy(() -> localService.regitrarCierre(10L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("El local ya se encuentra registrado como cerrado.");
+
+        verify(localRepositorio, never()).actualizar(local);
+        verifyNoInteractions(pedidoRepositorio);
+    }
+
+    @Test
+    void registrarCierreRechazaCuandoHayPedidosPendientes() {
+        Local local = localHabilitado(true);
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+        when(pedidoRepositorio.existePedidoPendientePorLocal(10L)).thenReturn(true);
+
+        assertThatThrownBy(() -> localService.regitrarCierre(10L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("El local no puede cerrarse porque tiene pedidos pendientes de confirmacion.");
+
+        verify(localRepositorio, never()).actualizar(local);
+        verify(pedidoRepositorio).existePedidoPendientePorLocal(10L);
+    }
+
+    private DtLocal solicitudValida() {
+        DtLocal solicitud = DtLocal.builder()
                 .nombre("La Cocina")
                 .direccion(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
                 .descripcion("Comida casera")
                 .imagenes(List.of("fachada.jpg", "producto.png"))
                 .build();
+        solicitud.setEmail("local@foodly.com");
+        return solicitud;
     }
 
-
+    private Local localHabilitado(boolean estaAbierto) {
+        return Local.builder()
+                .id(10L)
+                .email("local@foodly.com")
+                .nombre("La Cocina")
+                .direccion(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
+                .descripcion("Comida casera")
+                .estadoLocal(EstadoLocal.Habilitado)
+                .calificacionGlobal(4.5)
+                .estaAbierto(estaAbierto)
+                .imagenes(List.of("fachada.jpg"))
+                .build();
+    }
 }

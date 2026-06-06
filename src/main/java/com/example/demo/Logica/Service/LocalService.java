@@ -1,44 +1,55 @@
 package com.example.demo.Logica.Service;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
+import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Service
 public class LocalService {
-    private static final Pattern FORMATO_EMAIL = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
-    private static final String MENSAJE_CAMPOS_REQUERIDOS = "Los siguientes campos son requeridos: %s. Por favor, complételos antes de enviar.";
-    private static final String MENSAJE_EMAIL_INVALIDO = "El correo electrónico ingresado no tiene un formato válido.";
-    private static final String MENSAJE_IMAGEN_INVALIDA = "Solo se aceptan imágenes en formato JPG o PNG de hasta 10 MB cada una.";
+    private static final Pattern FORMATO_EMAIL =
+            Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
+    private static final String MENSAJE_CAMPOS_REQUERIDOS =
+            "Los siguientes campos son requeridos: %s. Por favor, completelos antes de enviar.";
+    private static final String MENSAJE_EMAIL_INVALIDO =
+            "El correo electronico ingresado no tiene un formato valido.";
+    private static final String MENSAJE_IMAGEN_INVALIDA =
+            "Solo se aceptan imagenes en formato JPG o PNG de hasta 10 MB cada una.";
+    private static final String MENSAJE_LOCAL_YA_ABIERTO =
+            "El local ya se encuentra registrado como abierto para el dia de hoy.";
+    private static final String MENSAJE_LOCAL_YA_CERRADO =
+            "El local ya se encuentra registrado como cerrado.";
+    private static final String MENSAJE_LOCAL_CON_PEDIDOS_PENDIENTES =
+            "El local no puede cerrarse porque tiene pedidos pendientes de confirmacion.";
 
     private final LocalRepositorio localRepositorio;
     private final PlatoRepositorio platoRepositorio;
     private final RegistroLocalNotificador registroLocalNotificador;
     private final UsuarioRepositorio usuarioRepositorio;
+    private final PedidoRepositorio pedidoRepositorio;
 
     public LocalService(
             LocalRepositorio localRepositorio,
             PlatoRepositorio platoRepositorio,
-            RegistroLocalNotificador registroLocalNotificador, UsuarioRepositorio usuarioRepositorio) {
+            RegistroLocalNotificador registroLocalNotificador,
+            UsuarioRepositorio usuarioRepositorio,
+            PedidoRepositorio pedidoRepositorio) {
         this.localRepositorio = localRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;
         this.usuarioRepositorio = usuarioRepositorio;
+        this.pedidoRepositorio = pedidoRepositorio;
     }
 
     @Transactional
@@ -55,6 +66,7 @@ public class LocalService {
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
         validarLocalHabilitado(local);
         local.setId(dtPlato.getDtLocal().getId());
+
         Plato plato = Plato.builder()
                 .nombre(dtPlato.getNombre())
                 .descripcion(dtPlato.getDescripcion())
@@ -79,6 +91,7 @@ public class LocalService {
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
         validarLocalHabilitado(local);
+
         Plato plato = Plato.builder()
                 .id(idPlato)
                 .nombre(dtPlato.getNombre())
@@ -95,7 +108,6 @@ public class LocalService {
     public void gestionarPlatoBaja(long idPlato) {
         platoRepositorio.eliminar(idPlato);
     }
-
 
     @Transactional
     public void solicitarRegistroComoLocalHabilitado(DtLocal dtLocal) {
@@ -125,17 +137,22 @@ public class LocalService {
     }
 
     @Transactional
-    public void registrarApertura(long idLocal){
-        Local local = localRepositorio.buscarPorId(idLocal).orElseThrow(() -> new RuntimeException("Local no encontrado"));
+    public void registrarApertura(long idLocal) {
+        Local local = localRepositorio.buscarPorId(idLocal)
+                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
         validarLocalHabilitado(local);
+        validarLocalCerrado(local);
         local.setEstaAbierto(true);
         localRepositorio.actualizar(local);
     }
 
     @Transactional
-    public void regitrarCierre(long idLocal){
-        Local local = localRepositorio.buscarPorId(idLocal).orElseThrow(() -> new RuntimeException("Local no encontrado"));
+    public void regitrarCierre(long idLocal) {
+        Local local = localRepositorio.buscarPorId(idLocal)
+                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
         validarLocalHabilitado(local);
+        validarLocalAbierto(local);
+        validarSinPedidosPendientes(idLocal);
         local.setEstaAbierto(false);
         localRepositorio.actualizar(local);
     }
@@ -166,7 +183,8 @@ public class LocalService {
         List<String> camposFaltantes = new ArrayList<>();
 
         if (dtLocal == null) {
-            throw new IllegalArgumentException(String.format(MENSAJE_CAMPOS_REQUERIDOS,
+            throw new IllegalArgumentException(String.format(
+                    MENSAJE_CAMPOS_REQUERIDOS,
                     "email, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
         }
 
@@ -191,7 +209,8 @@ public class LocalService {
         }
 
         if (!camposFaltantes.isEmpty()) {
-            throw new IllegalArgumentException(String.format(MENSAJE_CAMPOS_REQUERIDOS, String.join(", ", camposFaltantes)));
+            throw new IllegalArgumentException(
+                    String.format(MENSAJE_CAMPOS_REQUERIDOS, String.join(", ", camposFaltantes)));
         }
 
         if (!FORMATO_EMAIL.matcher(dtLocal.getEmail()).matches()) {
@@ -218,12 +237,32 @@ public class LocalService {
         if (queryIndex >= 0) {
             nombreNormalizado = nombreNormalizado.substring(0, queryIndex);
         }
-        return !(nombreNormalizado.endsWith(".jpg") || nombreNormalizado.endsWith(".jpeg") || nombreNormalizado.endsWith(".png"));
+        return !(nombreNormalizado.endsWith(".jpg")
+                || nombreNormalizado.endsWith(".jpeg")
+                || nombreNormalizado.endsWith(".png"));
     }
 
     private void validarLocalHabilitado(Local local) {
         if (local.getEstadoLocal() != EstadoLocal.Habilitado) {
-            throw new IllegalStateException("El local debe estar habilitado para realizar esta operación.");
+            throw new IllegalStateException("El local debe estar habilitado para realizar esta operacion.");
+        }
+    }
+
+    private void validarLocalCerrado(Local local) {
+        if (Boolean.TRUE.equals(local.getEstaAbierto())) {
+            throw new IllegalStateException(MENSAJE_LOCAL_YA_ABIERTO);
+        }
+    }
+
+    private void validarLocalAbierto(Local local) {
+        if (!Boolean.TRUE.equals(local.getEstaAbierto())) {
+            throw new IllegalStateException(MENSAJE_LOCAL_YA_CERRADO);
+        }
+    }
+
+    private void validarSinPedidosPendientes(long idLocal) {
+        if (pedidoRepositorio.existePedidoPendientePorLocal(idLocal)) {
+            throw new IllegalStateException(MENSAJE_LOCAL_CON_PEDIDOS_PENDIENTES);
         }
     }
 }

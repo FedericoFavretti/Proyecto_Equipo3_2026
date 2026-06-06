@@ -14,7 +14,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtPedido {
+public class DtPedidoResponse {
     private Long id;
     private Date fecha;
     private Duration tiempoEstEntrega;
@@ -23,9 +23,7 @@ public class DtPedido {
     private String medioDePago;
     private Boolean pagoSimulado;
     private EstadoPedido estado;
-    private List<DtDetallePedido> detalles;
-    private DtLocal dtLocal;
-    private DtCliente dtCliente;
-    private String mpPreferenciaId;
-    private String mpInitPoint;
+    private DtLocalResumenResponse local;
+    private DtClienteResumenResponse cliente;
+    private List<DtDetallePedidoResponse> detalles;
 }
