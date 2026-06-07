@@ -47,6 +47,19 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
     }
 
     @Override
+    public Optional<Factura> buscarPorPedidoId(Long pedidoId) {
+        return jdbcTemplate.query("SELECT * FROM Factura WHERE idPedido = ?",
+                (rs, row) -> new Factura(
+                        rs.getLong("id"),
+                        rs.getString("numero"),
+                        rs.getDouble("monto"),
+                        rs.getString("archivoPdf"),
+                        pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(() -> new RuntimeException("Pedido no encontrado"))
+                ), pedidoId
+        ).stream().findFirst();
+    }
+
+    @Override
     public void guardar(Factura factura) {
         jdbcTemplate.update("INSERT INTO Factura (numero, monto, archivoPdf, idPedido) VALUES (?, ?, ?, ?)",
                 factura.getNumero(),
@@ -58,7 +71,7 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
 
     @Override
     public void actualizar(Factura factura) {
-        jdbcTemplate.update("UPDATE Factura SET numero = ?, monto = ?, archivoPdf = ?, idPedido = ? WHERE id = ?)",
+        jdbcTemplate.update("UPDATE Factura SET numero = ?, monto = ?, archivoPdf = ?, idPedido = ? WHERE id = ?",
                 factura.getNumero(),
                 factura.getMonto(),
                 factura.getArchivoPdf(),

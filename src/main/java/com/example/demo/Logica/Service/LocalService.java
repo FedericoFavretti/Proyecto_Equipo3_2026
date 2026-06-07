@@ -32,6 +32,20 @@ public class LocalService {
             "El local ya se encuentra registrado como cerrado.";
     private static final String MENSAJE_LOCAL_CON_PEDIDOS_PENDIENTES =
             "El local no puede cerrarse porque tiene pedidos pendientes de confirmacion.";
+    private static final String MENSAJE_NOMBRE_PLATO_OBLIGATORIO =
+            "El nombre del plato es obligatorio.";
+    private static final String MENSAJE_PRECIO_PLATO_INVALIDO =
+            "El precio debe ser un valor numerico mayor a cero.";
+    private static final String MENSAJE_IMAGEN_PLATO_INVALIDA =
+            "Solo se aceptan imagenes JPG o PNG.";
+    private static final String MENSAJE_DATOS_PLATO_INCOMPLETOS =
+            "Debe completar todos los datos del plato.";
+    private static final String MENSAJE_PLATO_YA_EXISTE =
+            "El nombre del plato ya existe.";
+    private static final String MENSAJE_PLATO_NO_ENCONTRADO =
+            "Plato no encontrado";
+    private static final String MENSAJE_PLATO_DE_OTRO_LOCAL =
+            "El plato no pertenece al local indicado.";
 
     private final LocalRepositorio localRepositorio;
     private final PlatoRepositorio platoRepositorio;
@@ -54,12 +68,10 @@ public class LocalService {
 
     @Transactional
     public Plato altaPlato(DtPlato dtPlato) {
-        if (platoInvalido(dtPlato)) {
-            throw new IllegalArgumentException("Debe completar todos los datos del plato.");
-        }
+        validarDatosPlato(dtPlato);
 
         if (platoRepositorio.buscarPorNombre(dtPlato.getNombre()).isPresent()) {
-            throw new IllegalArgumentException("El nombre del plato ya existe.");
+            throw new IllegalArgumentException(MENSAJE_PLATO_YA_EXISTE);
         }
 
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
@@ -80,17 +92,21 @@ public class LocalService {
 
     @Transactional
     public Plato gestionarPlatoModificacion(long idPlato, DtPlato dtPlato) {
-        if (platoInvalido(dtPlato)) {
-            throw new IllegalArgumentException("Debe modificar un dato para poder actualizar el plato.");
-        }
+        validarDatosPlato(dtPlato);
 
-        if (platoRepositorio.buscarPorNombre(dtPlato.getNombre()).isPresent()) {
-            throw new IllegalArgumentException("El nombre del plato ya existe.");
-        }
+        Plato platoExistente = platoRepositorio.buscarPorId(idPlato)
+                .orElseThrow(() -> new RuntimeException(MENSAJE_PLATO_NO_ENCONTRADO));
 
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
         validarLocalHabilitado(local);
+        validarPlatoPerteneceAlLocal(platoExistente, local.getId());
+
+        platoRepositorio.buscarPorNombre(dtPlato.getNombre())
+                .filter(plato -> !plato.getId().equals(idPlato))
+                .ifPresent(plato -> {
+                    throw new IllegalArgumentException(MENSAJE_PLATO_YA_EXISTE);
+                });
 
         Plato plato = Plato.builder()
                 .id(idPlato)
@@ -106,7 +122,10 @@ public class LocalService {
 
     @Transactional
     public void gestionarPlatoBaja(long idPlato) {
-        platoRepositorio.eliminar(idPlato);
+        Plato plato = platoRepositorio.buscarPorId(idPlato)
+                .orElseThrow(() -> new RuntimeException(MENSAJE_PLATO_NO_ENCONTRADO));
+        plato.setDisponible(false);
+        platoRepositorio.actualizar(plato);
     }
 
     @Transactional
@@ -157,14 +176,27 @@ public class LocalService {
         localRepositorio.actualizar(local);
     }
 
-    private boolean platoInvalido(DtPlato dtPlato) {
-        return dtPlato == null
-                || textoVacio(dtPlato.getNombre())
+    private void validarDatosPlato(DtPlato dtPlato) {
+        if (dtPlato == null
+                || dtPlato.getDtLocal() == null
+                || dtPlato.getDtLocal().getId() == null
                 || textoVacio(dtPlato.getDescripcion())
-                || precioInvalido(dtPlato.getPrecio())
                 || listaVacia(dtPlato.getImagenes())
-                || dtPlato.getDisponible() == null
-                || dtPlato.getDtLocal() == null;
+                || dtPlato.getDisponible() == null) {
+            throw new IllegalArgumentException(MENSAJE_DATOS_PLATO_INCOMPLETOS);
+        }
+
+        if (textoVacio(dtPlato.getNombre())) {
+            throw new IllegalArgumentException(MENSAJE_NOMBRE_PLATO_OBLIGATORIO);
+        }
+
+        if (precioInvalido(dtPlato.getPrecio())) {
+            throw new IllegalArgumentException(MENSAJE_PRECIO_PLATO_INVALIDO);
+        }
+
+        if (dtPlato.getImagenes().stream().anyMatch(this::imagenPlatoNoPermitida)) {
+            throw new IllegalArgumentException(MENSAJE_IMAGEN_PLATO_INVALIDA);
+        }
     }
 
     private boolean textoVacio(String valor) {
@@ -177,6 +209,20 @@ public class LocalService {
 
     private boolean listaVacia(List<?> lista) {
         return lista == null || lista.isEmpty();
+    }
+
+    private boolean imagenPlatoNoPermitida(String imagen) {
+        if (imagen == null || imagen.isBlank()) {
+            return true;
+        }
+        String nombreNormalizado = imagen.strip().toLowerCase();
+        int queryIndex = nombreNormalizado.indexOf('?');
+        if (queryIndex >= 0) {
+            nombreNormalizado = nombreNormalizado.substring(0, queryIndex);
+        }
+        return !(nombreNormalizado.endsWith(".jpg")
+                || nombreNormalizado.endsWith(".jpeg")
+                || nombreNormalizado.endsWith(".png"));
     }
 
     private void validarSolicitudRegistroLocal(DtLocal dtLocal) {
@@ -263,6 +309,12 @@ public class LocalService {
     private void validarSinPedidosPendientes(long idLocal) {
         if (pedidoRepositorio.existePedidoPendientePorLocal(idLocal)) {
             throw new IllegalStateException(MENSAJE_LOCAL_CON_PEDIDOS_PENDIENTES);
+        }
+    }
+
+    private void validarPlatoPerteneceAlLocal(Plato plato, Long idLocal) {
+        if (plato.getLocal() == null || plato.getLocal().getId() == null || !plato.getLocal().getId().equals(idLocal)) {
+            throw new IllegalStateException(MENSAJE_PLATO_DE_OTRO_LOCAL);
         }
     }
 }

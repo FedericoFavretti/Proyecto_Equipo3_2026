@@ -2,6 +2,7 @@ package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.DetallePedido;
+import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -37,12 +39,19 @@ public class PedidoService {
             "El plato seleccionado no pertenece al local indicado.";
     private static final String MENSAJE_PLATO_NO_DISPONIBLE =
             "El plato seleccionado no está disponible.";
+    private static final String MENSAJE_TIEMPO_REQUERIDO =
+            "Debe ingresar el tiempo estimado de entrega para confirmar el pedido.";
+    private static final String MENSAJE_PAGO_FALLIDO =
+            "No se pudo procesar el pago. El pedido no ha sido confirmado. Por favor, inténtelo nuevamente.";
 
     private final PedidoRepositorio pedidoRepositorio;
     private final ClienteRepositorio clienteRepositorio;
     private final LocalRepositorio localRepositorio;
     private final DetallePedidoRepositorio detallePedidoRepositorio;
     private final PlatoRepositorio platoRepositorio;
+    private final FacturaService facturaService;
+    private final PagoSimuladoService pagoSimuladoService;
+    private final NotificacionPedidoService notificacionPedidoService;
 
     @Value("${mercadopago.back-url-success}")
     private String backUrlSuccess;
@@ -58,16 +67,22 @@ public class PedidoService {
             ClienteRepositorio clienteRepositorio,
             LocalRepositorio localRepositorio,
             DetallePedidoRepositorio detallePedidoRepositorio,
-            PlatoRepositorio platoRepositorio) {
+            PlatoRepositorio platoRepositorio,
+            FacturaService facturaService,
+            PagoSimuladoService pagoSimuladoService,
+            NotificacionPedidoService notificacionPedidoService) {
         this.pedidoRepositorio = pedidoRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
         this.detallePedidoRepositorio = detallePedidoRepositorio;
         this.platoRepositorio = platoRepositorio;
+        this.facturaService = facturaService;
+        this.pagoSimuladoService = pagoSimuladoService;
+        this.notificacionPedidoService = notificacionPedidoService;
     }
 
     @Transactional
-    public Pedido confirmarPedido(long idPedido) {
+    public Pedido confirmarPedido(long idPedido, Long tiempoEstimadoEntregaMinutos) {
         Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
@@ -75,13 +90,23 @@ public class PedidoService {
             throw new RuntimeException("Solo se pueden confirmar pedidos en estado Pendiente.");
         }
 
-        if (pedido.getTiempoEstEntrega() == null) {
-            throw new RuntimeException("Debe ingresar el tiempo estimado de entrega para confirmar el pedido.");
+        if (tiempoEstimadoEntregaMinutos == null || tiempoEstimadoEntregaMinutos <= 0) {
+            throw new IllegalArgumentException(MENSAJE_TIEMPO_REQUERIDO);
         }
 
-        pedido.setEstado(EstadoPedido.Confirmado);
+        pedido.setTiempoEstEntrega(Duration.ofMinutes(tiempoEstimadoEntregaMinutos));
 
+        if (!pagoSimuladoService.procesarPago(pedido)) {
+            throw new RuntimeException(MENSAJE_PAGO_FALLIDO);
+        }
+
+        pedido.setPagoSimulado(true);
+        pedido.setEstado(EstadoPedido.Confirmado);
         pedidoRepositorio.actualizar(pedido);
+
+        Factura factura = facturaService.generarYGuardarFactura(pedido);
+        notificacionPedidoService.notificarConfirmacion(pedido, factura);
+
         return pedido;
     }
 
