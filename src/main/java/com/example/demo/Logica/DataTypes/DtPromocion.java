@@ -11,7 +11,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DtPromocion {
-    private long id;
+    private Long id;
     private Double descuento;
     private Date fechaInicio;
     private Date fechaFin;
