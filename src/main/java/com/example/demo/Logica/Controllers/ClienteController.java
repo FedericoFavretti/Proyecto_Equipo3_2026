@@ -7,9 +7,12 @@ import com.example.demo.Logica.DataTypes.DtCliente;
 import com.example.demo.Logica.DataTypes.DtFiltro;
 import com.example.demo.Logica.Interfaces.iClienteController;
 import com.example.demo.Logica.Service.ClienteService;
+import com.example.demo.Logica.Service.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,9 +21,13 @@ import java.util.List;
 public class ClienteController implements iClienteController {
     @Autowired
     private ClienteService  clienteService;
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
-    @PostMapping
-    public ResponseEntity<Cliente> registrarUsuario(@RequestBody DtCliente dtCliente) {
+    @PostMapping(value = "/registro", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Cliente> registrarUsuario(@RequestPart("datos") DtCliente dtCliente, @RequestPart("foto") MultipartFile foto) {
+        String url = cloudinaryService.subirImagen(foto);
+        dtCliente.setFoto(url);
         Cliente cliente = clienteService.registrarUsuario(dtCliente);
         return ResponseEntity.ok(cliente);
     }

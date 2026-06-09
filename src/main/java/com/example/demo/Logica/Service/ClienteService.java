@@ -38,6 +38,7 @@ public class ClienteService {
             throw new IllegalArgumentException(
                     "El documento ya está asociado a una cuenta.");
         }
+
         Cliente cliente = Cliente.builder()
                 .documento(dtCliente.getDocumento())
                 .nombre(dtCliente.getNombre())
