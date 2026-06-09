@@ -1,8 +1,11 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Pedido;
+import com.example.demo.Logica.DataTypes.DtConfirmarPedidoRequest;
 import com.example.demo.Logica.DataTypes.DtPedido;
+import com.example.demo.Logica.DataTypes.DtPedidoResponse;
 import com.example.demo.Logica.Interfaces.iPedidoController;
+import com.example.demo.Logica.Service.PedidoResponseMapper;
 import com.example.demo.Logica.Service.PedidoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +18,15 @@ import java.util.List;
 public class PedidoController implements iPedidoController {
     @Autowired
     private PedidoService pedidoService;
+    @Autowired
+    private PedidoResponseMapper pedidoResponseMapper;
 
     @PostMapping("/{idPedido}/confirmar")
-    public ResponseEntity<Pedido> confirmarPedido(@PathVariable Long idPedido) {
-        Pedido pedido = pedidoService.confirmarPedido(idPedido);
-        return ResponseEntity.ok(pedido);
+    public ResponseEntity<DtPedidoResponse> confirmarPedido(
+            @PathVariable Long idPedido,
+            @RequestBody DtConfirmarPedidoRequest request) {
+        Pedido pedido = pedidoService.confirmarPedido(idPedido, request.getTiempoEstimadoEntregaMinutos());
+        return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 
     @PostMapping("/{idPedido}/rechazar")
@@ -29,9 +36,9 @@ public class PedidoController implements iPedidoController {
     }
 
     @PostMapping
-    public ResponseEntity<Pedido> realizarPedido(@RequestBody DtPedido dtPedido) {
+    public ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedido dtPedido) {
         Pedido pedido = pedidoService.realizarPedido(dtPedido);
-        return ResponseEntity.ok(pedido);
+        return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 
     @PostMapping("/{idPedido}/cancelar")

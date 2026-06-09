@@ -6,6 +6,8 @@ import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 @Repository
@@ -21,19 +23,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     public List<Cliente> listarTodos() {
         return jdbcTemplate.query(
                 "SELECT * FROM Cliente",
-                (rs, row)-> new Cliente(
-                        rs.getString("documento"),
-                        rs.getString("nombre"),
-                        rs.getString("apellido"),
-                        new DtDireccion(
-                                rs.getString("calle"),
-                                rs.getString("numero"),
-                                rs.getString("ciudad"),
-                                rs.getString("codigoPostal")
-                        ),
-                        rs.getDouble("calificacionGlobal"),
-                        rs.getBoolean("activo")
-                )
+                (rs, row)-> mapearCliente(rs)
         );
     }
 
@@ -41,26 +31,15 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     public Optional<Cliente> buscarPorId(Long id) {
         return jdbcTemplate.query(
                 "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id  WHERE u.id = ?",
-                (rs, row) -> new Cliente(
-                        rs.getString("documento"),
-                        rs.getString("nombre"),
-                        rs.getString("apellido"),
-                        new DtDireccion(
-                                rs.getString("calle"),
-                                rs.getString("numero"),
-                                rs.getString("ciudad"),
-                                rs.getString("codigoPostal")
-                        ),
-                        rs.getDouble("calificacionGlobal"),
-                        rs.getBoolean("activo")
-                ), id
+                (rs, row) -> mapearCliente(rs), id
         ).stream().findFirst();
     }
 
     @Override
     public void guardar(Cliente cliente) {
         jdbcTemplate.update(
-                "INSERT INTO Cliente (documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO Cliente (id, documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                cliente.getId(),
                 cliente.getDocumento(),
                 cliente.getNombre(),
                 cliente.getApellido(),
@@ -73,21 +52,22 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
         );
     }
 
-    @Override
-    public void actualizar(Cliente cliente) {
-        jdbcTemplate.update(
-                "UPDATE Cliente SET documento = ?, nombre = ?, apellido = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, calificacionGlobal = ?, activo = ?, WHERE id = ?",
-                cliente.getNombre(),
-                cliente.getApellido(),
-                cliente.getDireccion().getCalle(),
-                cliente.getDireccion().getNumero(),
-                cliente.getDireccion().getCiudad(),
-                cliente.getDireccion().getCodigoPostal(),
-                cliente.getCalificacionGlobal(),
-                cliente.getActivo(),
-                cliente.getId()
-        );
-    }
+        @Override
+        public void actualizar(Cliente cliente) {
+                jdbcTemplate.update(
+                        "UPDATE Cliente SET documento = ?, nombre = ?, apellido = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, calificacionGlobal = ?, activo = ? WHERE id = ?",
+                        cliente.getDocumento(),
+                        cliente.getNombre(),
+                        cliente.getApellido(),
+                        cliente.getDireccion().getCalle(),
+                        cliente.getDireccion().getNumero(),
+                        cliente.getDireccion().getCiudad(),
+                        cliente.getDireccion().getCodigoPostal(),
+                        cliente.getCalificacionGlobal(),
+                        cliente.getActivo(),
+                        cliente.getId()
+                );
+        }
 
     @Override
     public void eliminar(Long id) {
@@ -101,5 +81,23 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                 Integer.class, documento
         );
         return count != null && count > 0;
+    }
+
+    private Cliente mapearCliente(ResultSet rs) throws SQLException {
+        Cliente cliente = new Cliente(
+                rs.getString("documento"),
+                rs.getString("nombre"),
+                rs.getString("apellido"),
+                new DtDireccion(
+                        rs.getString("calle"),
+                        rs.getString("numero"),
+                        rs.getString("ciudad"),
+                        rs.getString("codigoPostal")
+                ),
+                rs.getDouble("calificacionGlobal"),
+                rs.getBoolean("activo")
+        );
+        cliente.setId(rs.getLong("id"));
+        return cliente;
     }
 }

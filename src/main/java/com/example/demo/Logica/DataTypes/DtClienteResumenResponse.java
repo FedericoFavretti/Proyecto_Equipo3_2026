@@ -1,4 +1,5 @@
 package com.example.demo.Logica.DataTypes;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,11 +9,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtCliente extends DtUsuario{
-    private String documento;
+public class DtClienteResumenResponse {
+    private Long id;
     private String nombre;
     private String apellido;
-    private DtDireccion direccion;
-    private Double calificacionGlobal;
-    private Boolean activo;
 }

@@ -15,7 +15,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.*;
-import java.time.Instant;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,12 +64,13 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
         Map<String, Object> row = rows.get(0);
         String tipo = (String) row.get("tipo");
-        Long id = (Long) row.get("id");
+        Number id = (Number) row.get("id");
+        Long usuarioId = id.longValue();
 
-        if (tipo.equals("local")) {
-            return localRepositorio.buscarPorId(id).map(u -> u);
-        } else if (tipo.equals("cliente")) {
-            return clienteRepositorio.buscarPorId(id).map(u -> u);
+        if ("local".equalsIgnoreCase(tipo)) {
+            return localRepositorio.buscarPorId(usuarioId).map(u -> u);
+        } else if ("cliente".equalsIgnoreCase(tipo)) {
+            return clienteRepositorio.buscarPorId(usuarioId).map(u -> u);
         }
         return Optional.empty();
     }
@@ -123,7 +124,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     @Override
     public void activarCuenta(Long id) {
         jdbcTemplate.update(
-                "UPDATE usuarios SET estado = ?, token_activacion = NULL, token_activacion_expira = NULL WHERE id = ?",
+                "UPDATE usuario SET estado = ?, token_activacion = NULL, token_activacion_expira = NULL WHERE id = ?",
                 EstadoCuenta.Activo.name(), id
         );
     }
@@ -131,7 +132,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     @Override
     public boolean existeCorreo(String email) {
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM usuarios WHERE email = ?",
+                "SELECT COUNT(*) FROM usuario WHERE email = ?",
                 Integer.class, email
         );
         return count != null && count > 0;

@@ -15,4 +15,5 @@ public interface PedidoRepositorio {
     void actualizarDatosMp(Long pedidoId, String mpPreferenciaId, String mpInitPoint);
     void actualizarPago(Long pedidoId, Boolean pagoSimulado, EstadoPedido estado);
     List<Pedido> listarPorLocal(Long idLocal);
+    boolean existePedidoPendientePorLocal(Long idLocal);
 }

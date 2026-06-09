@@ -15,7 +15,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Types;
 import java.time.Duration;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,25 +42,27 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
 
 
     private Pedido mapearPedido(ResultSet rs, int row) throws SQLException {
+        Time tiempoEstEntrega = rs.getTime("tiempoestentrega");
+
         return Pedido.builder()
                 .id(rs.getLong("id"))
                 .fecha(rs.getDate("fecha"))
-                .tiempoEstEntrega(Duration.ofMinutes(rs.getLong("tiempoEstEntrega")))
+                .tiempoEstEntrega(tiempoEstEntrega != null
+                        ? Duration.ofSeconds(tiempoEstEntrega.toLocalTime().toSecondOfDay())
+                        : null)
                 .total(rs.getDouble("total"))
                 .domicilioEntrega(new DtDireccion(
                         rs.getString("calle"),
                         rs.getString("numero"),
                         rs.getString("ciudad"),
-                        rs.getString("codigoPostal")
+                        rs.getString("codigopostal")
                 ))
-                .medioDePago(rs.getString("medioDePago"))
-                .pagoSimulado(rs.getBoolean("pagoSimulado"))
+                .medioDePago(rs.getString("mediopago"))
+                .pagoSimulado(rs.getBoolean("pagosimulado"))
                 .estado(EstadoPedido.valueOf(rs.getString("estado")))
-                .mpPreferenciaId(rs.getString("mp_preferencia_id"))
-                .mpInitPoint(rs.getString("mp_init_point"))
-                .local(localRepositorio.buscarPorId(rs.getLong("idLocal"))
+                .local(localRepositorio.buscarPorId(rs.getLong("idlocal"))
                         .orElseThrow(() -> new RuntimeException("Local no encontrado")))
-                .cliente(clienteRepositorio.buscarPorId(rs.getLong("idCliente"))
+                .cliente(clienteRepositorio.buscarPorId(rs.getLong("idcliente"))
                         .orElseThrow(() -> new RuntimeException("Cliente no encontrado")))
                 .build();
     }
@@ -67,7 +72,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     @Override
     public List<Pedido> listarTodos() {
         return jdbcTemplate.query(
-                "SELECT * FROM pedidos",
+                "SELECT * FROM pedido",
                 this::mapearPedido
         );
     }
@@ -75,7 +80,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     @Override
     public Optional<Pedido> buscarPorId(Long id) {
         return jdbcTemplate.query(
-                "SELECT * FROM pedidos WHERE id = ?",
+                "SELECT * FROM pedido WHERE id = ?",
                 this::mapearPedido, id
         ).stream().findFirst();
     }
@@ -83,9 +88,20 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     @Override
     public List<Pedido> listarPorLocal(Long idLocal) {
         return jdbcTemplate.query(
-                "SELECT * FROM pedidos WHERE idLocal = ?",
+                "SELECT * FROM pedido WHERE idlocal = ?",
                 this::mapearPedido, idLocal
         );
+    }
+
+    @Override
+    public boolean existePedidoPendientePorLocal(Long idLocal) {
+        Integer cantidad = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM pedido WHERE idlocal = ? AND estado = ?",
+                Integer.class,
+                idLocal,
+                EstadoPedido.Pendiente.name()
+        );
+        return cantidad != null && cantidad > 0;
     }
 
 
@@ -96,16 +112,19 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(
                     """
-                    INSERT INTO pedidos
-                        (fecha, tiempoEstEntrega, total, calle, numero, ciudad, codigoPostal,
-                         medioDePago, pagoSimulado, estado, mp_preferencia_id, mp_init_point,
-                         idLocal, idCliente)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO pedido
+                        (fecha, tiempoestentrega, total, calle, numero, ciudad, codigopostal,
+                         mediopago, pagosimulado, estado, idlocal, idcliente)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    Statement.RETURN_GENERATED_KEYS
+                    new String[]{"id"}
             );
             ps.setDate(1, new java.sql.Date(pedido.getFecha().getTime()));
-            ps.setLong(2, pedido.getTiempoEstEntrega() != null ? pedido.getTiempoEstEntrega().toMinutes() : 0);
+            if (pedido.getTiempoEstEntrega() != null) {
+                ps.setTime(2, Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds())));
+            } else {
+                ps.setNull(2, Types.TIME);
+            }
             ps.setDouble(3, pedido.getTotal());
             ps.setString(4, pedido.getDomicilioEntrega().getCalle());
             ps.setString(5, pedido.getDomicilioEntrega().getNumero());
@@ -114,10 +133,8 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
             ps.setString(8, pedido.getMedioDePago());
             ps.setBoolean(9, pedido.getPagoSimulado());
             ps.setString(10, pedido.getEstado().name());
-            ps.setString(11, pedido.getMpPreferenciaId());
-            ps.setString(12, pedido.getMpInitPoint());
-            ps.setLong(13, pedido.getLocal().getId());
-            ps.setLong(14, pedido.getCliente().getId());
+            ps.setLong(11, pedido.getLocal().getId());
+            ps.setLong(12, pedido.getCliente().getId());
             return ps;
         }, keyHolder);
 
@@ -128,15 +145,16 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     public void actualizar(Pedido pedido) {
         jdbcTemplate.update(
                 """
-                UPDATE pedidos SET
-                    fecha = ?, tiempoEstEntrega = ?, total = ?, calle = ?, numero = ?,
-                    ciudad = ?, codigoPostal = ?, medioDePago = ?, pagoSimulado = ?,
-                    estado = ?, mp_preferencia_id = ?, mp_init_point = ?,
-                    idLocal = ?, idCliente = ?
+                UPDATE pedido SET
+                    fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?,
+                    ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?,
+                    estado = ?, idlocal = ?, idcliente = ?
                 WHERE id = ?
                 """,
                 new java.sql.Date(pedido.getFecha().getTime()),
-                pedido.getTiempoEstEntrega() != null ? pedido.getTiempoEstEntrega().toMinutes() : 0,
+                pedido.getTiempoEstEntrega() != null
+                        ? Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds()))
+                        : null,
                 pedido.getTotal(),
                 pedido.getDomicilioEntrega().getCalle(),
                 pedido.getDomicilioEntrega().getNumero(),
@@ -145,8 +163,6 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 pedido.getMedioDePago(),
                 pedido.getPagoSimulado(),
                 pedido.getEstado().name(),
-                pedido.getMpPreferenciaId(),
-                pedido.getMpInitPoint(),
                 pedido.getLocal().getId(),
                 pedido.getCliente().getId(),
                 pedido.getId()
@@ -155,22 +171,21 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
 
     @Override
     public void eliminar(Long id) {
-        jdbcTemplate.update("DELETE FROM pedidos WHERE id = ?", id);
+        jdbcTemplate.update("DELETE FROM pedido WHERE id = ?", id);
     }
 
 
     @Override
     public void actualizarDatosMp(Long pedidoId, String mpPreferenciaId, String mpInitPoint) {
-        jdbcTemplate.update(
-                "UPDATE pedidos SET mp_preferencia_id = ?, mp_init_point = ? WHERE id = ?",
-                mpPreferenciaId, mpInitPoint, pedidoId
+        throw new UnsupportedOperationException(
+                "La tabla pedido no tiene columnas de Mercado Pago en el esquema actual."
         );
     }
 
     @Override
     public void actualizarPago(Long pedidoId, Boolean pagoSimulado, EstadoPedido estado) {
         jdbcTemplate.update(
-                "UPDATE pedidos SET pagoSimulado = ?, estado = ? WHERE id = ?",
+                "UPDATE pedido SET pagosimulado = ?, estado = ? WHERE id = ?",
                 pagoSimulado, estado.name(), pedidoId
         );
     }
