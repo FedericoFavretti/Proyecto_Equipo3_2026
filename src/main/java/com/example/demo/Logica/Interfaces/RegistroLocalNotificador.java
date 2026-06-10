@@ -1,4 +1,4 @@
-package com.example.demo.Logica.Service;
+package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.Clases.Local;
 

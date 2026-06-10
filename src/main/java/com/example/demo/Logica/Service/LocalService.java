@@ -9,6 +9,7 @@ import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.Enums.EstadoLocal;
+import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;

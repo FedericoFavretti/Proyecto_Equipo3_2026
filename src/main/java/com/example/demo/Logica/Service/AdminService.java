@@ -3,6 +3,7 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.Enums.EstadoLocal;
+import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

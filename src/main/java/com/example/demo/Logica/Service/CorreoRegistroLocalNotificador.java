@@ -1,5 +1,6 @@
 package com.example.demo.Logica.Service;
 
+import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
