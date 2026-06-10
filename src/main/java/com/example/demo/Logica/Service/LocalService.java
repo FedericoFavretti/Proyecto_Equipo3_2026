@@ -8,12 +8,15 @@ import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,11 +51,18 @@ public class LocalService {
     private static final String MENSAJE_PLATO_DE_OTRO_LOCAL =
             "El plato no pertenece al local indicado.";
 
+    @Autowired
     private final LocalRepositorio localRepositorio;
+    @Autowired
     private final PlatoRepositorio platoRepositorio;
+    @Autowired
     private final RegistroLocalNotificador registroLocalNotificador;
+    @Autowired
     private final UsuarioRepositorio usuarioRepositorio;
+    @Autowired
     private final PedidoRepositorio pedidoRepositorio;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public LocalService(
             LocalRepositorio localRepositorio,
@@ -139,7 +149,7 @@ public class LocalService {
 
         Local local = Local.builder()
                 .email(dtLocal.getEmail())
-                .passwd(dtLocal.getPasswd())
+                .passwd(passwordEncoder.encode(dtLocal.getPasswd()))
                 .foto(dtLocal.getFoto())
                 .tipo("Local")
                 .nombre(dtLocal.getNombre())
@@ -150,7 +160,7 @@ public class LocalService {
                 .estaAbierto(false)
                 .imagenes(new ArrayList<>(dtLocal.getImagenes()))
                 .build();
-
+        local.setEstado(EstadoCuenta.Pendiente);
         usuarioRepositorio.guardar(local);
         localRepositorio.guardar(local);
         registroLocalNotificador.notificarAdministradorSolicitudPendiente(local);

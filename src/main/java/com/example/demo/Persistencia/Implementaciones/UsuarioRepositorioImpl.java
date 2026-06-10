@@ -118,13 +118,10 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
         }
     }
 
-
-
-
     @Override
     public void activarCuenta(Long id) {
         jdbcTemplate.update(
-                "UPDATE usuario SET estado = ?, token_activacion = NULL, token_activacion_expira = NULL WHERE id = ?",
+                "UPDATE usuario SET estado = ? WHERE id = ?",
                 EstadoCuenta.Activo.name(), id
         );
     }

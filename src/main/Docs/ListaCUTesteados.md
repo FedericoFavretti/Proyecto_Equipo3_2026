@@ -1,5 +1,5 @@
 -Solicitar Hab local(crea el local siempre como habilitado, faltaria crear el caso contrario)
--CU-L02 Gestionar platos de comida
+-CU-L02 Gestionar platos de comida alta
         Estado actual
         Cubierto a nivel de negocio en LocalServiceTest:
         - alta de plato para local habilitado
@@ -12,6 +12,8 @@
         - permite mantener el mismo nombre del propio plato
         - rechazo si el plato pertenece a otro local
         - baja logica: desactiva el plato en lugar de borrarlo
+-CU-L02 Gestionar platos de comida 
+        - Modificacion de plato 
 
         Verificacion manual por API
         - modificacion OK via PUT /api/v1/locales/platos/{idPlato}
@@ -47,22 +49,10 @@
 -Crear Cliente (puede mejorarse con los puntos subsiguientes):
         2) Qué hay que corregir en ClienteService.registrarUsuario
         Archivo: src/main/java/com/example/demo/Logica/Service/ClienteService.java
-
-        Problema 1 — Guarda la contraseña sin encoder
+        
+        ya funciona activar cuenta
+        
         Hoy hace esto:
-
-        cliente.setPasswd(dtCliente.getPasswd());
-        Eso significa que la contraseña entra tal cual al objeto antes de persistirse.
-
-        Y en ApplicationConfig sí existe PasswordEncoder, así que NO hay excusa técnica para no usarlo.
-
-        Por qué está mal
-        Porque autenticación sin hash fuerte es una mala base de seguridad. Y además en las reglas del proyecto se pide almacenamiento seguro.
-
-        Qué corregir
-        inyectar PasswordEncoder
-        guardar:
-        passwordEncoder.encode(dtCliente.getPasswd())
         Problema 2 — El flujo de activación está mal modelado
         En GuiaCasosDeUso.md el CU-CL01 dice que:
 
@@ -71,27 +61,13 @@
         la cuenta queda activa recién cuando el usuario entra al enlace
         Pero tu servicio hace esto inmediatamente:
 
-        cliente.setEstado(EstadoCuenta.Activo);
-        .activo(true);
+        
+   
         luego envía el mail
         Por qué está mal
         Porque estás marcando la cuenta como activa ANTES de la activación. Eso contradice el caso de uso.
 
-        Qué corregir
-        Aquí hay una decisión de diseño que el equipo debe tomar bien:
-
-        Alternativa A — agregar un estado tipo PendienteAprobacion / PendienteActivacion
-        Pro: modela explícitamente el flujo
-        Contra: toca enum, seguridad y login
-
-        Alternativa B — usar un flag de activación separado
-        Por ejemplo usar activo como activación y estado solo para bloqueo.
-
-        Pro: menos invasivo
-        Contra: separa el concepto en dos campos y puede confundir
-
-        Mi recomendación: si el dominio exige activación por email, el modelo tiene que representarlo de forma explícita. NO lo tapes con un booleano sin una convención clara.
-
+        
         Problema 3 — El tipo de usuario es frágil
         Hoy pones:
 
@@ -203,3 +179,6 @@
         - notificacion al local por correo y web segun GuiaCasosDeUso.md
         - validar/expresar mejor errores HTTP de negocio (hoy terminan como RuntimeException generica)
         - cubrir explicitamente el alternativo de local cerrado con test dedicado y mensaje documentado
+
+-CU-C01 Login
+    Funciona

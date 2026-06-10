@@ -2,6 +2,7 @@ package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.DataTypes.DtLocal;
+import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -58,7 +59,7 @@ public class AdminService {
 
         local.setEstadoLocal(nuevoEstado);
         local.setEstaAbierto(false);
-
+        local.setEstado(EstadoCuenta.Activo);
         localRepositorio.actualizar(local);
         registroLocalNotificador.notificarLocalResolucionSolicitud(local);
     }

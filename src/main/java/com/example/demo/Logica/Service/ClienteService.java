@@ -8,12 +8,13 @@ import com.example.demo.Logica.DataTypes.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 
-import org.springframework.jdbc.core.JdbcTemplate;
+
 
 
 import java.util.List;
@@ -27,6 +28,8 @@ public class ClienteService {
     private UsuarioRepositorio usuarioRepositorio;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Transactional
     public Cliente registrarUsuario(DtCliente dtCliente) {
@@ -45,12 +48,12 @@ public class ClienteService {
                 .apellido(dtCliente.getApellido())
                 .direccion(dtCliente.getDireccion())
                 .calificacionGlobal(0.0)
-                .activo(true)
+                .activo(false)
                 .build();
         cliente.setEmail(dtCliente.getEmail());
-        cliente.setPasswd(dtCliente.getPasswd());
+        cliente.setPasswd(passwordEncoder.encode(dtCliente.getPasswd()));
         cliente.setFoto(dtCliente.getFoto());
-        cliente.setEstado(EstadoCuenta.Activo);
+        cliente.setEstado(EstadoCuenta.Pendiente);
         cliente.setTipo("Cliente");
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);
