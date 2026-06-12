@@ -17,11 +17,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/locales")
 public class LocalController implements iLocalController {
-    @Autowired
-    private LocalService localService;
-    @Autowired
-    private CloudinaryService cloudinaryService;
+    private final LocalService localService;
+    private final CloudinaryService cloudinaryService;
 
+    public LocalController(LocalService localService, CloudinaryService cloudinaryService) {
+        this.localService = localService;
+        this.cloudinaryService = cloudinaryService;
+    }
 
     @PostMapping(value = "/platos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Plato> gestionarPlatoAlta(@RequestPart("datos") DtPlato dtPlato, @RequestPart("imagenes") List<MultipartFile> imagenes) {

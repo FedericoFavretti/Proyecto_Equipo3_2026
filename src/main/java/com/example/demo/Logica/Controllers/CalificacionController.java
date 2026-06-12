@@ -9,7 +9,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/calificaciones")
 public class CalificacionController implements iCalificacionController {
-    @Autowired
-    private CalificacionService calificacionService;
+
+    private final CalificacionService calificacionService;
+
+    public CalificacionController(CalificacionService calificacionService) {
+        this.calificacionService = calificacionService;
+    }
 
 }

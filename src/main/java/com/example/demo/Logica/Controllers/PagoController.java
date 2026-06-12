@@ -12,8 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/pagos")
 public class PagoController {
 
-    @Autowired
-    private PedidoService PedidoService;
+    private final PedidoService PedidoService;
+
+    public PagoController(PedidoService PedidoService) {
+        this.PedidoService = PedidoService;
+    }
 
     @PostMapping("/webhook")
     public ResponseEntity<Void> recibirNotificacion(

@@ -51,17 +51,11 @@ public class LocalService {
     private static final String MENSAJE_PLATO_DE_OTRO_LOCAL =
             "El plato no pertenece al local indicado.";
 
-    @Autowired
     private final LocalRepositorio localRepositorio;
-    @Autowired
     private final PlatoRepositorio platoRepositorio;
-    @Autowired
     private final RegistroLocalNotificador registroLocalNotificador;
-    @Autowired
     private final UsuarioRepositorio usuarioRepositorio;
-    @Autowired
     private final PedidoRepositorio pedidoRepositorio;
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     public LocalService(

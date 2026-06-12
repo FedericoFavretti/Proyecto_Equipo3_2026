@@ -16,10 +16,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/pedidos")
 public class PedidoController implements iPedidoController {
-    @Autowired
-    private PedidoService pedidoService;
-    @Autowired
-    private PedidoResponseMapper pedidoResponseMapper;
+    private final PedidoService pedidoService;
+    private final PedidoResponseMapper pedidoResponseMapper;
+
+    public PedidoController(PedidoService pedidoService, PedidoResponseMapper pedidoResponseMapper) {
+        this.pedidoService = pedidoService;
+        this.pedidoResponseMapper = pedidoResponseMapper;
+    }
 
     @PostMapping("/{idPedido}/confirmar")
     public ResponseEntity<DtPedidoResponse> confirmarPedido(
@@ -48,8 +51,8 @@ public class PedidoController implements iPedidoController {
     }
 
     @GetMapping("/locales/{idLocal}")
-    public ResponseEntity<List<Pedido>> listarPedidos(@PathVariable Long idLocal) {
-        List<Pedido> pedidos = pedidoService.listarPedidos(idLocal);
+    public ResponseEntity<List<DtPedido>> listarPedidos(@PathVariable Long idLocal) {
+        List<DtPedido> pedidos = pedidoService.listarPedidos(idLocal);
         return ResponseEntity.ok(pedidos);
     }
 }

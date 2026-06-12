@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.DataTypes.DtLocal;
+import com.example.demo.Logica.Enums.EstadoLocal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 

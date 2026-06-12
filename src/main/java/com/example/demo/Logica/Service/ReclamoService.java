@@ -7,8 +7,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ReclamoService {
-    @Autowired
-    private ReclamoRepositorio reclamoRepositorio;
-    @Autowired
-    private PedidoRepositorio pedidoRepositorio;
+    private final ReclamoRepositorio reclamoRepositorio;
+    private final PedidoRepositorio pedidoRepositorio;
+
+    public ReclamoService(ReclamoRepositorio reclamoRepositorio, PedidoRepositorio pedidoRepositorio){
+        this.reclamoRepositorio = reclamoRepositorio;
+        this.pedidoRepositorio = pedidoRepositorio;
+    }
 }

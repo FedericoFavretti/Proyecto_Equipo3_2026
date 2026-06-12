@@ -13,11 +13,14 @@ import com.example.demo.Logica.Clases.Usuario;
 
 @Service
 public class UsuarioService {
-    @Autowired
-    private UsuarioRepositorio usuarioRepositorio;
 
-    @Autowired
+    private UsuarioRepositorio usuarioRepositorio;
     private EmailService emailService;
+
+    public UsuarioService(UsuarioRepositorio usuarioRepositorio, EmailService emailService){
+        this.usuarioRepositorio = usuarioRepositorio;
+        this.emailService = emailService;
+    }
 
     @Transactional
     public DtLoginResponse login(DtLoginRequest dtLogin) {

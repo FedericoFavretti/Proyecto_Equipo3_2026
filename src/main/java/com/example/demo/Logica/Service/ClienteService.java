@@ -20,16 +20,20 @@ import com.example.demo.Logica.Enums.EstadoCuenta;
 import java.util.List;
 @Service
 public class ClienteService {
-    @Autowired
-    private ClienteRepositorio clienteRepositorio;
-    @Autowired
-    private PlatoRepositorio platoRepositorio;
-    @Autowired
-    private UsuarioRepositorio usuarioRepositorio;
-    @Autowired
-    private EmailService emailService;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final ClienteRepositorio clienteRepositorio;
+    private final PlatoRepositorio platoRepositorio;
+    private final UsuarioRepositorio usuarioRepositorio;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
+
+    public ClienteService (ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio, UsuarioRepositorio usuarioRepositorio, EmailService emailService, PasswordEncoder passwordEncode) {
+        this.clienteRepositorio = clienteRepositorio;
+        this.platoRepositorio = platoRepositorio;
+        this.usuarioRepositorio = usuarioRepositorio;
+        this.emailService = emailService;
+        this.passwordEncoder = passwordEncode;
+    }
+
 
     @Transactional
     public Cliente registrarUsuario(DtCliente dtCliente) {

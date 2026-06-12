@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/reclamos")
 public class ReclamoController implements iReclamoController {
-    @Autowired
-    private ReclamoService reclamoService;
+    private final ReclamoService reclamoService;
+
+    public ReclamoController(ReclamoService reclamoService) {
+        this.reclamoService = reclamoService;
+    }
 }

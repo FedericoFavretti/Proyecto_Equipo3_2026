@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/usuarios")
 public class UsuarioController implements iUsuarioController {
-    @Autowired
     private UsuarioService usuarioService;
+
+    public UsuarioController(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
 
     @PostMapping("")
     public ResponseEntity<DtLoginResponse> login(@RequestBody DtLoginRequest dtLogin) {

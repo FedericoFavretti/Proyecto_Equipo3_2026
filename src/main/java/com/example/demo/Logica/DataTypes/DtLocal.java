@@ -1,14 +1,13 @@
 package com.example.demo.Logica.DataTypes;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
-
-@Builder
+@SuperBuilder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -3,12 +3,13 @@ import com.example.demo.Logica.Enums.EstadoCuenta;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-
+@SuperBuilder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public  class DtUsuario {
+public  abstract class DtUsuario {
     private Long id;
     private String email;
     private String passwd;

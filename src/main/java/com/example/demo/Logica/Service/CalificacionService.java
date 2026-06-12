@@ -8,11 +8,16 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class CalificacionService {
-    @Autowired
-    private CalificacionRepositorio calificacionRepositorio;
-    @Autowired
-    private ClienteRepositorio clienteRepositorio;
-    @Autowired
-    private LocalRepositorio  localRepositorio;
 
+    private final CalificacionRepositorio calificacionRepositorio;
+
+    private final ClienteRepositorio clienteRepositorio;
+
+    private final LocalRepositorio  localRepositorio;
+
+    public CalificacionService(CalificacionRepositorio calificacionRepositorio, ClienteRepositorio clienteRepositorio, LocalRepositorio  localRepositorio) {
+        this.calificacionRepositorio = calificacionRepositorio;
+        this.clienteRepositorio = clienteRepositorio;
+        this.localRepositorio = localRepositorio;
+    }
 }

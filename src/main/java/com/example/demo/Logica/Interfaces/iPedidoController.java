@@ -18,5 +18,5 @@ public interface iPedidoController {
     ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido);
     ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedido dtPedido);
     ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido);
-    ResponseEntity<List<Pedido>> listarPedidos(@PathVariable Long idLocal);
+    ResponseEntity<List<DtPedido>> listarPedidos(@PathVariable Long idLocal);
 }

@@ -14,12 +14,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admins")
 public class AdminController implements iAdminController {
-    @Autowired
-    private AdminService adminService;
+
+    private final AdminService adminService;
+
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
+    }
 
     @PostMapping("")
     public ResponseEntity<Void> resolverSolicitud(@RequestBody DtLocal dtLocal) {
-        adminService.resolverSolicitudRegistroLocal(dtLocal.getId(), EstadoLocal.Habilitado);
+        adminService.resolverSolicitud(dtLocal);
         return ResponseEntity.ok().build();
     }
 }

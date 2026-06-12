@@ -7,7 +7,9 @@ import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.DtDetallePedido;
+import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.DataTypes.DtPedido;
+import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
@@ -26,6 +28,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PedidoService {
@@ -162,11 +165,11 @@ public class PedidoService {
     }
 
     @Transactional
-    public List<Pedido> listarPedidos(Long idLocal) {
+    public List<DtPedido> listarPedidos(Long idLocal) {
         localRepositorio.buscarPorId(idLocal)
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
-
-        return pedidoRepositorio.listarPorLocal(idLocal);
+        List<DtPedido> dtPedidos = new ArrayList<>();
+        return dtPedidos;
     }
 
     public void procesarPagoConfirmado(String paymentId) {

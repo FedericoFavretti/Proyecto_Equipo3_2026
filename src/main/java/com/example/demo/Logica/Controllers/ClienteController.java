@@ -19,10 +19,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/clientes")
 public class ClienteController implements iClienteController {
-    @Autowired
-    private ClienteService  clienteService;
-    @Autowired
-    private CloudinaryService cloudinaryService;
+    private final ClienteService  clienteService;
+    private final CloudinaryService cloudinaryService;
+
+    public ClienteController(ClienteService clienteService, CloudinaryService cloudinaryService) {
+        this.clienteService = clienteService;
+        this.cloudinaryService = cloudinaryService;
+    }
 
     @PostMapping(value = "/registro", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Cliente> registrarUsuario(@RequestPart("datos") DtCliente dtCliente, @RequestPart("foto") MultipartFile foto) {
