@@ -5,6 +5,10 @@ import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.DtCliente;
 import com.example.demo.Logica.DataTypes.DtFiltro;
+import com.example.demo.Logica.DataTypes.DtLocal;
+import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.Mappers.ClienteMapper;
+import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +19,10 @@ import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 
 
-
-
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class ClienteService {
     private final ClienteRepositorio clienteRepositorio;
@@ -25,13 +30,17 @@ public class ClienteService {
     private final UsuarioRepositorio usuarioRepositorio;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final ClienteMapper clienteMapper;
+    private final PlatoMapper platoMapper;
 
-    public ClienteService (ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio, UsuarioRepositorio usuarioRepositorio, EmailService emailService, PasswordEncoder passwordEncode) {
+    public ClienteService (ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio, UsuarioRepositorio usuarioRepositorio, EmailService emailService, PasswordEncoder passwordEncode,  ClienteMapper clienteMapper, PlatoMapper platoMapper) {
         this.clienteRepositorio = clienteRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncode;
+        this.clienteMapper = clienteMapper;
+        this.platoMapper = platoMapper;
     }
 
 
@@ -46,19 +55,8 @@ public class ClienteService {
                     "El documento ya está asociado a una cuenta.");
         }
 
-        Cliente cliente = Cliente.builder()
-                .documento(dtCliente.getDocumento())
-                .nombre(dtCliente.getNombre())
-                .apellido(dtCliente.getApellido())
-                .direccion(dtCliente.getDireccion())
-                .calificacionGlobal(0.0)
-                .activo(false)
-                .build();
-        cliente.setEmail(dtCliente.getEmail());
-        cliente.setPasswd(passwordEncoder.encode(dtCliente.getPasswd()));
-        cliente.setFoto(dtCliente.getFoto());
-        cliente.setEstado(EstadoCuenta.Pendiente);
-        cliente.setTipo("Cliente");
+        Cliente cliente = clienteMapper.mapearClienteDeDt(dtCliente);
+        cliente.setPasswd(passwordEncoder.encode(cliente.getPasswd()));
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);
         emailService.enviarMailDeActivacion(cliente.getEmail());
@@ -71,19 +69,19 @@ public class ClienteService {
     }
 
     @Transactional
-    public List<Plato> buscarPlatos(DtFiltro dtFiltro) {
-        if(dtFiltro == null){
-            throw  new IllegalArgumentException("El filtro no puede ser nulo.");
-        }
-        if (dtFiltro.getNombre() != null && dtFiltro.getPrecioMasBajo() != null && dtFiltro.getPromocionActiva() != null && dtFiltro.getAlfabetico() != null && dtFiltro.getDtLocal() != null){
-            platoRepositorio.buscarPorNombre(dtFiltro.getNombre());
+    public List<DtPlato> buscarPlatos(DtFiltro dtFiltro) {
+        if (dtFiltro == null) {
+            throw new IllegalArgumentException("El filtro no puede ser nulo.");
         }
 
-        return null;
+        return platoRepositorio.buscarConFiltros(dtFiltro)
+                .stream()
+                .map(platoMapper::mapearDtPlatoDeClase)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public List<Local> listarLocales() {
+    public List<DtLocal> listarLocales() {
         return null;
     }
 }

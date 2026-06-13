@@ -4,6 +4,8 @@ import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.DataTypes.DtCliente;
+import com.example.demo.Logica.DataTypes.DtLocal;
+import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.DataTypes.DtFiltro;
 import com.example.demo.Logica.Interfaces.iClienteController;
 import com.example.demo.Logica.Service.ClienteService;
@@ -41,14 +43,14 @@ public class ClienteController implements iClienteController {
         return ResponseEntity.ok(cliente);
     }
     @GetMapping("/{filtro}")
-    public ResponseEntity<List<Plato>> buscarPlatos(@PathVariable DtFiltro dtFiltro) {
-        List<Plato> platos = clienteService.buscarPlatos(dtFiltro);
+    public ResponseEntity<List<DtPlato>> buscarPlatos(@PathVariable DtFiltro dtFiltro) {
+        List<DtPlato> platos = clienteService.buscarPlatos(dtFiltro);
         return ResponseEntity.ok(platos);
     }
 
     @GetMapping
-    public ResponseEntity<List<Local>> listarLocales() {
-        List<Local> locales = clienteService.listarLocales();
+    public ResponseEntity<List<DtLocal>> listarLocales() {
+        List<DtLocal> locales = clienteService.listarLocales();
         return ResponseEntity.ok(locales);
     }
 }

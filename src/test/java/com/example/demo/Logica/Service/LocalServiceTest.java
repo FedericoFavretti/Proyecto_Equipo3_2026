@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
+import com.example.demo.Logica.Mappers.LocalMapper;
+import com.example.demo.Logica.Mappers.PlatoMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,7 @@ import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class LocalServiceTest {
@@ -49,6 +52,12 @@ class LocalServiceTest {
 
     private LocalService localService;
 
+    private PasswordEncoder passwordEncoder;
+
+    private LocalMapper localMapper;
+
+    private PlatoMapper platoMapper;
+
     @BeforeEach
     void setUp() {
         localService = new LocalService(
@@ -56,7 +65,11 @@ class LocalServiceTest {
                 platoRepositorio,
                 registroLocalNotificador,
                 usuarioRepositorio,
-                pedidoRepositorio);
+                pedidoRepositorio,
+                passwordEncoder,
+                localMapper,
+                platoMapper
+                );
     }
 
     @Test

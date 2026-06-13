@@ -11,6 +11,7 @@ import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.DataTypes.DtPedido;
 import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Mappers.PedidoMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -55,6 +56,7 @@ public class PedidoService {
     private final FacturaService facturaService;
     private final PagoSimuladoService pagoSimuladoService;
     private final NotificacionPedidoService notificacionPedidoService;
+    private final PedidoMapper pedidoMapper;
 
     @Value("${mercadopago.back-url-success}")
     private String backUrlSuccess;
@@ -73,7 +75,7 @@ public class PedidoService {
             PlatoRepositorio platoRepositorio,
             FacturaService facturaService,
             PagoSimuladoService pagoSimuladoService,
-            NotificacionPedidoService notificacionPedidoService) {
+            NotificacionPedidoService notificacionPedidoService, PedidoMapper  pedidoMapper) {
         this.pedidoRepositorio = pedidoRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
@@ -82,6 +84,7 @@ public class PedidoService {
         this.facturaService = facturaService;
         this.pagoSimuladoService = pagoSimuladoService;
         this.notificacionPedidoService = notificacionPedidoService;
+        this.pedidoMapper = pedidoMapper;
     }
 
     @Transactional
@@ -137,17 +140,7 @@ public class PedidoService {
                 .mapToDouble(DetallePedido::getSubtotal)
                 .sum();
 
-        Pedido pedido = Pedido.builder()
-                .fecha(new Date())
-                .total(total)
-                .domicilioEntrega(dtPedido.getDomicilioEntrega())
-                .medioDePago(dtPedido.getMedioDePago())
-                .pagoSimulado(false)
-                .estado(EstadoPedido.Pendiente)
-                .detalles(detalles)
-                .local(local)
-                .cliente(cliente)
-                .build();
+        Pedido pedido = pedidoMapper.mapearPedidoDeDt(dtPedido);
 
         pedidoRepositorio.guardar(pedido);
 
@@ -169,7 +162,10 @@ public class PedidoService {
         localRepositorio.buscarPorId(idLocal)
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
         List<DtPedido> dtPedidos = new ArrayList<>();
-        return dtPedidos;
+
+        return pedidoRepositorio.listarPorLocal(idLocal).stream()
+                .map(pedidoMapper::mapearDtPedidoDeClase)
+                .collect(Collectors.toList());
     }
 
     public void procesarPagoConfirmado(String paymentId) {

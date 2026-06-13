@@ -11,6 +11,8 @@ import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
+import com.example.demo.Logica.Mappers.LocalMapper;
+import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
@@ -56,19 +58,24 @@ public class LocalService {
     private final RegistroLocalNotificador registroLocalNotificador;
     private final UsuarioRepositorio usuarioRepositorio;
     private final PedidoRepositorio pedidoRepositorio;
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final LocalMapper localMapper;
+    private final PlatoMapper platoMapper;
 
     public LocalService(
             LocalRepositorio localRepositorio,
             PlatoRepositorio platoRepositorio,
             RegistroLocalNotificador registroLocalNotificador,
             UsuarioRepositorio usuarioRepositorio,
-            PedidoRepositorio pedidoRepositorio) {
+            PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper) {
         this.localRepositorio = localRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;
         this.usuarioRepositorio = usuarioRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
+        this.passwordEncoder = passwordEncoder;
+        this.localMapper = localMapper;
+        this.platoMapper = platoMapper;
     }
 
     @Transactional
@@ -84,14 +91,7 @@ public class LocalService {
         validarLocalHabilitado(local);
         local.setId(dtPlato.getDtLocal().getId());
 
-        Plato plato = Plato.builder()
-                .nombre(dtPlato.getNombre())
-                .descripcion(dtPlato.getDescripcion())
-                .precio(dtPlato.getPrecio())
-                .imagenes(dtPlato.getImagenes())
-                .disponible(dtPlato.getDisponible())
-                .local(local)
-                .build();
+        Plato plato = platoMapper.mapearPlatoDeDt(dtPlato);
         return platoRepositorio.guardar(plato);
     }
 
@@ -113,15 +113,7 @@ public class LocalService {
                     throw new IllegalArgumentException(MENSAJE_PLATO_YA_EXISTE);
                 });
 
-        Plato plato = Plato.builder()
-                .id(idPlato)
-                .nombre(dtPlato.getNombre())
-                .descripcion(dtPlato.getDescripcion())
-                .precio(dtPlato.getPrecio())
-                .imagenes(dtPlato.getImagenes())
-                .disponible(dtPlato.getDisponible())
-                .local(local)
-                .build();
+        Plato plato = platoMapper.mapearPlatoDeDt(dtPlato);
         return platoRepositorio.actualizar(plato);
     }
 
@@ -141,20 +133,7 @@ public class LocalService {
             throw new IllegalArgumentException("El nombre del local ya se encuentra registrado.");
         }
 
-        Local local = Local.builder()
-                .email(dtLocal.getEmail())
-                .passwd(passwordEncoder.encode(dtLocal.getPasswd()))
-                .foto(dtLocal.getFoto())
-                .tipo("Local")
-                .nombre(dtLocal.getNombre())
-                .direccion(dtLocal.getDireccion())
-                .descripcion(dtLocal.getDescripcion())
-                .estadoLocal(EstadoLocal.Pendiente)
-                .calificacionGlobal(0.0)
-                .estaAbierto(false)
-                .imagenes(new ArrayList<>(dtLocal.getImagenes()))
-                .build();
-        local.setEstado(EstadoCuenta.Pendiente);
+        Local local = localMapper.mapearLocalDeDt(dtLocal);
         usuarioRepositorio.guardar(local);
         localRepositorio.guardar(local);
         registroLocalNotificador.notificarAdministradorSolicitudPendiente(local);

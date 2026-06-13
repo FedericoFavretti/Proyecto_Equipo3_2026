@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.demo.Logica.Mappers.PedidoMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,6 +70,8 @@ class PedidoServiceTest {
 
     private PedidoService pedidoService;
 
+    private PedidoMapper pedidoMapper;
+
     @BeforeEach
     void setUp() {
         pedidoService = new PedidoService(
@@ -79,7 +82,8 @@ class PedidoServiceTest {
                 platoRepositorio,
                 facturaService,
                 pagoSimuladoService,
-                notificacionPedidoService
+                notificacionPedidoService,
+                pedidoMapper
         );
     }
 

@@ -5,9 +5,8 @@ import com.example.demo.Logica.DataTypes.DtConfirmarPedidoRequest;
 import com.example.demo.Logica.DataTypes.DtPedido;
 import com.example.demo.Logica.DataTypes.DtPedidoResponse;
 import com.example.demo.Logica.Interfaces.iPedidoController;
-import com.example.demo.Logica.Service.PedidoResponseMapper;
+import com.example.demo.Logica.Mappers.PedidoResponseMapper;
 import com.example.demo.Logica.Service.PedidoService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
