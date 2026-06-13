@@ -6,6 +6,8 @@ import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,28 +25,14 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
     @Override
     public List<Promocion> listarTodos() {
         return jdbcTemplate.query("SELECT * FROM Promocion",
-                (rs, row) -> new Promocion(
-                        rs.getLong("id"),
-                        rs.getDouble("descuento"),
-                        rs.getDate("fechaInicio"),
-                        rs.getDate("fechaFin"),
-                        rs.getString("descripcion"),
-                        platoRepositorio.buscarPorId(rs.getLong("idPlato")).orElseThrow(()-> new RuntimeException("Plato no encontrado"))
-                )
+                (rs, row) -> mapearPromocion(rs)
         );
     }
 
     @Override
     public Optional<Promocion> buscarPorId(long id) {
         return jdbcTemplate.query("SELECT * FROM Promocion WHERE id = ?",
-                (rs, row) -> new Promocion(
-                        rs.getLong("id"),
-                        rs.getDouble("descuento"),
-                        rs.getDate("fechaInicio"),
-                        rs.getDate("fechaFin"),
-                        rs.getString("descripcion"),
-                        platoRepositorio.buscarPorId(rs.getLong("idPlato")).orElseThrow(()-> new RuntimeException("Plato no encontrado"))
-                ),id
+                (rs, row) -> mapearPromocion(rs),id
         ).stream().findFirst();
     }
 
@@ -74,5 +62,14 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
     @Override
     public void eliminar(long id) {
         jdbcTemplate.update("DELETE FROM Promocion WHERE id = ?", id);
+    }
+
+    private Promocion mapearPromocion(ResultSet rs) throws SQLException {
+        return new Promocion( rs.getLong("id"),
+                rs.getDouble("descuento"),
+                rs.getDate("fechaInicio"),
+                rs.getDate("fechaFin"),
+                rs.getString("descripcion"),
+                platoRepositorio.buscarPorId(rs.getLong("idPlato")).orElseThrow(()-> new RuntimeException("Plato no encontrado")));
     }
 }

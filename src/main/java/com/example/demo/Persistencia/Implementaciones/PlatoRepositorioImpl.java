@@ -37,32 +37,14 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     @Override
     public List<Plato> listarTodos() {
         return jdbcTemplate.query("SELECT * FROM plato",
-                (rs, row) -> new Plato(
-                        rs.getLong("id"),
-                        rs.getString("nombre"),
-                        rs.getString("descripcion"),
-                        rs.getDouble("precio"),
-                        mapearImagenes(rs),
-                        rs.getBoolean("disponible"),
-                        localRepositorio.buscarPorId(rs.getLong("idLocal"))
-                                .orElseThrow(() -> new RuntimeException("Local no encontrado"))
-                )
+                (rs, row) ->mapearPlato(rs)
         );
     }
 
     @Override
     public Optional<Plato> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM plato WHERE id = ?",
-                (rs, row) -> new Plato(
-                        rs.getLong("id"),
-                        rs.getString("nombre"),
-                        rs.getString("descripcion"),
-                        rs.getDouble("precio"),
-                        mapearImagenes(rs),
-                        rs.getBoolean("disponible"),
-                        localRepositorio.buscarPorId(rs.getLong("idLocal"))
-                                .orElseThrow(() -> new RuntimeException("Local no encontrado"))
-                ), id
+                (rs, row) -> mapearPlato(rs), id
         ).stream().findFirst();
     }
 
@@ -70,16 +52,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     @Override
     public Optional<Plato> buscarPorNombre(String nombre) {
         return jdbcTemplate.query("SELECT * FROM plato WHERE nombre = ?",
-                (rs, row) -> new Plato(
-                        rs.getLong("id"),
-                        rs.getString("nombre"),
-                        rs.getString("descripcion"),
-                        rs.getDouble("precio"),
-                        mapearImagenes(rs),
-                        rs.getBoolean("disponible"),
-                        localRepositorio.buscarPorId(rs.getLong("idLocal"))
-                                .orElseThrow(() -> new RuntimeException("Local no encontrado"))
-                ), nombre
+                (rs, row) -> mapearPlato(rs), nombre
         ).stream().findFirst();
     }
 
@@ -119,16 +92,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         }
 
         return jdbcTemplate.query(sql.toString(),
-                (rs, row) -> new Plato(
-                        rs.getLong("id"),
-                        rs.getString("nombre"),
-                        rs.getString("descripcion"),
-                        rs.getDouble("precio"),
-                        mapearImagenes(rs),
-                        rs.getBoolean("disponible"),
-                        localRepositorio.buscarPorId(rs.getLong("idLocal"))
-                                .orElseThrow(() -> new RuntimeException("Local no encontrado"))
-                ),
+                (rs, row) -> mapearPlato(rs),
                 params.toArray()
         );
     }
@@ -179,5 +143,18 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     @Override
     public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM plato WHERE id = ?", id);
+    }
+
+    private Plato mapearPlato(ResultSet rs) throws SQLException {
+        return new Plato(
+                rs.getLong("id"),
+                rs.getString("nombre"),
+                rs.getString("descripcion"),
+                rs.getDouble("precio"),
+                mapearImagenes(rs),
+                rs.getBoolean("disponible"),
+                localRepositorio.buscarPorId(rs.getLong("idLocal"))
+                        .orElseThrow(() -> new RuntimeException("Local no encontrado"))
+        );
     }
 }

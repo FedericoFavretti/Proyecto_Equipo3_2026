@@ -39,36 +39,6 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         this.clienteRepositorio = clienteRepo;
     }
 
-
-
-    private Pedido mapearPedido(ResultSet rs, int row) throws SQLException {
-        Time tiempoEstEntrega = rs.getTime("tiempoestentrega");
-
-        return Pedido.builder()
-                .id(rs.getLong("id"))
-                .fecha(rs.getDate("fecha"))
-                .tiempoEstEntrega(tiempoEstEntrega != null
-                        ? Duration.ofSeconds(tiempoEstEntrega.toLocalTime().toSecondOfDay())
-                        : null)
-                .total(rs.getDouble("total"))
-                .domicilioEntrega(new DtDireccion(
-                        rs.getString("calle"),
-                        rs.getString("numero"),
-                        rs.getString("ciudad"),
-                        rs.getString("codigopostal")
-                ))
-                .medioDePago(rs.getString("mediopago"))
-                .pagoSimulado(rs.getBoolean("pagosimulado"))
-                .estado(EstadoPedido.valueOf(rs.getString("estado")))
-                .local(localRepositorio.buscarPorId(rs.getLong("idlocal"))
-                        .orElseThrow(() -> new RuntimeException("Local no encontrado")))
-                .cliente(clienteRepositorio.buscarPorId(rs.getLong("idcliente"))
-                        .orElseThrow(() -> new RuntimeException("Cliente no encontrado")))
-                .build();
-    }
-
-
-
     @Override
     public List<Pedido> listarTodos() {
         return jdbcTemplate.query(
@@ -144,13 +114,9 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     @Override
     public void actualizar(Pedido pedido) {
         jdbcTemplate.update(
-                """
-                UPDATE pedido SET
-                    fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?,
-                    ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?,
-                    estado = ?, idlocal = ?, idcliente = ?
-                WHERE id = ?
-                """,
+                "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?,ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?,estado = ?, idlocal = ?, idcliente = ? WHERE id = ?"
+
+                ,
                 new java.sql.Date(pedido.getFecha().getTime()),
                 pedido.getTiempoEstEntrega() != null
                         ? Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds()))
@@ -189,4 +155,31 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 pagoSimulado, estado.name(), pedidoId
         );
     }
+
+    private Pedido mapearPedido(ResultSet rs, int row) throws SQLException {
+        Time tiempoEstEntrega = rs.getTime("tiempoestentrega");
+
+        return Pedido.builder()
+                .id(rs.getLong("id"))
+                .fecha(rs.getDate("fecha"))
+                .tiempoEstEntrega(tiempoEstEntrega != null
+                        ? Duration.ofSeconds(tiempoEstEntrega.toLocalTime().toSecondOfDay())
+                        : null)
+                .total(rs.getDouble("total"))
+                .domicilioEntrega(new DtDireccion(
+                        rs.getString("calle"),
+                        rs.getString("numero"),
+                        rs.getString("ciudad"),
+                        rs.getString("codigopostal")
+                ))
+                .medioDePago(rs.getString("mediopago"))
+                .pagoSimulado(rs.getBoolean("pagosimulado"))
+                .estado(EstadoPedido.valueOf(rs.getString("estado")))
+                .local(localRepositorio.buscarPorId(rs.getLong("idlocal"))
+                        .orElseThrow(() -> new RuntimeException("Local no encontrado")))
+                .cliente(clienteRepositorio.buscarPorId(rs.getLong("idcliente"))
+                        .orElseThrow(() -> new RuntimeException("Cliente no encontrado")))
+                .build();
+    }
+
 }

@@ -134,5 +134,4 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
         );
         return count != null && count > 0;
     }
-
 }

@@ -8,6 +8,8 @@ import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,28 +28,14 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
     @Override
     public List<DetallePedido> listarTodos() {
         return jdbcTemplate.query("SELECT * FROM DetallePedido",
-                (rs, row)-> new DetallePedido(
-                        rs.getLong("id"),
-                        rs.getInt("cantidad"),
-                        rs.getDouble("precioUnitario"),
-                        rs.getDouble("subtotal"),
-                        platoRepositorio.buscarPorId(rs.getLong("idPlato")).orElseThrow(() -> new RuntimeException("Plato no encontrado")),
-                        pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(() -> new RuntimeException("Pedido no encontrado"))
-                )
+                (rs, row)-> mapearDetallePedido(rs)
         );
     }
 
     @Override
     public Optional<DetallePedido> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM DetallePedido WHERE id = ?",
-                (rs, row)-> new DetallePedido(
-                        rs.getLong("id"),
-                        rs.getInt("cantidad"),
-                        rs.getDouble("precioUnitario"),
-                        rs.getDouble("subtotal"),
-                        platoRepositorio.buscarPorId(rs.getLong("idPlato")).orElseThrow(() -> new RuntimeException("Plato no encontrado")),
-                        pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(() -> new RuntimeException("Pedido no encontrado"))
-                ),id
+                (rs, row)-> mapearDetallePedido(rs),id
         ).stream().findFirst();
     }
 
@@ -77,5 +65,16 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
     @Override
     public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM DetallePedido WHERE id = ?", id);
+    }
+
+    private DetallePedido mapearDetallePedido(ResultSet rs) throws SQLException {
+        return new DetallePedido(
+                rs.getLong("id"),
+                rs.getInt("cantidad"),
+                rs.getDouble("precioUnitario"),
+                rs.getDouble("subtotal"),
+                platoRepositorio.buscarPorId(rs.getLong("idPlato")).orElseThrow(() -> new RuntimeException("Plato no encontrado")),
+                pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(() -> new RuntimeException("Pedido no encontrado"))
+        );
     }
 }

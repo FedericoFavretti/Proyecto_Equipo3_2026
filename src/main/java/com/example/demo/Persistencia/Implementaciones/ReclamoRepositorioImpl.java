@@ -6,6 +6,8 @@ import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,28 +25,14 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
     @Override
     public List<Reclamo> listarTodos() {
         return jdbcTemplate.query("SELECT * FROM Reclamo",
-                (rs, row) -> new Reclamo(
-                        rs.getLong("id"),
-                        rs.getString("motivo"),
-                        rs.getString("tipoCompensacion"),
-                        rs.getDouble("montoReintegro"),
-                        rs.getDate("fecha"),
-                        pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(()->new RuntimeException("Pedido no encontrado"))
-                )
+                (rs, row) -> mapearRecalamo(rs)
         );
     }
 
     @Override
     public Optional<Reclamo> buscarPorId(long id) {
         return jdbcTemplate.query("SELECT * FROM Reclamo WHERE id = ?",
-                (rs, row) -> new Reclamo(
-                        rs.getLong("id"),
-                        rs.getString("motivo"),
-                        rs.getString("tipoCompensacion"),
-                        rs.getDouble("montoReintegro"),
-                        rs.getDate("fecha"),
-                        pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(()->new RuntimeException("Pedido no encontrado"))
-                ),id
+                (rs, row) -> mapearRecalamo(rs),id
         ).stream().findFirst();
     }
 
@@ -74,5 +62,16 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
     @Override
     public void eliminar(long id) {
         jdbcTemplate.update("DELETE FROM Reclamo WHERE id = ?", id);
+    }
+
+    private Reclamo mapearRecalamo(ResultSet rs) throws SQLException {
+        return new Reclamo(
+                rs.getLong("id"),
+                rs.getString("motivo"),
+                rs.getString("tipoCompensacion"),
+                rs.getDouble("montoReintegro"),
+                rs.getDate("fecha"),
+                pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(()->new RuntimeException("Pedido no encontrado"))
+        );
     }
 }

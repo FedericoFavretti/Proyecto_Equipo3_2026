@@ -6,6 +6,8 @@ import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,39 +25,21 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
     @Override
     public List<Factura> listarTodos() {
         return jdbcTemplate.query("SELECT * FROM Factura",
-                (rs, row) -> new Factura(
-                    rs.getLong("id"),
-                    rs.getString("numero"),
-                    rs.getDouble("monto"),
-                    rs.getString("archivoPdf"),
-                    pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(()-> new RuntimeException("Pedido no encontrado"))
-                )
+                (rs, row) ->mapearFactura(rs)
         );
     }
 
     @Override
     public Optional<Factura> buscarPorId(Long id) {
         return jdbcTemplate.query("SELECT * FROM Factura WHERE id = ?",
-                (rs, row) -> new Factura(
-                        rs.getLong("id"),
-                        rs.getString("numero"),
-                        rs.getDouble("monto"),
-                        rs.getString("archivoPdf"),
-                        pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(()-> new RuntimeException("Pedido no encontrado"))
-                ),id
+                (rs, row) -> mapearFactura(rs),id
         ).stream().findFirst();
     }
 
     @Override
     public Optional<Factura> buscarPorPedidoId(Long pedidoId) {
         return jdbcTemplate.query("SELECT * FROM Factura WHERE idPedido = ?",
-                (rs, row) -> new Factura(
-                        rs.getLong("id"),
-                        rs.getString("numero"),
-                        rs.getDouble("monto"),
-                        rs.getString("archivoPdf"),
-                        pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(() -> new RuntimeException("Pedido no encontrado"))
-                ), pedidoId
+                (rs, row) -> mapearFactura(rs), pedidoId
         ).stream().findFirst();
     }
 
@@ -83,5 +67,15 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
     @Override
     public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Factura WHERE id = ?", id);
+    }
+
+    private Factura mapearFactura(ResultSet rs) throws SQLException {
+        return new Factura(
+                rs.getLong("id"),
+                rs.getString("numero"),
+                rs.getDouble("monto"),
+                rs.getString("archivoPdf"),
+                pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(()-> new RuntimeException("Pedido no encontrado"))
+        );
     }
 }

@@ -67,7 +67,6 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
         } else if (calificacion.getTipo().equals(TipoCalificacion.Local_a_cliente)) {
             localCalificacionRepositorio.calificar(calificacion.getLocal().getId(), idCalificacion);
         }
-
     }
 
     @Override
