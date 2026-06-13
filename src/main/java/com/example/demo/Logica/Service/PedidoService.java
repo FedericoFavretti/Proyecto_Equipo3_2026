@@ -7,9 +7,7 @@ import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.DtDetallePedido;
-import com.example.demo.Logica.DataTypes.DtLocal;
 import com.example.demo.Logica.DataTypes.DtPedido;
-import com.example.demo.Logica.DataTypes.DtPlato;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Mappers.PedidoMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
@@ -140,14 +138,11 @@ public class PedidoService {
                 .mapToDouble(DetallePedido::getSubtotal)
                 .sum();
 
-        Pedido pedido = pedidoMapper.mapearPedidoDeDt(dtPedido);
+        Pedido pedido = construirPedido(dtPedido, local, cliente, detalles, total);
 
         pedidoRepositorio.guardar(pedido);
 
-        detalles.forEach(detalle -> {
-            detalle.setPedido(pedido);
-            detallePedidoRepositorio.guardar(detalle);
-        });
+        detalles.forEach(detallePedidoRepositorio::guardar);
 
         return pedido;
     }
@@ -220,6 +215,32 @@ public class PedidoService {
         }
 
         return detalles;
+    }
+
+    private Pedido construirPedido(
+            DtPedido dtPedido,
+            Local local,
+            Cliente cliente,
+            List<DetallePedido> detalles,
+            double total) {
+        Pedido pedido = Pedido.builder()
+                .fecha(new Date())
+                .tiempoEstEntrega(dtPedido.getTiempoEstEntrega())
+                .total(total)
+                .domicilioEntrega(dtPedido.getDomicilioEntrega())
+                .medioDePago(dtPedido.getMedioDePago())
+                .pagoSimulado(dtPedido.getPagoSimulado())
+                .estado(EstadoPedido.Pendiente)
+                .local(local)
+                .cliente(cliente)
+                .detalles(detalles)
+                .mpPreferenciaId(dtPedido.getMpPreferenciaId())
+                .mpInitPoint(dtPedido.getMpInitPoint())
+                .build();
+
+        detalles.forEach(detalle -> detalle.setPedido(pedido));
+
+        return pedido;
     }
 
     private void validarCantidad(DtDetallePedido detalleSolicitado) {

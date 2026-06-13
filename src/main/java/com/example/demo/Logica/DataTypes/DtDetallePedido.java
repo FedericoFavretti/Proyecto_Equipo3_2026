@@ -14,5 +14,4 @@ public class DtDetallePedido {
     private Double precioUnitario;
     private Double subtotal;
     private DtPlato dtPlato;
-    private DtPedido dtPedido;
 }

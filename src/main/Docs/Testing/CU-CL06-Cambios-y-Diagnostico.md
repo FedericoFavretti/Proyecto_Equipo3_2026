@@ -336,3 +336,16 @@ Los problemas para testear `CU-CL06` no vinieron de un √∫nico bug, sino de una c
 - y dise√±o de respuesta HTTP
 
 El trabajo realizado dej√≥ el caso de uso mucho m√°s estable y, sobre todo, dej√≥ evidencia clara de QU√â estaba mal y POR QU√â.
+
+---
+
+## ActualizaciÛn posterior ó contrato de DtDetallePedido
+
+En una limpieza posterior del mapeo de pedidos, DtDetallePedido dejÛ de incluir
+DtPedido dtPedido.
+
+### Motivo
+
+- el detalle ya viaja anidado dentro de DtPedido
+- repetir el pedido completo dentro de cada detalle reintroduce circularidad
+- el contrato queda m·s chico, m·s claro y sin back-reference innecesaria
