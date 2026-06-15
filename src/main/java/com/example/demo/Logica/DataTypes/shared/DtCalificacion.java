@@ -1,4 +1,5 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.shared;
+
 import com.example.demo.Logica.Enums.TipoCalificacion;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,3 +21,4 @@ public class DtCalificacion {
     private DtCliente dtCliente;
     private DtLocal dtLocal;
 }
+

@@ -1,4 +1,5 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.shared;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,3 +15,4 @@ public class DtDireccion {
     private String ciudad;
     private String codigoPostal;
 }
+

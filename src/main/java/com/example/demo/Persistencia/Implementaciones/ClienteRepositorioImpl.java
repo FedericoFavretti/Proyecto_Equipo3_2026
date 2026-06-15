@@ -1,7 +1,7 @@
 package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Logica.Clases.Cliente;
-import com.example.demo.Logica.DataTypes.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -101,3 +101,4 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
         return cliente;
     }
 }
+

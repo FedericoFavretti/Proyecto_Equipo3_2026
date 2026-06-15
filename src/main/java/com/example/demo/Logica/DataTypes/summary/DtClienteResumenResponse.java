@@ -1,4 +1,4 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.summary;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,3 +14,4 @@ public class DtClienteResumenResponse {
     private String nombre;
     private String apellido;
 }
+

@@ -1,15 +1,20 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Pedido;
-import com.example.demo.Logica.DataTypes.DtConfirmarPedidoRequest;
-import com.example.demo.Logica.DataTypes.DtPedido;
-import com.example.demo.Logica.DataTypes.DtPedidoResponse;
+import com.example.demo.Logica.DataTypes.request.DtConfirmarPedidoRequest;
+import com.example.demo.Logica.DataTypes.shared.DtPedido;
+import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
+import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
+import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
+import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Interfaces.iPedidoController;
 import com.example.demo.Logica.Mappers.PedidoResponseMapper;
 import com.example.demo.Logica.Service.PedidoService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -50,8 +55,22 @@ public class PedidoController implements iPedidoController {
     }
 
     @GetMapping("/locales/{idLocal}")
-    public ResponseEntity<List<DtPedido>> listarPedidos(@PathVariable Long idLocal) {
-        List<DtPedido> pedidos = pedidoService.listarPedidos(idLocal);
+    public ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(
+            @PathVariable Long idLocal,
+            @RequestParam(required = false) EstadoPedido estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @RequestParam(required = false, defaultValue = "fecha") String ordenarPor,
+            @RequestParam(required = false, defaultValue = "desc") String direccion) {
+        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
+                .estado(estado)
+                .fechaDesde(fechaDesde)
+                .fechaHasta(fechaHasta)
+                .ordenarPor(ordenarPor)
+                .direccion(direccion)
+                .build();
+        List<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(idLocal, filtro);
         return ResponseEntity.ok(pedidos);
     }
 }
+

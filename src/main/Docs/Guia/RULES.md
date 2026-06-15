@@ -379,6 +379,14 @@ Dentro de cada módulo se pueden usar subcapas como api, aplicacion, dominio, in
 - No hardcodear secretos, claves JWT, credenciales de correo ni URLs sensibles.
 - Usar logs parametrizados; nunca loguear contraseñas, tokens ni datos sensibles completos.
 
+### Convenciones para DTOs / DataTypes
+
+- Request: entra desde controller.
+- Response: sale hacia API.
+- Summary: representa vistas resumidas o listados.
+- Shared: piezas reutilizables, pequeñas y neutras.
+- No usar DTOs genéricos si representan más de un caso de uso.
+
 
 ## 10. Seguridad y autenticación
 

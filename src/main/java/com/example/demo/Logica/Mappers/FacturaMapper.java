@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.Factura;
-import com.example.demo.Logica.DataTypes.DtFactura;
+import com.example.demo.Logica.DataTypes.shared.DtFactura;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -33,3 +33,4 @@ public class FacturaMapper {
                 .build();
     }
 }
+

@@ -2,7 +2,7 @@ package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.DetallePedido;
 import com.example.demo.Logica.Clases.Pedido;
-import com.example.demo.Logica.DataTypes.DtPedido;
+import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -65,3 +65,4 @@ public class PedidoMapper {
                 .build();
     }
 }
+

@@ -1,5 +1,8 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.response;
 
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.DataTypes.summary.DtClienteResumenResponse;
+import com.example.demo.Logica.DataTypes.summary.DtLocalResumenResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +17,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtPedido {
+public class DtPedidoResponse {
     private Long id;
     private Date fecha;
     private Duration tiempoEstEntrega;
@@ -23,9 +26,8 @@ public class DtPedido {
     private String medioDePago;
     private Boolean pagoSimulado;
     private EstadoPedido estado;
-    private List<DtDetallePedido> detalles;
-    private DtLocal dtLocal;
-    private DtCliente dtCliente;
-    private String mpPreferenciaId;
-    private String mpInitPoint;
+    private DtLocalResumenResponse local;
+    private DtClienteResumenResponse cliente;
+    private List<DtDetallePedidoResponse> detalles;
 }
+

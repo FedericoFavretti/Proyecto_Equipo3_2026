@@ -1,5 +1,5 @@
 package com.example.demo.Logica.Clases;
-import com.example.demo.Logica.DataTypes.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,3 +29,4 @@ public class Pedido {
     private String mpPreferenciaId;
     private String mpInitPoint;
 }
+

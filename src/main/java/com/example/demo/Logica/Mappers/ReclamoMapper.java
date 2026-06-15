@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.Reclamo;
-import com.example.demo.Logica.DataTypes.DtReclamo;
+import com.example.demo.Logica.DataTypes.shared.DtReclamo;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -37,3 +37,4 @@ public class ReclamoMapper {
                 .build();
     }
 }
+

@@ -22,14 +22,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtDireccion;
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
+import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import org.mockito.Mockito;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,9 +52,10 @@ class LocalServiceTest {
     @Mock
     private PedidoRepositorio pedidoRepositorio;
 
-    private LocalService localService;
-
+    @Mock
     private PasswordEncoder passwordEncoder;
+
+    private LocalService localService;
 
     private LocalMapper localMapper;
 
@@ -60,6 +63,8 @@ class LocalServiceTest {
 
     @BeforeEach
     void setUp() {
+        localMapper = new LocalMapper();
+        platoMapper = new PlatoMapper(localMapper);
         localService = new LocalService(
                 localRepositorio,
                 platoRepositorio,
@@ -245,14 +250,19 @@ class LocalServiceTest {
     void solicitarRegistroComoLocalHabilitadoRegistraSolicitudPendienteYNotificaAdministrador() {
         DtLocal solicitud = solicitudValida();
         when(localRepositorio.buscarPorNombre("La Cocina")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("123456")).thenReturn("encoded-123456");
 
         localService.solicitarRegistroComoLocalHabilitado(solicitud);
 
         ArgumentCaptor<Local> localCaptor = ArgumentCaptor.forClass(Local.class);
+        verify(usuarioRepositorio).guardar(localCaptor.capture());
         verify(localRepositorio).guardar(localCaptor.capture());
 
-        Local localGuardado = localCaptor.getValue();
+        Local localGuardado = localCaptor.getAllValues().getLast();
         assertThat(localGuardado.getEmail()).isEqualTo("local@foodly.com");
+        assertThat(localGuardado.getPasswd()).isEqualTo("encoded-123456");
+        assertThat(localGuardado.getEstado()).isEqualTo(EstadoCuenta.Pendiente);
+        assertThat(localGuardado.getTipo()).isEqualTo("local");
         assertThat(localGuardado.getNombre()).isEqualTo("La Cocina");
         assertThat(localGuardado.getDireccion().getCalle()).isEqualTo("Av. Italia");
         assertThat(localGuardado.getEstadoLocal()).isEqualTo(EstadoLocal.Pendiente);
@@ -260,6 +270,30 @@ class LocalServiceTest {
         assertThat(localGuardado.getCalificacionGlobal()).isZero();
         assertThat(localGuardado.getImagenes()).containsExactly("fachada.jpg", "producto.png");
         verify(registroLocalNotificador).notificarAdministradorSolicitudPendiente(localGuardado);
+    }
+
+    @Test
+    void solicitarRegistroComoLocalHabilitadoIgnoraEstadosInternosEnviadosPorCliente() {
+        DtLocal solicitud = solicitudValida();
+        solicitud.setTipo("admin");
+        solicitud.setEstadoCuenta(EstadoCuenta.Activo);
+        solicitud.setEstadoLocal(EstadoLocal.Habilitado);
+        solicitud.setCalificacionGlobal(99.0);
+        solicitud.setEstaAbierto(true);
+        when(localRepositorio.buscarPorNombre("La Cocina")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("123456")).thenReturn("encoded-123456");
+
+        localService.solicitarRegistroComoLocalHabilitado(solicitud);
+
+        ArgumentCaptor<Local> localCaptor = ArgumentCaptor.forClass(Local.class);
+        verify(localRepositorio).guardar(localCaptor.capture());
+        Local localGuardado = localCaptor.getValue();
+
+        assertThat(localGuardado.getEstado()).isEqualTo(EstadoCuenta.Pendiente);
+        assertThat(localGuardado.getTipo()).isEqualTo("local");
+        assertThat(localGuardado.getEstadoLocal()).isEqualTo(EstadoLocal.Pendiente);
+        assertThat(localGuardado.getCalificacionGlobal()).isZero();
+        assertThat(localGuardado.getEstaAbierto()).isFalse();
     }
 
     @Test
@@ -271,9 +305,9 @@ class LocalServiceTest {
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Los siguientes campos son requeridos: email, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes. Por favor, completelos antes de enviar.");
+                .hasMessage("Los siguientes campos son requeridos: email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes. Por favor, completelos antes de enviar.");
 
-        verifyNoInteractions(localRepositorio, registroLocalNotificador);
+        verifyNoInteractions(localRepositorio, usuarioRepositorio, registroLocalNotificador);
     }
 
     @Test
@@ -285,7 +319,7 @@ class LocalServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El correo electronico ingresado no tiene un formato valido.");
 
-        verifyNoInteractions(localRepositorio, registroLocalNotificador);
+        verifyNoInteractions(localRepositorio, usuarioRepositorio, registroLocalNotificador);
     }
 
     @Test
@@ -297,7 +331,7 @@ class LocalServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Solo se aceptan imagenes en formato JPG o PNG de hasta 10 MB cada una.");
 
-        verifyNoInteractions(localRepositorio, registroLocalNotificador);
+        verifyNoInteractions(localRepositorio, usuarioRepositorio, registroLocalNotificador);
     }
 
     @Test
@@ -310,7 +344,7 @@ class LocalServiceTest {
                 .hasMessage("El nombre del local ya se encuentra registrado.");
 
         verify(localRepositorio).buscarPorNombre("La Cocina");
-        verifyNoInteractions(registroLocalNotificador);
+        verifyNoInteractions(usuarioRepositorio, registroLocalNotificador);
     }
 
     @Test
@@ -386,6 +420,7 @@ class LocalServiceTest {
                 .imagenes(List.of("fachada.jpg", "producto.png"))
                 .build();
         solicitud.setEmail("local@foodly.com");
+        solicitud.setPasswd("123456");
         return solicitud;
     }
 
@@ -435,3 +470,4 @@ class LocalServiceTest {
                 .build();
     }
 }
+

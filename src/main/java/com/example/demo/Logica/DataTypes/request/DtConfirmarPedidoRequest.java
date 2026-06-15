@@ -1,4 +1,4 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,3 +10,4 @@ import lombok.NoArgsConstructor;
 public class DtConfirmarPedidoRequest {
     private Long tiempoEstimadoEntregaMinutos;
 }
+

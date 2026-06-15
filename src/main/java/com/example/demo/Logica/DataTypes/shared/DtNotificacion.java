@@ -1,4 +1,5 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.shared;
+
 import com.example.demo.Logica.Enums.CanalNotificacion;
 import com.example.demo.Logica.Enums.TipoNotificacion;
 import lombok.AllArgsConstructor;
@@ -22,3 +23,4 @@ public class DtNotificacion {
     private DtPedido dtPedido;
     private DtReclamo dtReclamo;
 }
+

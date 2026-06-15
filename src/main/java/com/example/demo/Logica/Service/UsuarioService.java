@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Service;
 
-import com.example.demo.Logica.DataTypes.DtLoginRequest;
-import com.example.demo.Logica.DataTypes.DtLoginResponse;
+import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,3 +36,4 @@ public class UsuarioService {
         usuarioRepositorio.activarCuenta(usuarioOpt.get().getId());
     }
 }
+

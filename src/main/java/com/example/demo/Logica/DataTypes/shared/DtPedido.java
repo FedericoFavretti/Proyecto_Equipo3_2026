@@ -1,4 +1,4 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.shared;
 
 import com.example.demo.Logica.Enums.EstadoPedido;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtPedidoResponse {
+public class DtPedido {
     private Long id;
     private Date fecha;
     private Duration tiempoEstEntrega;
@@ -23,7 +23,10 @@ public class DtPedidoResponse {
     private String medioDePago;
     private Boolean pagoSimulado;
     private EstadoPedido estado;
-    private DtLocalResumenResponse local;
-    private DtClienteResumenResponse cliente;
-    private List<DtDetallePedidoResponse> detalles;
+    private List<DtDetallePedido> detalles;
+    private DtLocal dtLocal;
+    private DtCliente dtCliente;
+    private String mpPreferenciaId;
+    private String mpInitPoint;
 }
+

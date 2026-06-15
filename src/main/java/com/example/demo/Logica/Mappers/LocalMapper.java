@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.Local;
-import com.example.demo.Logica.DataTypes.DtLocal;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,14 +11,11 @@ public class LocalMapper {
         return Local.builder()
                 .id(dtLocal.getId())
                 .email(dtLocal.getEmail())
-                .estado(dtLocal.getEstadoCuenta())
-                .tipo(dtLocal.getTipo())
+                .passwd(dtLocal.getPasswd())
+                .foto(dtLocal.getFoto())
                 .nombre(dtLocal.getNombre())
                 .direccion(dtLocal.getDireccion())
                 .descripcion(dtLocal.getDescripcion())
-                .estadoLocal(dtLocal.getEstadoLocal())
-                .calificacionGlobal(dtLocal.getCalificacionGlobal())
-                .estaAbierto(dtLocal.getEstaAbierto())
                 .imagenes(dtLocal.getImagenes())
                 .build();
     }
@@ -39,3 +36,4 @@ public class LocalMapper {
                 .build();
     }
 }
+

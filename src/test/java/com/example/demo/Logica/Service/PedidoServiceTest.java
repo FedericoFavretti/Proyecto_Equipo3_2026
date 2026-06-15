@@ -27,18 +27,24 @@ import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtCliente;
-import com.example.demo.Logica.DataTypes.DtDetallePedido;
-import com.example.demo.Logica.DataTypes.DtDireccion;
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.DataTypes.DtPedido;
-import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtCliente;
+import com.example.demo.Logica.DataTypes.shared.DtDetallePedido;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.shared.DtPedido;
+import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
+import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Mappers.PedidoListadoMapper;
+import com.example.demo.Persistencia.Implementaciones.PedidoListadoView;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+
+import java.time.LocalDate;
 
 @ExtendWith(MockitoExtension.class)
 class PedidoServiceTest {
@@ -67,6 +73,9 @@ class PedidoServiceTest {
     @Mock
     private NotificacionPedidoService notificacionPedidoService;
 
+    @Mock
+    private PedidoListadoMapper pedidoListadoMapper;
+
     private PedidoService pedidoService;
 
     @BeforeEach
@@ -80,7 +89,7 @@ class PedidoServiceTest {
                 facturaService,
                 pagoSimuladoService,
                 notificacionPedidoService,
-                null
+                pedidoListadoMapper
         );
     }
 
@@ -225,6 +234,67 @@ class PedidoServiceTest {
         verify(detallePedidoRepositorio, never()).guardar(any(DetallePedido.class));
     }
 
+    @Test
+    void listarPedidosRetornaResumenesConFiltro() {
+        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
+                .estado(EstadoPedido.Pendiente)
+                .fechaDesde(LocalDate.of(2026, 6, 1))
+                .fechaHasta(LocalDate.of(2026, 6, 30))
+                .ordenarPor("fecha")
+                .direccion("desc")
+                .build();
+
+        PedidoListadoView view = PedidoListadoView.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .total(30.0)
+                .cantidadItems(2)
+                .build();
+
+        DtPedidoListadoResponse response = DtPedidoListadoResponse.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .total(30.0)
+                .cantidadItems(2)
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(localAbierto()));
+        when(pedidoRepositorio.listarRecibidosPorLocal(10L, filtro)).thenReturn(List.of(view));
+        when(pedidoListadoMapper.toResponse(view)).thenReturn(response);
+
+        List<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(10L, filtro);
+
+        assertThat(pedidos).containsExactly(response);
+    }
+
+    @Test
+    void listarPedidosRechazaCampoDeOrdenInvalido() {
+        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
+                .ordenarPor("cliente")
+                .direccion("desc")
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(localAbierto()));
+
+        assertThatThrownBy(() -> pedidoService.listarPedidos(10L, filtro))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El campo de orden no es válido.");
+    }
+
+    @Test
+    void listarPedidosRechazaRangoDeFechasInvalido() {
+        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
+                .fechaDesde(LocalDate.of(2026, 6, 30))
+                .fechaHasta(LocalDate.of(2026, 6, 1))
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(localAbierto()));
+
+        assertThatThrownBy(() -> pedidoService.listarPedidos(10L, filtro))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("La fecha desde no puede ser posterior a la fecha hasta.");
+    }
+
     private DtPedido pedidoSinDetalles() {
         DtLocal local = new DtLocal();
         local.setId(10L);
@@ -319,3 +389,4 @@ class PedidoServiceTest {
                 .build();
     }
 }
+

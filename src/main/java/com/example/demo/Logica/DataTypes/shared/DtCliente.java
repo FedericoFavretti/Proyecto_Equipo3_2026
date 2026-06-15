@@ -1,9 +1,10 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.shared;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.NoArgsConstructor;
 
 @SuperBuilder
 @Data
@@ -17,3 +18,4 @@ public class DtCliente extends DtUsuario{
     private Double calificacionGlobal;
     private Boolean activo;
 }
+

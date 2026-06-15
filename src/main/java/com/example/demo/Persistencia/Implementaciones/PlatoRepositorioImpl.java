@@ -2,7 +2,7 @@ package com.example.demo.Persistencia.Implementaciones;
 
 
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtFiltro;
+import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -72,6 +72,18 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         if (filtro.getDtLocal() != null) {
             sql.append(" AND p.idLocal = ?");
             params.add(filtro.getDtLocal().getId());
+        }
+
+        if (Boolean.TRUE.equals(filtro.getPromocionActiva())) {
+            sql.append("""
+                     AND EXISTS (
+                        SELECT 1
+                        FROM promocion pr
+                        WHERE pr.idPlato = p.id
+                          AND pr.fechaInicio <= CURRENT_DATE
+                          AND pr.fechaFin >= CURRENT_DATE
+                    )
+                    """);
         }
 
         List<String> orden = new ArrayList<>();
@@ -158,3 +170,4 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         );
     }
 }
+

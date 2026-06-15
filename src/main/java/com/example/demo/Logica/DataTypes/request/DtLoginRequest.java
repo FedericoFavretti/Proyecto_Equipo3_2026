@@ -1,4 +1,4 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtLocalResumenResponse {
-    private Long id;
-    private String nombre;
+public class DtLoginRequest {
+    private String email;
+    private String passwd;
 }
+

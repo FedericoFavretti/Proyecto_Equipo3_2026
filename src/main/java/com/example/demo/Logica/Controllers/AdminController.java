@@ -1,18 +1,16 @@
 package com.example.demo.Logica.Controllers;
 
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.Enums.EstadoLocal;
+import com.example.demo.Logica.DataTypes.request.DtResolverSolicitudLocalRequest;
+import com.example.demo.Logica.DataTypes.response.DtSolicitudLocalPendienteResponse;
 import com.example.demo.Logica.Interfaces.iAdminController;
 import com.example.demo.Logica.Service.AdminService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/admins")
+@RequestMapping("/api/v1/admins/solicitudes-locales")
 public class AdminController implements iAdminController {
 
     private final AdminService adminService;
@@ -21,9 +19,20 @@ public class AdminController implements iAdminController {
         this.adminService = adminService;
     }
 
-    @PostMapping("")
-    public ResponseEntity<Void> resolverSolicitud(@RequestBody DtLocal dtLocal) {
-        adminService.resolverSolicitud(dtLocal);
-        return ResponseEntity.ok().build();
+    @GetMapping("/pendientes")
+    public ResponseEntity<List<DtSolicitudLocalPendienteResponse>> listarSolicitudesPendientes() {
+        return ResponseEntity.ok(adminService.listarSolicitudesPendientes());
+    }
+
+    @PutMapping("/{idLocal}")
+    public ResponseEntity<Void> resolverSolicitud(
+            @PathVariable Long idLocal,
+            @RequestBody DtResolverSolicitudLocalRequest request) {
+        if (request == null || request.getEstadoObjetivo() == null) {
+            throw new IllegalArgumentException("Debe indicar el estado objetivo de la solicitud.");
+        }
+        adminService.resolverSolicitud(idLocal, request);
+        return ResponseEntity.noContent().build();
     }
 }
+

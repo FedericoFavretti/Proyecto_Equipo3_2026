@@ -1,5 +1,5 @@
 package com.example.demo.Logica.Clases;
-import com.example.demo.Logica.DataTypes.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,4 +18,5 @@ public class Cliente extends Usuario{
     private Double calificacionGlobal;
     private Boolean activo;
 }
+
 

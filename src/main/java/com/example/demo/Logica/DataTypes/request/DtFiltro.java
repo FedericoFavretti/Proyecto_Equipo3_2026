@@ -1,4 +1,6 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.request;
+
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

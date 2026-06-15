@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.Notificacion;
-import com.example.demo.Logica.DataTypes.DtNotificacion;
+import com.example.demo.Logica.DataTypes.shared.DtNotificacion;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -41,3 +41,4 @@ public class NotificacionMapper {
                 .build();
     }
 }
+

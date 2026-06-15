@@ -1,13 +1,18 @@
 package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.Clases.Pedido;
-import com.example.demo.Logica.DataTypes.DtConfirmarPedidoRequest;
-import com.example.demo.Logica.DataTypes.DtPedido;
-import com.example.demo.Logica.DataTypes.DtPedidoResponse;
+import com.example.demo.Logica.DataTypes.request.DtConfirmarPedidoRequest;
+import com.example.demo.Logica.DataTypes.shared.DtPedido;
+import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
+import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
+import com.example.demo.Logica.Enums.EstadoPedido;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface iPedidoController {
@@ -18,5 +23,13 @@ public interface iPedidoController {
     ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido);
     ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedido dtPedido);
     ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido);
-    ResponseEntity<List<DtPedido>> listarPedidos(@PathVariable Long idLocal);
+    ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(
+            @PathVariable Long idLocal,
+            @RequestParam(required = false) EstadoPedido estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @RequestParam(required = false) String ordenarPor,
+            @RequestParam(required = false) String direccion
+    );
 }
+

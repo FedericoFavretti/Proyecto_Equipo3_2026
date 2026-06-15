@@ -6,10 +6,12 @@ import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtDetallePedido;
-import com.example.demo.Logica.DataTypes.DtPedido;
+import com.example.demo.Logica.DataTypes.shared.DtDetallePedido;
+import com.example.demo.Logica.DataTypes.shared.DtPedido;
+import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
+import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
-import com.example.demo.Logica.Mappers.PedidoMapper;
+import com.example.demo.Logica.Mappers.PedidoListadoMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -27,7 +29,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class PedidoService {
@@ -54,7 +55,7 @@ public class PedidoService {
     private final FacturaService facturaService;
     private final PagoSimuladoService pagoSimuladoService;
     private final NotificacionPedidoService notificacionPedidoService;
-    private final PedidoMapper pedidoMapper;
+    private final PedidoListadoMapper pedidoListadoMapper;
 
     @Value("${mercadopago.back-url-success}")
     private String backUrlSuccess;
@@ -73,7 +74,8 @@ public class PedidoService {
             PlatoRepositorio platoRepositorio,
             FacturaService facturaService,
             PagoSimuladoService pagoSimuladoService,
-            NotificacionPedidoService notificacionPedidoService, PedidoMapper  pedidoMapper) {
+            NotificacionPedidoService notificacionPedidoService,
+            PedidoListadoMapper pedidoListadoMapper) {
         this.pedidoRepositorio = pedidoRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
@@ -82,7 +84,7 @@ public class PedidoService {
         this.facturaService = facturaService;
         this.pagoSimuladoService = pagoSimuladoService;
         this.notificacionPedidoService = notificacionPedidoService;
-        this.pedidoMapper = pedidoMapper;
+        this.pedidoListadoMapper = pedidoListadoMapper;
     }
 
     @Transactional
@@ -152,15 +154,15 @@ public class PedidoService {
 
     }
 
-    @Transactional
-    public List<DtPedido> listarPedidos(Long idLocal) {
+    @Transactional(readOnly = true)
+    public List<DtPedidoListadoResponse> listarPedidos(Long idLocal, DtPedidoListadoFiltro filtro) {
         localRepositorio.buscarPorId(idLocal)
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
-        List<DtPedido> dtPedidos = new ArrayList<>();
+        validarFiltroListado(filtro);
 
-        return pedidoRepositorio.listarPorLocal(idLocal).stream()
-                .map(pedidoMapper::mapearDtPedidoDeClase)
-                .collect(Collectors.toList());
+        return pedidoRepositorio.listarRecibidosPorLocal(idLocal, filtro).stream()
+                .map(pedidoListadoMapper::toResponse)
+                .toList();
     }
 
     public void procesarPagoConfirmado(String paymentId) {
@@ -248,4 +250,31 @@ public class PedidoService {
             throw new IllegalArgumentException(MENSAJE_CANTIDAD_INVALIDA);
         }
     }
+
+    private void validarFiltroListado(DtPedidoListadoFiltro filtro) {
+        if (filtro == null) {
+            return;
+        }
+
+        if (filtro.getFechaDesde() != null
+                && filtro.getFechaHasta() != null
+                && filtro.getFechaDesde().isAfter(filtro.getFechaHasta())) {
+            throw new IllegalArgumentException("La fecha desde no puede ser posterior a la fecha hasta.");
+        }
+
+        if (filtro.getOrdenarPor() != null) {
+            List<String> camposValidos = List.of("fecha", "total", "estado");
+            if (!camposValidos.contains(filtro.getOrdenarPor().toLowerCase())) {
+                throw new IllegalArgumentException("El campo de orden no es válido.");
+            }
+        }
+
+        if (filtro.getDireccion() != null) {
+            List<String> direccionesValidas = List.of("asc", "desc");
+            if (!direccionesValidas.contains(filtro.getDireccion().toLowerCase())) {
+                throw new IllegalArgumentException("La dirección de orden no es válida.");
+            }
+        }
+    }
 }
+

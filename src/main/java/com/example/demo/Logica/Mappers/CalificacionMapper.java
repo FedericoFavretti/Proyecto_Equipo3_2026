@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.Calificacion;
-import com.example.demo.Logica.DataTypes.DtCalificacion;
+import com.example.demo.Logica.DataTypes.shared.DtCalificacion;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -39,3 +39,4 @@ public class CalificacionMapper {
                 .build();
     }
 }
+

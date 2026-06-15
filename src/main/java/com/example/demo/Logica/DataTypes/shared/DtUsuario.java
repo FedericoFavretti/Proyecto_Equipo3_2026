@@ -1,9 +1,10 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.shared;
+
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.NoArgsConstructor;
 
 @SuperBuilder
 @Data
@@ -17,3 +18,4 @@ public  abstract class DtUsuario {
     private EstadoCuenta estadoCuenta;
     private String tipo;
 }
+

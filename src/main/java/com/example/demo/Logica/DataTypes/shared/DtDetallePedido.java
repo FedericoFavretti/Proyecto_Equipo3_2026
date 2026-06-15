@@ -1,4 +1,4 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.shared;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtDetallePedidoResponse {
+public class DtDetallePedido {
     private Long id;
     private Integer cantidad;
     private Double precioUnitario;
     private Double subtotal;
-    private DtPlatoResumenResponse plato;
+    private DtPlato dtPlato;
 }
+

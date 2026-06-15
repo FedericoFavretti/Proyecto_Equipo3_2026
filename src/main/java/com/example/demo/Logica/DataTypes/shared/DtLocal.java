@@ -1,9 +1,10 @@
-package com.example.demo.Logica.DataTypes;
+package com.example.demo.Logica.DataTypes.shared;
+
 import com.example.demo.Logica.Enums.EstadoLocal;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -20,3 +21,4 @@ public class DtLocal extends DtUsuario {
     private Boolean estaAbierto;
     private List<String> imagenes;
 }
+
