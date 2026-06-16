@@ -7,8 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Duration;
-import java.util.Date;
-import java.util.List;
+import java.time.LocalDateTime;
+
 
 @Builder
 @Data
@@ -16,14 +16,13 @@ import java.util.List;
 @AllArgsConstructor
 public class DtPedido {
     private Long id;
-    private Date fecha;
+    private LocalDateTime fecha;
     private Duration tiempoEstEntrega;
     private Double total;
     private DtDireccion domicilioEntrega;
     private String medioDePago;
     private Boolean pagoSimulado;
     private EstadoPedido estado;
-    private List<DtDetallePedido> detalles;
     private DtLocal dtLocal;
     private DtCliente dtCliente;
     private String mpPreferenciaId;

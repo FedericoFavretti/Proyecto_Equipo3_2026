@@ -11,4 +11,5 @@ public interface DetallePedidoRepositorio {
     void guardar(DetallePedido detallePedido);
     void actualizar(DetallePedido detallePedido);
     void eliminar(Long id);
+    List<DetallePedido> buscarPorPedido(Long idPedido);
 }

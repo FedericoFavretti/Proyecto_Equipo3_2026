@@ -36,9 +36,6 @@ public class PedidoResponseMapper {
                         .apellido(pedido.getCliente().getApellido())
                         .build()
                         : null)
-                .detalles(pedido.getDetalles() != null
-                        ? pedido.getDetalles().stream().map(this::toDetalleResponse).toList()
-                        : null)
                 .build();
     }
 

@@ -1,20 +1,17 @@
 package com.example.demo.Logica.DataTypes;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtReclamo {
-    private Long id;
-    private String motivo;
-    private String tipoCompensacion;
-    private Double montoReintegro;
-    private LocalDateTime fecha;
+public class DtPedidoConDetalles {
     private DtPedido dtPedido;
+    private List<DtDetallePedido> detalles;
 }

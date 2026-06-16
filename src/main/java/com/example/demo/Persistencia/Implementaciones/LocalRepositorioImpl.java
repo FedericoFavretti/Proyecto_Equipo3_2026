@@ -43,7 +43,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     @Override
     public Optional<Local> buscarPorId(Long id) {
         return jdbcTemplate.query(
-                "SELECT * FROM Local WHERE id = ?",
+                "SELECT l.*, u.* FROM local l JOIN usuario u ON l.id = u.id WHERE l.id = ?",
                 (rs, row) -> mapearLocal(rs), id
         ).stream().findFirst();
     }

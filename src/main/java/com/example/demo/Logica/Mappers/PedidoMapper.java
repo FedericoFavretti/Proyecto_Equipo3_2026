@@ -9,12 +9,10 @@ public class PedidoMapper {
 
     private final LocalMapper localMapper;
     private final ClienteMapper clienteMapper;
-    private final DetallePedidoMapper detallePedidoMapper;
 
-    public PedidoMapper(LocalMapper localMapper, ClienteMapper clienteMapper,  DetallePedidoMapper detallePedidoMapper) {
+    public PedidoMapper(LocalMapper localMapper, ClienteMapper clienteMapper) {
         this.localMapper = localMapper;
         this.clienteMapper = clienteMapper;
-        this.detallePedidoMapper = detallePedidoMapper;
     }
 
     public Pedido mapearPedidoDeDt(DtPedido dtPedido) {
@@ -26,7 +24,7 @@ public class PedidoMapper {
                 .medioDePago(dtPedido.getMedioDePago())
                 .pagoSimulado(dtPedido.getPagoSimulado())
                 .estado(dtPedido.getEstado())
-                .detalles(detallePedidoMapper.mapearDetallesPedidoDeDt(dtPedido.getDetalles()))
+                .local(localMapper.mapearLocalDeDt(dtPedido.getDtLocal()))
                 .cliente(clienteMapper.mapearClienteDeDt(dtPedido.getDtCliente()))
                 .mpPreferenciaId(dtPedido.getMpPreferenciaId())
                 .mpInitPoint(dtPedido.getMpInitPoint())
@@ -42,7 +40,7 @@ public class PedidoMapper {
                 .medioDePago(pedido.getMedioDePago())
                 .pagoSimulado(pedido.getPagoSimulado())
                 .estado(pedido.getEstado())
-                .detalles(detallePedidoMapper.mapearDetallesPedidoDeClase(pedido.getDetalles()))
+                .dtLocal(localMapper.mapearDtLocalDeClase(pedido.getLocal()))
                 .dtCliente(clienteMapper.mapearDtClienteDeClase(pedido.getCliente()))
                 .mpPreferenciaId(pedido.getMpPreferenciaId())
                 .mpInitPoint(pedido.getMpInitPoint())

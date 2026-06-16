@@ -89,7 +89,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     """,
                     new String[]{"id"}
             );
-            ps.setDate(1, new java.sql.Date(pedido.getFecha().getTime()));
+            ps.setDate(1, java.sql.Date.valueOf(pedido.getFecha().toLocalDate()));
             if (pedido.getTiempoEstEntrega() != null) {
                 ps.setTime(2, Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds())));
             } else {
@@ -117,7 +117,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?,ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?,estado = ?, idlocal = ?, idcliente = ? WHERE id = ?"
 
                 ,
-                new java.sql.Date(pedido.getFecha().getTime()),
+                java.sql.Date.valueOf(pedido.getFecha().toLocalDate()),
                 pedido.getTiempoEstEntrega() != null
                         ? Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds()))
                         : null,
@@ -161,7 +161,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
 
         return Pedido.builder()
                 .id(rs.getLong("id"))
-                .fecha(rs.getDate("fecha"))
+                .fecha(rs.getTimestamp("fecha").toLocalDateTime())
                 .tiempoEstEntrega(tiempoEstEntrega != null
                         ? Duration.ofSeconds(tiempoEstEntrega.toLocalTime().toSecondOfDay())
                         : null)

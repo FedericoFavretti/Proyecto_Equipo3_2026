@@ -67,6 +67,15 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
         jdbcTemplate.update("DELETE FROM DetallePedido WHERE id = ?", id);
     }
 
+    @Override
+    public List<DetallePedido> buscarPorPedido(Long idPedido){
+        return jdbcTemplate.query(
+                "SELECT * FROM DetallePedido WHERE idpedido = ?",
+                (rs, row) -> mapearDetallePedido(rs),
+                idPedido
+        );
+    }
+
     private DetallePedido mapearDetallePedido(ResultSet rs) throws SQLException {
         return new DetallePedido(
                 rs.getLong("id"),

@@ -6,11 +6,9 @@ import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtDetallePedido;
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.DataTypes.DtPedido;
-import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.DataTypes.*;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Mappers.DetallePedidoMapper;
 import com.example.demo.Logica.Mappers.PedidoMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
@@ -26,8 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,6 +54,7 @@ public class PedidoService {
     private final PagoSimuladoService pagoSimuladoService;
     private final NotificacionPedidoService notificacionPedidoService;
     private final PedidoMapper pedidoMapper;
+    private final DetallePedidoMapper detallePedidoMapper;
 
     @Value("${mercadopago.back-url-success}")
     private String backUrlSuccess;
@@ -75,7 +73,7 @@ public class PedidoService {
             PlatoRepositorio platoRepositorio,
             FacturaService facturaService,
             PagoSimuladoService pagoSimuladoService,
-            NotificacionPedidoService notificacionPedidoService, PedidoMapper  pedidoMapper) {
+            NotificacionPedidoService notificacionPedidoService, PedidoMapper  pedidoMapper, DetallePedidoMapper detallePedidoMapper) {
         this.pedidoRepositorio = pedidoRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
@@ -85,6 +83,7 @@ public class PedidoService {
         this.pagoSimuladoService = pagoSimuladoService;
         this.notificacionPedidoService = notificacionPedidoService;
         this.pedidoMapper = pedidoMapper;
+        this.detallePedidoMapper = detallePedidoMapper;
     }
 
     @Transactional
@@ -122,8 +121,11 @@ public class PedidoService {
     }
 
     @Transactional
-    public Pedido realizarPedido(DtPedido dtPedido) {
-        validarPedidoConDetalles(dtPedido);
+    public Pedido realizarPedido(DtPedidoConDetalles dtPedidoConDetalles) {
+        DtPedido dtPedido = dtPedidoConDetalles.getDtPedido();
+        dtPedido.setFecha(LocalDateTime.now());
+        dtPedido.setEstado(EstadoPedido.Pendiente);
+        validarPedidoConDetalles(dtPedidoConDetalles);
 
         Local local = localRepositorio.buscarPorId(dtPedido.getDtLocal().getId())
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
@@ -135,12 +137,14 @@ public class PedidoService {
         Cliente cliente = clienteRepositorio.buscarPorId(dtPedido.getDtCliente().getId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
-        List<DetallePedido> detalles = construirDetallesPedido(dtPedido.getDetalles(), local);
+
+        List<DetallePedido> detalles = detallePedidoMapper.mapearDetallesPedidoDeDt(dtPedidoConDetalles.getDetalles());;
         double total = detalles.stream()
                 .mapToDouble(DetallePedido::getSubtotal)
                 .sum();
 
         Pedido pedido = pedidoMapper.mapearPedidoDeDt(dtPedido);
+        pedido.setTotal(total);
 
         pedidoRepositorio.guardar(pedido);
 
@@ -161,7 +165,6 @@ public class PedidoService {
     public List<DtPedido> listarPedidos(Long idLocal) {
         localRepositorio.buscarPorId(idLocal)
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
-        List<DtPedido> dtPedidos = new ArrayList<>();
 
         return pedidoRepositorio.listarPorLocal(idLocal).stream()
                 .map(pedidoMapper::mapearDtPedidoDeClase)
@@ -181,45 +184,10 @@ public class PedidoService {
         }
     }
 
-    private void validarPedidoConDetalles(DtPedido dtPedido) {
-        if (dtPedido == null || dtPedido.getDetalles() == null || dtPedido.getDetalles().isEmpty()) {
+    private void validarPedidoConDetalles(DtPedidoConDetalles dtPedidoConDetalles) {
+        if (dtPedidoConDetalles == null || dtPedidoConDetalles.getDetalles() == null || dtPedidoConDetalles.getDetalles().isEmpty()) {
             throw new IllegalArgumentException(MENSAJE_SIN_PLATOS);
         }
-    }
-
-    private List<DetallePedido> construirDetallesPedido(List<DtDetallePedido> detallesSolicitados, Local local) {
-        List<DetallePedido> detalles = new ArrayList<>();
-
-        for (DtDetallePedido detalleSolicitado : detallesSolicitados) {
-            validarCantidad(detalleSolicitado);
-
-            Long idPlato = detalleSolicitado.getDtPlato() != null
-                    ? detalleSolicitado.getDtPlato().getId()
-                    : null;
-
-            Plato plato = platoRepositorio.buscarPorId(idPlato)
-                    .orElseThrow(() -> new RuntimeException("Plato no encontrado"));
-
-            if (plato.getLocal() == null || !plato.getLocal().getId().equals(local.getId())) {
-                throw new IllegalArgumentException(MENSAJE_PLATO_OTRO_LOCAL);
-            }
-
-            if (!Boolean.TRUE.equals(plato.getDisponible())) {
-                throw new IllegalArgumentException(MENSAJE_PLATO_NO_DISPONIBLE);
-            }
-
-            double precioUnitario = plato.getPrecio();
-            double subtotal = precioUnitario * detalleSolicitado.getCantidad();
-
-            detalles.add(DetallePedido.builder()
-                    .cantidad(detalleSolicitado.getCantidad())
-                    .precioUnitario(precioUnitario)
-                    .subtotal(subtotal)
-                    .plato(plato)
-                    .build());
-        }
-
-        return detalles;
     }
 
     private void validarCantidad(DtDetallePedido detalleSolicitado) {

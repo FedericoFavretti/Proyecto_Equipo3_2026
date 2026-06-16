@@ -127,6 +127,10 @@ public class LocalService {
 
     @Transactional
     public void solicitarRegistroComoLocalHabilitado(DtLocal dtLocal) {
+        dtLocal.setPasswd(passwordEncoder.encode(dtLocal.getPasswd()));
+        dtLocal.setEstadoLocal(EstadoLocal.Pendiente);
+        dtLocal.setEstaAbierto(false);
+        dtLocal.setCalificacionGlobal(0.0);
         validarSolicitudRegistroLocal(dtLocal);
 
         if (localRepositorio.buscarPorNombre(dtLocal.getNombre()).isPresent()) {

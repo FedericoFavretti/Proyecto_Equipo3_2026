@@ -1,10 +1,10 @@
 package com.example.demo.Logica.Controllers;
 
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.Enums.EstadoLocal;
+import com.example.demo.Logica.DataTypes.DtResloverHabilitacionLocal;
+
 import com.example.demo.Logica.Interfaces.iAdminController;
 import com.example.demo.Logica.Service.AdminService;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,9 +21,9 @@ public class AdminController implements iAdminController {
         this.adminService = adminService;
     }
 
-    @PostMapping("")
-    public ResponseEntity<Void> resolverSolicitud(@RequestBody DtLocal dtLocal) {
-        adminService.resolverSolicitud(dtLocal);
+    @PostMapping("/resolver_solicitud")
+    public ResponseEntity<Void> resolverSolicitud(@RequestBody DtResloverHabilitacionLocal dtResloverHabilitacionLocal) {
+        adminService.resolverSolicitud(dtResloverHabilitacionLocal);
         return ResponseEntity.ok().build();
     }
 }

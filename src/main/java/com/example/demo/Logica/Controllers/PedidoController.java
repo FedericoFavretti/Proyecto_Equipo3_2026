@@ -1,9 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Pedido;
-import com.example.demo.Logica.DataTypes.DtConfirmarPedidoRequest;
-import com.example.demo.Logica.DataTypes.DtPedido;
-import com.example.demo.Logica.DataTypes.DtPedidoResponse;
+import com.example.demo.Logica.DataTypes.*;
 import com.example.demo.Logica.Interfaces.iPedidoController;
 import com.example.demo.Logica.Mappers.PedidoResponseMapper;
 import com.example.demo.Logica.Service.PedidoService;
@@ -38,8 +36,8 @@ public class PedidoController implements iPedidoController {
     }
 
     @PostMapping
-    public ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedido dtPedido) {
-        Pedido pedido = pedidoService.realizarPedido(dtPedido);
+    public ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles) {
+        Pedido pedido = pedidoService.realizarPedido(dtPedidoConDetalles);
         return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 

@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Builder
 @Data
@@ -13,8 +13,8 @@ import java.util.Date;
 public class DtPromocion {
     private Long id;
     private Double descuento;
-    private Date fechaInicio;
-    private Date fechaFin;
+    private LocalDateTime fechaInicio;
+    private LocalDateTime fechaFin;
     private String descripcion;
     private DtPlato dtPlato;
 }

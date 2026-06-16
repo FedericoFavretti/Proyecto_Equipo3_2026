@@ -98,7 +98,7 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
                     .mensaje(rs.getString("mensaje"))
                     .canal(CanalNotificacion.valueOf(rs.getString("canal")))
                     .leida( rs.getBoolean("leida"))
-                    .fecha( rs.getDate("fecha"))
+                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
                     .reclamo(reclamo)
                     .pedido(null)
                     .build();
@@ -111,7 +111,7 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
                     .mensaje(rs.getString("mensaje"))
                     .canal(CanalNotificacion.valueOf(rs.getString("canal")))
                     .leida( rs.getBoolean("leida"))
-                    .fecha( rs.getDate("fecha"))
+                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
                     .reclamo(null)
                     .pedido(pedido)
                     .build();
