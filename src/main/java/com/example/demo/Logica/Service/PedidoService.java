@@ -14,6 +14,7 @@ import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Mappers.DetallePedidoMapper;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
+import com.example.demo.Logica.Mappers.PedidoMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -60,6 +61,7 @@ public class PedidoService {
     private final NotificacionPedidoService notificacionPedidoService;
     private final PedidoListadoMapper pedidoListadoMapper;
     private final DetallePedidoMapper detallePedidoMapper;
+    private final PedidoMapper pedidoMapper;
 
 
     @Value("${mercadopago.back-url-success}")
@@ -80,7 +82,7 @@ public class PedidoService {
             FacturaService facturaService,
             PagoSimuladoService pagoSimuladoService,
             NotificacionPedidoService notificacionPedidoService,
-            PedidoListadoMapper pedidoListadoMapper, DetallePedidoMapper detallePedidoMapper) {
+            PedidoListadoMapper pedidoListadoMapper, DetallePedidoMapper detallePedidoMapper, PedidoMapper pedidoMapper) {
         this.pedidoRepositorio = pedidoRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
@@ -91,6 +93,7 @@ public class PedidoService {
         this.notificacionPedidoService = notificacionPedidoService;
         this.pedidoListadoMapper = pedidoListadoMapper;
         this.detallePedidoMapper = detallePedidoMapper;
+        this.pedidoMapper = pedidoMapper;
     }
 
     @Transactional
@@ -146,8 +149,8 @@ public class PedidoService {
         double total = detalles.stream()
                 .mapToDouble(DetallePedido::getSubtotal)
                 .sum();
-
-        Pedido pedido = construirPedido(dtPedido, local, cliente, detalles, total);
+        dtPedido.setTotal(total);
+        Pedido pedido = pedidoMapper.mapearPedidoDeDt(dtPedido);
 
         pedidoRepositorio.guardar(pedido);
 
@@ -191,33 +194,6 @@ public class PedidoService {
         }
     }
 
-
-
-    private Pedido construirPedido(
-            DtPedido dtPedido,
-            Local local,
-            Cliente cliente,
-            List<DetallePedido> detalles,
-            double total) {
-        Pedido pedido = Pedido.builder()
-                .fecha(LocalDateTime.now())
-                .tiempoEstEntrega(dtPedido.getTiempoEstEntrega())
-                .total(total)
-                .domicilioEntrega(dtPedido.getDomicilioEntrega())
-                .medioDePago(dtPedido.getMedioDePago())
-                .pagoSimulado(dtPedido.getPagoSimulado())
-                .estado(EstadoPedido.Pendiente)
-                .local(local)
-                .cliente(cliente)
-                .detalles(detalles)
-                .mpPreferenciaId(dtPedido.getMpPreferenciaId())
-                .mpInitPoint(dtPedido.getMpInitPoint())
-                .build();
-
-        detalles.forEach(detalle -> detalle.setPedido(pedido));
-
-        return pedido;
-    }
 
     private void validarCantidad(DtDetallePedido detalleSolicitado) {
         if (detalleSolicitado == null || detalleSolicitado.getCantidad() <= 0) {
