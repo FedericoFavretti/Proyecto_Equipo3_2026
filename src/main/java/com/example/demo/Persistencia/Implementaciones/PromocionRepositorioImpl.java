@@ -1,6 +1,7 @@
 package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Logica.Clases.Promocion;
+import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,6 +66,49 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
         jdbcTemplate.update("DELETE FROM Promocion WHERE id = ?", id);
     }
 
+    @Override
+    public List<Promocion> buscarActivasConFiltros(DtFiltro filtro) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT pr.*
+                FROM promocion pr
+                INNER JOIN plato p ON p.id = pr.idPlato
+                WHERE pr.fechaInicio <= CURRENT_DATE
+                  AND pr.fechaFin >= CURRENT_DATE
+                """);
+        List<Object> params = new ArrayList<>();
+
+        if (filtro.getNombre() != null && !filtro.getNombre().isBlank()) {
+            sql.append(" AND (p.nombre LIKE ? OR pr.descripcion LIKE ?)");
+            String termino = "%" + filtro.getNombre() + "%";
+            params.add(termino);
+            params.add(termino);
+        }
+
+        if (filtro.getDtLocal() != null) {
+            sql.append(" AND p.idLocal = ?");
+            params.add(filtro.getDtLocal().getId());
+        }
+
+        List<String> orden = new ArrayList<>();
+        if (Boolean.TRUE.equals(filtro.getPrecioMasBajo())) {
+            orden.add("p.precio ASC");
+        } else if (Boolean.TRUE.equals(filtro.getPrecioMasAlto())) {
+            orden.add("p.precio DESC");
+        }
+
+        if (Boolean.TRUE.equals(filtro.getAlfabetico())) {
+            orden.add("p.nombre ASC");
+        }
+
+        if (!orden.isEmpty()) {
+            sql.append(" ORDER BY ").append(String.join(", ", orden));
+        }
+
+        return jdbcTemplate.query(sql.toString(),
+                (rs, row) -> mapearPromocion(rs),
+                params.toArray());
+    }
+
     private Promocion mapearPromocion(ResultSet rs) throws SQLException {
         return new Promocion( rs.getLong("id"),
                 rs.getDouble("descuento"),
@@ -73,3 +118,4 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
                 platoRepositorio.buscarPorId(rs.getLong("idPlato")).orElseThrow(()-> new RuntimeException("Plato no encontrado")));
     }
 }
+

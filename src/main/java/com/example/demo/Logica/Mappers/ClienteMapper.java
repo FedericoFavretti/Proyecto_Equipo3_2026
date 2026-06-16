@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.Cliente;
-import com.example.demo.Logica.DataTypes.DtCliente;
+import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,6 +11,7 @@ public class ClienteMapper {
         return Cliente.builder()
                 .id(dtCliente.getId())
                 .email(dtCliente.getEmail())
+                .passwd(dtCliente.getPasswd())
                 .foto(dtCliente.getFoto())
                 .estado(dtCliente.getEstadoCuenta())
                 .tipo(dtCliente.getTipo())
@@ -39,3 +40,4 @@ public class ClienteMapper {
                 .build();
     }
 }
+

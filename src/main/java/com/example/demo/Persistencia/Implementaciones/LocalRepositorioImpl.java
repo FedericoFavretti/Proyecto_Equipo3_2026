@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.demo.Logica.Clases.Local;
-import com.example.demo.Logica.DataTypes.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,6 +19,12 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class LocalRepositorioImpl implements LocalRepositorio {
+    private static final String SELECT_LOCAL_CON_USUARIO = """
+            SELECT l.*, u.email, u.estado AS estado_cuenta, u.tipo, u.foto
+            FROM Local l
+            LEFT JOIN usuario u ON u.id = l.id
+            """;
+
     private final JdbcTemplate jdbcTemplate;
 
     public LocalRepositorioImpl(JdbcTemplate jdbcTemplate) {
@@ -26,7 +33,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     @Override
     public List<Local> listarTodos() {
         return jdbcTemplate.query(
-                "SELECT * FROM Local",
+                SELECT_LOCAL_CON_USUARIO,
                 (rs, row) -> mapearLocal(rs)
         );
     }
@@ -34,7 +41,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     @Override
     public List<Local> listarPendientes() {
         return jdbcTemplate.query(
-                "SELECT * FROM Local WHERE estado = ?",
+                SELECT_LOCAL_CON_USUARIO + " WHERE l.estado = ?",
                 (rs, row) -> mapearLocal(rs),
                 EstadoLocal.Pendiente.name()
         );
@@ -43,7 +50,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     @Override
     public Optional<Local> buscarPorId(Long id) {
         return jdbcTemplate.query(
-                "SELECT l.*, u.* FROM local l JOIN usuario u ON l.id = u.id WHERE l.id = ?",
+                SELECT_LOCAL_CON_USUARIO + " WHERE l.id = ?",
                 (rs, row) -> mapearLocal(rs), id
         ).stream().findFirst();
     }
@@ -51,7 +58,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     @Override
     public Optional<Local> buscarPorNombre(String nombre) {
         return jdbcTemplate.query(
-                "SELECT * FROM Local WHERE LOWER(nombre) = LOWER(?)",
+                SELECT_LOCAL_CON_USUARIO + " WHERE LOWER(l.nombre) = LOWER(?)",
                 (rs, row) -> mapearLocal(rs), nombre
         ).stream().findFirst();
     }
@@ -118,21 +125,34 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                 EstadoLocal.valueOf(rs.getString("estado")),
                 rs.getDouble("calificacionGlobal"),
                 rs.getBoolean("estaAbierto"),
-                mapearImagenes(rs.getString("imagenes"))
+                mapearImagenes(rs.getArray("imagenes"))
         );
         local.setId(rs.getLong("id"));
+        local.setEmail(rs.getString("email"));
+        local.setFoto(rs.getString("foto"));
+        local.setTipo(rs.getString("tipo"));
+        String estadoCuenta = rs.getString("estado_cuenta");
+        if (estadoCuenta != null && !estadoCuenta.isBlank()) {
+            local.setEstado(EstadoCuenta.valueOf(estadoCuenta));
+        }
         return local;
     }
 
 
 
-    private List<String> mapearImagenes(String imagenes) {
-        if (imagenes == null || imagenes.isBlank()) {
+    private List<String> mapearImagenes(Array imagenesArray) throws SQLException {
+        if (imagenesArray == null) {
             return Collections.emptyList();
         }
-        return Arrays.stream(imagenes.split(","))
+        String[] imagenes = (String[]) imagenesArray.getArray();
+        if (imagenes == null || imagenes.length == 0) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(imagenes)
+                .filter(imagen -> imagen != null)
                 .map(String::trim)
                 .filter(imagen -> !imagen.isBlank())
                 .toList();
     }
 }
+

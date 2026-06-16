@@ -1,6 +1,6 @@
 package com.example.demo.Logica.Controllers;
-import com.example.demo.Logica.DataTypes.DtLoginRequest;
-import com.example.demo.Logica.DataTypes.DtLoginResponse;
+import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,3 +28,4 @@ public class UsuarioController implements iUsuarioController {
         return ResponseEntity.ok("Cuenta activada correctamente.");
     }
 }
+

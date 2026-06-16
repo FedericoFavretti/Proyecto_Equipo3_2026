@@ -3,11 +3,11 @@ package com.example.demo.Logica.Mappers;
 import com.example.demo.Logica.Clases.DetallePedido;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtClienteResumenResponse;
-import com.example.demo.Logica.DataTypes.DtDetallePedidoResponse;
-import com.example.demo.Logica.DataTypes.DtLocalResumenResponse;
-import com.example.demo.Logica.DataTypes.DtPedidoResponse;
-import com.example.demo.Logica.DataTypes.DtPlatoResumenResponse;
+import com.example.demo.Logica.DataTypes.summary.DtClienteResumenResponse;
+import com.example.demo.Logica.DataTypes.response.DtDetallePedidoResponse;
+import com.example.demo.Logica.DataTypes.summary.DtLocalResumenResponse;
+import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
+import com.example.demo.Logica.DataTypes.summary.DtPlatoResumenResponse;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -64,3 +64,4 @@ public class PedidoResponseMapper {
                 .build();
     }
 }
+

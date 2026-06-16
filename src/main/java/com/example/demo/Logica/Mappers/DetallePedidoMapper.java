@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.DetallePedido;
-import com.example.demo.Logica.DataTypes.DtDetallePedido;
+import com.example.demo.Logica.DataTypes.shared.DtDetallePedido;
 
 import org.springframework.stereotype.Component;
 
@@ -52,4 +52,4 @@ public class DetallePedidoMapper {
                 .map(this::mapearDtDetallePedidoDeClase)
                 .collect(Collectors.toList());
     }
-}
+} 

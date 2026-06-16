@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 public class Promocion {
     private Long id;
     private Double descuento;
-    private LocalDateTime  fechaInicio;
-    private LocalDateTime  fechaFin;
+    private LocalDateTime fechaInicio;
+    private LocalDateTime fechaFin;
     private String descripcion;
     private Plato plato;
 }

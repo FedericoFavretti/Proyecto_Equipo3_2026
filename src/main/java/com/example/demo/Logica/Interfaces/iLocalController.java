@@ -1,8 +1,8 @@
 package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,3 +24,4 @@ public interface iLocalController {
 
     ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") Long idLocal);
 }
+

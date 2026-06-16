@@ -97,7 +97,7 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
                     .tipo(TipoNotificacion.valueOf(rs.getString("tipo")))
                     .mensaje(rs.getString("mensaje"))
                     .canal(CanalNotificacion.valueOf(rs.getString("canal")))
-                    .leida( rs.getBoolean("leida"))
+                    .leida(rs.getBoolean("leida"))
                     .fecha(rs.getTimestamp("fecha").toLocalDateTime())
                     .reclamo(reclamo)
                     .pedido(null)

@@ -1,7 +1,8 @@
 package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Logica.Clases.Pedido;
-import com.example.demo.Logica.DataTypes.DtDireccion;
+import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -14,11 +15,12 @@ import org.springframework.stereotype.Repository;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Types;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,6 +62,60 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         return jdbcTemplate.query(
                 "SELECT * FROM pedido WHERE idlocal = ?",
                 this::mapearPedido, idLocal
+        );
+    }
+
+    @Override
+    public List<PedidoListadoView> listarRecibidosPorLocal(Long idLocal, DtPedidoListadoFiltro filtro) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                    p.id,
+                    p.fecha,
+                    p.estado,
+                    p.total,
+                    p.tiempoestentrega,
+                    c.id AS cliente_id,
+                    c.nombre AS cliente_nombre,
+                    c.apellido AS cliente_apellido,
+                    COALESCE(SUM(dp.cantidad), 0) AS cantidad_items
+                FROM pedido p
+                JOIN cliente c ON c.id = p.idcliente
+                LEFT JOIN detallepedido dp ON dp.idpedido = p.id
+                WHERE p.idlocal = ?
+                """);
+
+        List<Object> parametros = new ArrayList<>();
+        parametros.add(idLocal);
+
+        if (filtro != null && filtro.getEstado() != null) {
+            sql.append(" AND p.estado = ?");
+            parametros.add(filtro.getEstado().name());
+        }
+
+        if (filtro != null && filtro.getFechaDesde() != null) {
+            sql.append(" AND p.fecha >= ?");
+            parametros.add(java.sql.Date.valueOf(filtro.getFechaDesde()));
+        }
+
+        if (filtro != null && filtro.getFechaHasta() != null) {
+            sql.append(" AND p.fecha <= ?");
+            parametros.add(java.sql.Date.valueOf(filtro.getFechaHasta()));
+        }
+
+        sql.append("""
+                
+                GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
+                         c.id, c.nombre, c.apellido
+                ORDER BY 
+                """);
+        sql.append(resolverCampoOrden(filtro));
+        sql.append(" ");
+        sql.append(resolverDireccionOrden(filtro));
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                this::mapearPedidoListadoView,
+                parametros.toArray()
         );
     }
 
@@ -114,9 +170,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     @Override
     public void actualizar(Pedido pedido) {
         jdbcTemplate.update(
-                "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?,ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?,estado = ?, idlocal = ?, idcliente = ? WHERE id = ?"
-
-                ,
+                "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?, ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?, estado = ? WHERE id = ?",
                 java.sql.Date.valueOf(pedido.getFecha().toLocalDate()),
                 pedido.getTiempoEstEntrega() != null
                         ? Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds()))
@@ -129,8 +183,6 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 pedido.getMedioDePago(),
                 pedido.getPagoSimulado(),
                 pedido.getEstado().name(),
-                pedido.getLocal().getId(),
-                pedido.getCliente().getId(),
                 pedido.getId()
         );
     }
@@ -182,4 +234,43 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 .build();
     }
 
+    private PedidoListadoView mapearPedidoListadoView(ResultSet rs, int row) throws SQLException {
+        Time tiempoEstEntrega = rs.getTime("tiempoestentrega");
+
+        return PedidoListadoView.builder()
+                .id(rs.getLong("id"))
+                .fecha(rs.getTimestamp("fecha").toLocalDateTime())
+                .estado(EstadoPedido.valueOf(rs.getString("estado")))
+                .total(rs.getDouble("total"))
+                .tiempoEstEntrega(tiempoEstEntrega != null
+                        ? Duration.ofSeconds(tiempoEstEntrega.toLocalTime().toSecondOfDay())
+                        : null)
+                .clienteId(rs.getLong("cliente_id"))
+                .clienteNombre(rs.getString("cliente_nombre"))
+                .clienteApellido(rs.getString("cliente_apellido"))
+                .cantidadItems(rs.getInt("cantidad_items"))
+                .build();
+    }
+
+    private String resolverCampoOrden(DtPedidoListadoFiltro filtro) {
+        if (filtro == null || filtro.getOrdenarPor() == null) {
+            return "p.fecha";
+        }
+
+        return switch (filtro.getOrdenarPor().toLowerCase()) {
+            case "total" -> "p.total";
+            case "estado" -> "p.estado";
+            default -> "p.fecha";
+        };
+    }
+
+    private String resolverDireccionOrden(DtPedidoListadoFiltro filtro) {
+        if (filtro == null || filtro.getDireccion() == null) {
+            return "DESC";
+        }
+
+        return "asc".equalsIgnoreCase(filtro.getDireccion()) ? "ASC" : "DESC";
+    }
+
 }
+

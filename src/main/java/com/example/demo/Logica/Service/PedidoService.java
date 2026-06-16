@@ -6,10 +6,14 @@ import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.*;
+import com.example.demo.Logica.DataTypes.shared.DtDetallePedido;
+import com.example.demo.Logica.DataTypes.shared.DtPedido;
+import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
+import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
+import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Mappers.DetallePedidoMapper;
-import com.example.demo.Logica.Mappers.PedidoMapper;
+import com.example.demo.Logica.Mappers.PedidoListadoMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -25,8 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class PedidoService {
@@ -53,8 +58,9 @@ public class PedidoService {
     private final FacturaService facturaService;
     private final PagoSimuladoService pagoSimuladoService;
     private final NotificacionPedidoService notificacionPedidoService;
-    private final PedidoMapper pedidoMapper;
+    private final PedidoListadoMapper pedidoListadoMapper;
     private final DetallePedidoMapper detallePedidoMapper;
+
 
     @Value("${mercadopago.back-url-success}")
     private String backUrlSuccess;
@@ -73,7 +79,8 @@ public class PedidoService {
             PlatoRepositorio platoRepositorio,
             FacturaService facturaService,
             PagoSimuladoService pagoSimuladoService,
-            NotificacionPedidoService notificacionPedidoService, PedidoMapper  pedidoMapper, DetallePedidoMapper detallePedidoMapper) {
+            NotificacionPedidoService notificacionPedidoService,
+            PedidoListadoMapper pedidoListadoMapper, DetallePedidoMapper detallePedidoMapper) {
         this.pedidoRepositorio = pedidoRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
@@ -82,7 +89,7 @@ public class PedidoService {
         this.facturaService = facturaService;
         this.pagoSimuladoService = pagoSimuladoService;
         this.notificacionPedidoService = notificacionPedidoService;
-        this.pedidoMapper = pedidoMapper;
+        this.pedidoListadoMapper = pedidoListadoMapper;
         this.detallePedidoMapper = detallePedidoMapper;
     }
 
@@ -123,8 +130,6 @@ public class PedidoService {
     @Transactional
     public Pedido realizarPedido(DtPedidoConDetalles dtPedidoConDetalles) {
         DtPedido dtPedido = dtPedidoConDetalles.getDtPedido();
-        dtPedido.setFecha(LocalDateTime.now());
-        dtPedido.setEstado(EstadoPedido.Pendiente);
         validarPedidoConDetalles(dtPedidoConDetalles);
 
         Local local = localRepositorio.buscarPorId(dtPedido.getDtLocal().getId())
@@ -137,21 +142,16 @@ public class PedidoService {
         Cliente cliente = clienteRepositorio.buscarPorId(dtPedido.getDtCliente().getId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
-
-        List<DetallePedido> detalles = detallePedidoMapper.mapearDetallesPedidoDeDt(dtPedidoConDetalles.getDetalles());;
+        List<DetallePedido> detalles = detallePedidoMapper.mapearDetallesPedidoDeDt(dtPedidoConDetalles.getDetalles());
         double total = detalles.stream()
                 .mapToDouble(DetallePedido::getSubtotal)
                 .sum();
 
-        Pedido pedido = pedidoMapper.mapearPedidoDeDt(dtPedido);
-        pedido.setTotal(total);
+        Pedido pedido = construirPedido(dtPedido, local, cliente, detalles, total);
 
         pedidoRepositorio.guardar(pedido);
 
-        detalles.forEach(detalle -> {
-            detalle.setPedido(pedido);
-            detallePedidoRepositorio.guardar(detalle);
-        });
+        detalles.forEach(detallePedidoRepositorio::guardar);
 
         return pedido;
     }
@@ -161,14 +161,15 @@ public class PedidoService {
 
     }
 
-    @Transactional
-    public List<DtPedido> listarPedidos(Long idLocal) {
+    @Transactional(readOnly = true)
+    public List<DtPedidoListadoResponse> listarPedidos(Long idLocal, DtPedidoListadoFiltro filtro) {
         localRepositorio.buscarPorId(idLocal)
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+        validarFiltroListado(filtro);
 
-        return pedidoRepositorio.listarPorLocal(idLocal).stream()
-                .map(pedidoMapper::mapearDtPedidoDeClase)
-                .collect(Collectors.toList());
+        return pedidoRepositorio.listarRecibidosPorLocal(idLocal, filtro).stream()
+                .map(pedidoListadoMapper::toResponse)
+                .toList();
     }
 
     public void procesarPagoConfirmado(String paymentId) {
@@ -185,9 +186,37 @@ public class PedidoService {
     }
 
     private void validarPedidoConDetalles(DtPedidoConDetalles dtPedidoConDetalles) {
-        if (dtPedidoConDetalles == null || dtPedidoConDetalles.getDetalles() == null || dtPedidoConDetalles.getDetalles().isEmpty()) {
+        if (dtPedidoConDetalles.getDtPedido() == null || dtPedidoConDetalles.getDetalles() == null || dtPedidoConDetalles.getDetalles().isEmpty()) {
             throw new IllegalArgumentException(MENSAJE_SIN_PLATOS);
         }
+    }
+
+
+
+    private Pedido construirPedido(
+            DtPedido dtPedido,
+            Local local,
+            Cliente cliente,
+            List<DetallePedido> detalles,
+            double total) {
+        Pedido pedido = Pedido.builder()
+                .fecha(LocalDateTime.now())
+                .tiempoEstEntrega(dtPedido.getTiempoEstEntrega())
+                .total(total)
+                .domicilioEntrega(dtPedido.getDomicilioEntrega())
+                .medioDePago(dtPedido.getMedioDePago())
+                .pagoSimulado(dtPedido.getPagoSimulado())
+                .estado(EstadoPedido.Pendiente)
+                .local(local)
+                .cliente(cliente)
+                .detalles(detalles)
+                .mpPreferenciaId(dtPedido.getMpPreferenciaId())
+                .mpInitPoint(dtPedido.getMpInitPoint())
+                .build();
+
+        detalles.forEach(detalle -> detalle.setPedido(pedido));
+
+        return pedido;
     }
 
     private void validarCantidad(DtDetallePedido detalleSolicitado) {
@@ -195,4 +224,31 @@ public class PedidoService {
             throw new IllegalArgumentException(MENSAJE_CANTIDAD_INVALIDA);
         }
     }
+
+    private void validarFiltroListado(DtPedidoListadoFiltro filtro) {
+        if (filtro == null) {
+            return;
+        }
+
+        if (filtro.getFechaDesde() != null
+                && filtro.getFechaHasta() != null
+                && filtro.getFechaDesde().isAfter(filtro.getFechaHasta())) {
+            throw new IllegalArgumentException("La fecha desde no puede ser posterior a la fecha hasta.");
+        }
+
+        if (filtro.getOrdenarPor() != null) {
+            List<String> camposValidos = List.of("fecha", "total", "estado");
+            if (!camposValidos.contains(filtro.getOrdenarPor().toLowerCase())) {
+                throw new IllegalArgumentException("El campo de orden no es válido.");
+            }
+        }
+
+        if (filtro.getDireccion() != null) {
+            List<String> direccionesValidas = List.of("asc", "desc");
+            if (!direccionesValidas.contains(filtro.getDireccion().toLowerCase())) {
+                throw new IllegalArgumentException("La dirección de orden no es válida.");
+            }
+        }
+    }
 }
+

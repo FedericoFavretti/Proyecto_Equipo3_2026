@@ -14,8 +14,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
-import com.example.demo.Logica.Mappers.DetallePedidoMapper;
-import com.example.demo.Logica.Mappers.PedidoMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,18 +27,24 @@ import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtCliente;
-import com.example.demo.Logica.DataTypes.DtDetallePedido;
-import com.example.demo.Logica.DataTypes.DtDireccion;
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.DataTypes.DtPedido;
-import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtCliente;
+import com.example.demo.Logica.DataTypes.shared.DtDetallePedido;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.shared.DtPedido;
+import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
+import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Mappers.PedidoListadoMapper;
+import com.example.demo.Persistencia.Implementaciones.PedidoListadoView;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+
+import java.time.LocalDate;
 
 @ExtendWith(MockitoExtension.class)
 class PedidoServiceTest {
@@ -69,11 +73,11 @@ class PedidoServiceTest {
     @Mock
     private NotificacionPedidoService notificacionPedidoService;
 
+    @Mock
+    private PedidoListadoMapper pedidoListadoMapper;
+
     private PedidoService pedidoService;
 
-    private PedidoMapper pedidoMapper;
-
-    private DetallePedidoMapper detallePedidoMapper;
     @BeforeEach
     void setUp() {
         pedidoService = new PedidoService(
@@ -85,8 +89,7 @@ class PedidoServiceTest {
                 facturaService,
                 pagoSimuladoService,
                 notificacionPedidoService,
-                pedidoMapper,
-                detallePedidoMapper
+                pedidoListadoMapper
         );
     }
 
@@ -148,18 +151,24 @@ class PedidoServiceTest {
     void realizarPedidoRechazaCuandoNoHayPlatos() {
         DtPedido solicitud = pedidoSinDetalles();
 
+        assertThatThrownBy(() -> pedidoService.realizarPedido(solicitud))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Debe agregar al menos un plato para realizar el pedido.");
+
         verifyNoInteractions(localRepositorio, clienteRepositorio, platoRepositorio, pedidoRepositorio, detallePedidoRepositorio);
     }
 
     @Test
     void realizarPedidoRechazaCantidadInvalida() {
         DtPedido solicitud = pedidoValido();
-
+        solicitud.getDetalles().getFirst().setCantidad(0);
 
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(localAbierto()));
         when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(cliente()));
 
-
+        assertThatThrownBy(() -> pedidoService.realizarPedido(solicitud))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("La cantidad debe ser un número entero mayor a cero.");
 
         verify(pedidoRepositorio, never()).guardar(any(Pedido.class));
         verify(detallePedidoRepositorio, never()).guardar(any(DetallePedido.class));
@@ -183,7 +192,7 @@ class PedidoServiceTest {
             return null;
         }).when(pedidoRepositorio).guardar(any(Pedido.class));
 
-
+        Pedido pedidoGuardado = pedidoService.realizarPedido(solicitud);
 
         ArgumentCaptor<Pedido> pedidoCaptor = ArgumentCaptor.forClass(Pedido.class);
         verify(pedidoRepositorio).guardar(pedidoCaptor.capture());
@@ -205,8 +214,8 @@ class PedidoServiceTest {
         assertThat(detalle.getPedido()).isSameAs(cabecera);
         assertThat(detalle.getPedido().getId()).isEqualTo(77L);
 
-
-
+        assertThat(pedidoGuardado).isSameAs(cabecera);
+        assertThat(pedidoGuardado.getDetalles()).hasSize(1);
     }
 
     @Test
@@ -217,9 +226,73 @@ class PedidoServiceTest {
         when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(cliente()));
         when(platoRepositorio.buscarPorId(100L)).thenReturn(Optional.of(platoDeOtroLocal()));
 
+        assertThatThrownBy(() -> pedidoService.realizarPedido(solicitud))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El plato seleccionado no pertenece al local indicado.");
 
         verify(pedidoRepositorio, never()).guardar(any(Pedido.class));
         verify(detallePedidoRepositorio, never()).guardar(any(DetallePedido.class));
+    }
+
+    @Test
+    void listarPedidosRetornaResumenesConFiltro() {
+        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
+                .estado(EstadoPedido.Pendiente)
+                .fechaDesde(LocalDate.of(2026, 6, 1))
+                .fechaHasta(LocalDate.of(2026, 6, 30))
+                .ordenarPor("fecha")
+                .direccion("desc")
+                .build();
+
+        PedidoListadoView view = PedidoListadoView.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .total(30.0)
+                .cantidadItems(2)
+                .build();
+
+        DtPedidoListadoResponse response = DtPedidoListadoResponse.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .total(30.0)
+                .cantidadItems(2)
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(localAbierto()));
+        when(pedidoRepositorio.listarRecibidosPorLocal(10L, filtro)).thenReturn(List.of(view));
+        when(pedidoListadoMapper.toResponse(view)).thenReturn(response);
+
+        List<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(10L, filtro);
+
+        assertThat(pedidos).containsExactly(response);
+    }
+
+    @Test
+    void listarPedidosRechazaCampoDeOrdenInvalido() {
+        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
+                .ordenarPor("cliente")
+                .direccion("desc")
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(localAbierto()));
+
+        assertThatThrownBy(() -> pedidoService.listarPedidos(10L, filtro))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El campo de orden no es válido.");
+    }
+
+    @Test
+    void listarPedidosRechazaRangoDeFechasInvalido() {
+        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
+                .fechaDesde(LocalDate.of(2026, 6, 30))
+                .fechaHasta(LocalDate.of(2026, 6, 1))
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(localAbierto()));
+
+        assertThatThrownBy(() -> pedidoService.listarPedidos(10L, filtro))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("La fecha desde no puede ser posterior a la fecha hasta.");
     }
 
     private DtPedido pedidoSinDetalles() {
@@ -233,7 +306,7 @@ class PedidoServiceTest {
                 .dtCliente(cliente)
                 .domicilioEntrega(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
                 .medioDePago("Efectivo")
-
+                .detalles(List.of())
                 .build();
     }
 
@@ -255,7 +328,7 @@ class PedidoServiceTest {
                 .dtCliente(cliente)
                 .domicilioEntrega(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
                 .medioDePago("Efectivo")
-
+                .detalles(List.of(detalle))
                 .build();
     }
 
@@ -316,3 +389,4 @@ class PedidoServiceTest {
                 .build();
     }
 }
+

@@ -1,16 +1,13 @@
 package com.example.demo.Logica.Controllers;
 
-import com.example.demo.Logica.Clases.Local;
-import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.Clases.Cliente;
-import com.example.demo.Logica.DataTypes.DtCliente;
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.DataTypes.DtPlato;
-import com.example.demo.Logica.DataTypes.DtFiltro;
+import com.example.demo.Logica.DataTypes.shared.DtCliente;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.request.DtFiltro;
+import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
 import com.example.demo.Logica.Interfaces.iClienteController;
 import com.example.demo.Logica.Service.ClienteService;
 import com.example.demo.Logica.Service.CloudinaryService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,10 +39,11 @@ public class ClienteController implements iClienteController {
         Cliente cliente = clienteService.registrarUsuarioGoogle(dtCliente);
         return ResponseEntity.ok(cliente);
     }
-    @GetMapping("/{filtro}")
-    public ResponseEntity<List<DtPlato>> buscarPlatos(@PathVariable DtFiltro dtFiltro) {
-        List<DtPlato> platos = clienteService.buscarPlatos(dtFiltro);
-        return ResponseEntity.ok(platos);
+
+    @PostMapping("/busqueda")
+    public ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(@RequestBody DtFiltro dtFiltro) {
+        DtBusquedaPlatosPromocionesResponse response = clienteService.buscarPlatosYPromociones(dtFiltro);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
@@ -54,3 +52,4 @@ public class ClienteController implements iClienteController {
         return ResponseEntity.ok(locales);
     }
 }
+

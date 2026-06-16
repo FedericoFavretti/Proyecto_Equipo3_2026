@@ -6,8 +6,8 @@ import java.util.regex.Pattern;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
@@ -32,6 +32,7 @@ public class LocalService {
             "El correo electronico ingresado no tiene un formato valido.";
     private static final String MENSAJE_IMAGEN_INVALIDA =
             "Solo se aceptan imagenes en formato JPG o PNG de hasta 10 MB cada una.";
+    private static final String TIPO_USUARIO_LOCAL = "local";
     private static final String MENSAJE_LOCAL_YA_ABIERTO =
             "El local ya se encuentra registrado como abierto para el dia de hoy.";
     private static final String MENSAJE_LOCAL_YA_CERRADO =
@@ -92,6 +93,7 @@ public class LocalService {
         local.setId(dtPlato.getDtLocal().getId());
 
         Plato plato = platoMapper.mapearPlatoDeDt(dtPlato);
+        plato.setLocal(local);
         return platoRepositorio.guardar(plato);
     }
 
@@ -114,6 +116,8 @@ public class LocalService {
                 });
 
         Plato plato = platoMapper.mapearPlatoDeDt(dtPlato);
+        plato.setId(idPlato);
+        plato.setLocal(local);
         return platoRepositorio.actualizar(plato);
     }
 
@@ -138,6 +142,15 @@ public class LocalService {
         }
 
         Local local = localMapper.mapearLocalDeDt(dtLocal);
+        local.setEmail(dtLocal.getEmail().trim());
+        local.setPasswd(passwordEncoder.encode(dtLocal.getPasswd().trim()));
+        local.setEstado(EstadoCuenta.Pendiente);
+        local.setTipo(TIPO_USUARIO_LOCAL);
+        local.setNombre(dtLocal.getNombre().trim());
+        local.setDescripcion(dtLocal.getDescripcion().trim());
+        local.setEstadoLocal(EstadoLocal.Pendiente);
+        local.setCalificacionGlobal(0.0);
+        local.setEstaAbierto(false);
         usuarioRepositorio.guardar(local);
         localRepositorio.guardar(local);
         registroLocalNotificador.notificarAdministradorSolicitudPendiente(local);
@@ -219,10 +232,11 @@ public class LocalService {
         if (dtLocal == null) {
             throw new IllegalArgumentException(String.format(
                     MENSAJE_CAMPOS_REQUERIDOS,
-                    "email, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
+                    "email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
         }
 
         agregarSiVacio(camposFaltantes, "email", dtLocal.getEmail());
+        agregarSiVacio(camposFaltantes, "passwd", dtLocal.getPasswd());
         agregarSiVacio(camposFaltantes, "nombre", dtLocal.getNombre());
 
         if (dtLocal.getDireccion() == null) {
@@ -306,3 +320,4 @@ public class LocalService {
         }
     }
 }
+

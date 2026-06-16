@@ -1,8 +1,8 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.DtLocal;
-import com.example.demo.Logica.DataTypes.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Interfaces.iLocalController;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.Service.LocalService;
@@ -69,3 +69,4 @@ public class LocalController implements iLocalController {
         return ResponseEntity.ok().build();
     }
 }
+

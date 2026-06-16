@@ -2,7 +2,7 @@ package com.example.demo.Logica.Mappers;
 
 
 import com.example.demo.Logica.Clases.Promocion;
-import com.example.demo.Logica.DataTypes.DtPromocion;
+import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -35,3 +35,4 @@ public class PromocionMapper {
                 .build();
     }
 }
+

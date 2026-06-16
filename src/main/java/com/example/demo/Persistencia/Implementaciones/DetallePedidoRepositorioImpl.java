@@ -69,11 +69,9 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
 
     @Override
     public List<DetallePedido> buscarPorPedido(Long idPedido){
-        return jdbcTemplate.query(
-                "SELECT * FROM DetallePedido WHERE idpedido = ?",
-                (rs, row) -> mapearDetallePedido(rs),
-                idPedido
-        );
+        return jdbcTemplate.query("SELECT * FROM DetallePedido WHERE idpedido = ?",
+                (rs, row)-> mapearDetallePedido(rs),idPedido
+                );
     }
 
     private DetallePedido mapearDetallePedido(ResultSet rs) throws SQLException {

@@ -107,6 +107,15 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     }
 
     @Override
+    public void actualizarEstado(Long id, EstadoCuenta estado) {
+        jdbcTemplate.update(
+                "UPDATE usuario SET estado = ? WHERE id = ?",
+                estado.name(),
+                id
+        );
+    }
+
+    @Override
     public void eliminar(Long id) {
         Optional<Usuario> usuario = buscarPorId(id);
         if (usuario.isPresent()) {
