@@ -3,6 +3,7 @@ package com.example.demo.Logica.Mappers;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.DataTypes.DtLocal;
 import org.springframework.stereotype.Component;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
 
 @Component
 public class LocalMapper {
