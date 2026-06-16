@@ -3,7 +3,14 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.auth.dto.AuthResponse;
+import com.example.demo.auth.dto.LoginRequest;
+import com.example.demo.jwt.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -16,15 +23,29 @@ public class UsuarioService {
 
     private UsuarioRepositorio usuarioRepositorio;
     private EmailService emailService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
 
-    public UsuarioService(UsuarioRepositorio usuarioRepositorio, EmailService emailService){
+    public UsuarioService(UsuarioRepositorio usuarioRepositorio, EmailService emailService, AuthenticationManager authenticationManager,
+                          JwtService jwtService,
+                          UserDetailsService userDetailsService){
         this.usuarioRepositorio = usuarioRepositorio;
         this.emailService = emailService;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
     }
 
     @Transactional
-    public DtLoginResponse login(DtLoginRequest dtLogin) {
-        return null;
+    public AuthResponse authenticate(LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+
+        UserDetails user = userDetailsService.loadUserByUsername(request.email());
+
+        String token = jwtService.generateToken(user);
+        return new AuthResponse(token);
     }
 
     @Transactional

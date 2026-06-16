@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Cliente;
+import com.example.demo.Logica.DataTypes.shared.DtCalificacion;
 import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
@@ -51,5 +52,7 @@ public class ClienteController implements iClienteController {
         List<DtLocal> locales = clienteService.listarLocales();
         return ResponseEntity.ok(locales);
     }
+
+
 }
 
