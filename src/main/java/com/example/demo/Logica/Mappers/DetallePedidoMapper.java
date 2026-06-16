@@ -12,9 +12,11 @@ import java.util.stream.Collectors;
 public class DetallePedidoMapper {
 
     private final PlatoMapper platoMapper;
+    private final PedidoMapper pedidoMapper;
 
-    public DetallePedidoMapper(PlatoMapper platoMapper) {
+    public DetallePedidoMapper(PlatoMapper platoMapper, PedidoMapper pedidoMapper) {
         this.platoMapper = platoMapper;
+        this.pedidoMapper = pedidoMapper;
     }
 
 
@@ -23,9 +25,9 @@ public class DetallePedidoMapper {
         return DetallePedido.builder()
                 .id(dtDetallePedido.getId())
                 .cantidad(dtDetallePedido.getCantidad())
-                .precioUnitario(dtDetallePedido.getPrecioUnitario())
                 .subtotal(dtDetallePedido.getSubtotal())
                 .plato(platoMapper.mapearPlatoDeDt(dtDetallePedido.getDtPlato()))
+                .pedido(pedidoMapper.mapearPedidoDeDt(dtDetallePedido.getDtPedido()))
                 .build();
     }
 
@@ -39,9 +41,9 @@ public class DetallePedidoMapper {
         return DtDetallePedido.builder()
                 .id(detallePedido.getId())
                 .cantidad(detallePedido.getCantidad())
-                .precioUnitario(detallePedido.getPrecioUnitario())
                 .subtotal(detallePedido.getSubtotal())
                 .dtPlato(platoMapper.mapearDtPlatoDeClase(detallePedido.getPlato()))
+                .dtPedido(pedidoMapper.mapearDtPedidoDeClase(detallePedido.getPedido()))
                 .build();
     }
 
@@ -50,5 +52,4 @@ public class DetallePedidoMapper {
                 .map(this::mapearDtDetallePedidoDeClase)
                 .collect(Collectors.toList());
     }
-}
-
+} 

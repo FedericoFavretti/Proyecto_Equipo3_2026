@@ -16,17 +16,15 @@ import java.util.List;
 @AllArgsConstructor
 public class DtPedido {
     private Long id;
-    private Date fecha;
+    private LocalDateTime fecha;
     private Duration tiempoEstEntrega;
     private Double total;
     private DtDireccion domicilioEntrega;
     private String medioDePago;
     private Boolean pagoSimulado;
     private EstadoPedido estado;
-    private List<DtDetallePedido> detalles;
     private DtLocal dtLocal;
     private DtCliente dtCliente;
     private String mpPreferenciaId;
     private String mpInitPoint;
 }
-
