@@ -23,5 +23,7 @@ public class PedidoListadoView {
     private Long clienteId;
     private String clienteNombre;
     private String clienteApellido;
+    private Long localId;
+    private String localNombre;
     private Integer cantidadItems;
 }

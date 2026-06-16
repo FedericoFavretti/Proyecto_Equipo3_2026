@@ -501,3 +501,8 @@ Estas inconsistencias ya fueron observadas y deben resolverse antes de implement
 5. El modelo indica descuento de promoción mayor a 0 y menor a 100; el caso de uso habla de rango 1% a 100%.
 6. El modelo usa Double para dinero (precio, total, monto). Técnicamente BigDecimal sería más correcto para dinero, pero cambiarlo rompe la literalidad del modelo y requiere aprobación.
 7. El diagrama muestra passwd/password en Usuario; el equipo debe decidir si el atributo Java final será contrasena por coherencia idiomática o si se mantiene el nombre del diagrama.
+
+
+## 18. DTO
+
+- NO hacer mas data types que los ya definidos, los actuales son FINALES.

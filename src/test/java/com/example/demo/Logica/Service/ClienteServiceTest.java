@@ -21,7 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,8 +91,8 @@ class ClienteServiceTest {
         Promocion promocion = Promocion.builder()
                 .id(20L)
                 .descripcion("2x1")
-                .fechaInicio(new Date())
-                .fechaFin(new Date())
+                .fechaInicio(LocalDateTime.now())
+                .fechaFin(LocalDateTime.now().plusDays(1))
                 .plato(plato)
                 .build();
 

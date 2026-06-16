@@ -77,6 +77,8 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     c.id AS cliente_id,
                     c.nombre AS cliente_nombre,
                     c.apellido AS cliente_apellido,
+                    NULL::bigint AS local_id,
+                    NULL::varchar AS local_nombre,
                     COALESCE(SUM(dp.cantidad), 0) AS cantidad_items
                 FROM pedido p
                 JOIN cliente c ON c.id = p.idcliente
@@ -117,6 +119,77 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 this::mapearPedidoListadoView,
                 parametros.toArray()
         );
+    }
+
+    @Override
+    public List<PedidoListadoView> listarHistorialPorCliente(Long idCliente, DtPedidoListadoFiltro filtro) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                    p.id,
+                    p.fecha,
+                    p.estado,
+                    p.total,
+                    p.tiempoestentrega,
+                    NULL::bigint AS cliente_id,
+                    NULL::varchar AS cliente_nombre,
+                    NULL::varchar AS cliente_apellido,
+                    l.id AS local_id,
+                    l.nombre AS local_nombre,
+                    COALESCE(SUM(dp.cantidad), 0) AS cantidad_items
+                FROM pedido p
+                JOIN local l ON l.id = p.idlocal
+                LEFT JOIN detallepedido dp ON dp.idpedido = p.id
+                WHERE p.idcliente = ?
+                """);
+
+        List<Object> parametros = new ArrayList<>();
+        parametros.add(idCliente);
+
+        if (filtro != null && filtro.getEstado() != null) {
+            sql.append(" AND p.estado = ?");
+            parametros.add(filtro.getEstado().name());
+        }
+
+        if (filtro != null && filtro.getFechaDesde() != null) {
+            sql.append(" AND p.fecha >= ?");
+            parametros.add(java.sql.Date.valueOf(filtro.getFechaDesde()));
+        }
+
+        if (filtro != null && filtro.getFechaHasta() != null) {
+            sql.append(" AND p.fecha <= ?");
+            parametros.add(java.sql.Date.valueOf(filtro.getFechaHasta()));
+        }
+
+        if (filtro != null && filtro.getIdLocal() != null) {
+            sql.append(" AND p.idlocal = ?");
+            parametros.add(filtro.getIdLocal());
+        }
+
+        sql.append("""
+
+                GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
+                         l.id, l.nombre
+                ORDER BY
+                """);
+        sql.append(resolverCampoOrden(filtro));
+        sql.append(" ");
+        sql.append(resolverDireccionOrden(filtro));
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                this::mapearPedidoListadoView,
+                parametros.toArray()
+        );
+    }
+
+    @Override
+    public boolean existePedidoPorCliente(Long idCliente) {
+        Integer cantidad = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM pedido WHERE idcliente = ?",
+                Integer.class,
+                idCliente
+        );
+        return cantidad != null && cantidad > 0;
     }
 
     @Override
@@ -245,9 +318,11 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 .tiempoEstEntrega(tiempoEstEntrega != null
                         ? Duration.ofSeconds(tiempoEstEntrega.toLocalTime().toSecondOfDay())
                         : null)
-                .clienteId(rs.getLong("cliente_id"))
+                .clienteId(rs.getObject("cliente_id", Long.class))
                 .clienteNombre(rs.getString("cliente_nombre"))
                 .clienteApellido(rs.getString("cliente_apellido"))
+                .localId(rs.getObject("local_id", Long.class))
+                .localNombre(rs.getString("local_nombre"))
                 .cantidadItems(rs.getInt("cantidad_items"))
                 .build();
     }
