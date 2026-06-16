@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Builder
 @Data
@@ -15,6 +15,6 @@ public class Reclamo {
     private String motivo;
     private String tipoCompensacion;
     private Double montoReintegro;
-    private Date fecha;
+    private LocalDateTime fecha;
     private Pedido pedido;
 }

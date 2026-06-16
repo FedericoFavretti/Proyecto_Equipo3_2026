@@ -4,6 +4,7 @@ import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.request.DtConfirmarPedidoRequest;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
+import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
@@ -43,8 +44,8 @@ public class PedidoController implements iPedidoController {
     }
 
     @PostMapping
-    public ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedido dtPedido) {
-        Pedido pedido = pedidoService.realizarPedido(dtPedido);
+    public ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles) {
+        Pedido pedido = pedidoService.realizarPedido(dtPedidoConDetalles);
         return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 

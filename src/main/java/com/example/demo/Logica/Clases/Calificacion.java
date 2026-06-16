@@ -4,7 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Date;
+import java.time.LocalDateTime;
+
 @Builder
 @Data
 @NoArgsConstructor
@@ -13,7 +14,7 @@ public class Calificacion {
     private Long id;
     private int puntaje;
     private String comentario;
-    private Date fecha;
+    private LocalDateTime fecha;
     private TipoCalificacion tipo;
     private Cliente cliente;
     private Local local;

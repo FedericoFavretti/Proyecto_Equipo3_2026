@@ -3,6 +3,7 @@ package com.example.demo.Logica.Interfaces;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.request.DtConfirmarPedidoRequest;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
+import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
@@ -21,7 +22,7 @@ public interface iPedidoController {
             @RequestBody DtConfirmarPedidoRequest request
     );
     ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido);
-    ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedido dtPedido);
+    ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles);
     ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido);
     ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(
             @PathVariable Long idLocal,

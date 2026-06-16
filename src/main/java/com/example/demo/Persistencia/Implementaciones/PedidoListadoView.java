@@ -7,7 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Duration;
-import java.util.Date;
+import java.time.LocalDateTime;
+
 
 @Builder
 @Data
@@ -15,7 +16,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class PedidoListadoView {
     private Long id;
-    private Date fecha;
+    private LocalDateTime fecha;
     private EstadoPedido estado;
     private Double total;
     private Duration tiempoEstEntrega;

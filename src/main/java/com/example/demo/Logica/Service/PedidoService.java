@@ -9,8 +9,10 @@ import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.shared.DtDetallePedido;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
+import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Mappers.DetallePedidoMapper;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -56,6 +59,8 @@ public class PedidoService {
     private final PagoSimuladoService pagoSimuladoService;
     private final NotificacionPedidoService notificacionPedidoService;
     private final PedidoListadoMapper pedidoListadoMapper;
+    private final DetallePedidoMapper detallePedidoMapper;
+
 
     @Value("${mercadopago.back-url-success}")
     private String backUrlSuccess;
@@ -75,7 +80,7 @@ public class PedidoService {
             FacturaService facturaService,
             PagoSimuladoService pagoSimuladoService,
             NotificacionPedidoService notificacionPedidoService,
-            PedidoListadoMapper pedidoListadoMapper) {
+            PedidoListadoMapper pedidoListadoMapper, DetallePedidoMapper detallePedidoMapper) {
         this.pedidoRepositorio = pedidoRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
@@ -85,6 +90,7 @@ public class PedidoService {
         this.pagoSimuladoService = pagoSimuladoService;
         this.notificacionPedidoService = notificacionPedidoService;
         this.pedidoListadoMapper = pedidoListadoMapper;
+        this.detallePedidoMapper = detallePedidoMapper;
     }
 
     @Transactional
@@ -122,8 +128,9 @@ public class PedidoService {
     }
 
     @Transactional
-    public Pedido realizarPedido(DtPedido dtPedido) {
-        validarPedidoConDetalles(dtPedido);
+    public Pedido realizarPedido(DtPedidoConDetalles dtPedidoConDetalles) {
+        DtPedido dtPedido = dtPedidoConDetalles.getDtPedido();
+        validarPedidoConDetalles(dtPedidoConDetalles);
 
         Local local = localRepositorio.buscarPorId(dtPedido.getDtLocal().getId())
                 .orElseThrow(() -> new RuntimeException("Local no encontrado"));
@@ -135,7 +142,7 @@ public class PedidoService {
         Cliente cliente = clienteRepositorio.buscarPorId(dtPedido.getDtCliente().getId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
-        List<DetallePedido> detalles = construirDetallesPedido(dtPedido.getDetalles(), local);
+        List<DetallePedido> detalles = detallePedidoMapper.mapearDetallesPedidoDeDt(dtPedidoConDetalles.getDetalles());
         double total = detalles.stream()
                 .mapToDouble(DetallePedido::getSubtotal)
                 .sum();
@@ -178,46 +185,13 @@ public class PedidoService {
         }
     }
 
-    private void validarPedidoConDetalles(DtPedido dtPedido) {
-        if (dtPedido == null || dtPedido.getDetalles() == null || dtPedido.getDetalles().isEmpty()) {
+    private void validarPedidoConDetalles(DtPedidoConDetalles dtPedidoConDetalles) {
+        if (dtPedidoConDetalles.getDtPedido() == null || dtPedidoConDetalles.getDetalles() == null || dtPedidoConDetalles.getDetalles().isEmpty()) {
             throw new IllegalArgumentException(MENSAJE_SIN_PLATOS);
         }
     }
 
-    private List<DetallePedido> construirDetallesPedido(List<DtDetallePedido> detallesSolicitados, Local local) {
-        List<DetallePedido> detalles = new ArrayList<>();
 
-        for (DtDetallePedido detalleSolicitado : detallesSolicitados) {
-            validarCantidad(detalleSolicitado);
-
-            Long idPlato = detalleSolicitado.getDtPlato() != null
-                    ? detalleSolicitado.getDtPlato().getId()
-                    : null;
-
-            Plato plato = platoRepositorio.buscarPorId(idPlato)
-                    .orElseThrow(() -> new RuntimeException("Plato no encontrado"));
-
-            if (plato.getLocal() == null || !plato.getLocal().getId().equals(local.getId())) {
-                throw new IllegalArgumentException(MENSAJE_PLATO_OTRO_LOCAL);
-            }
-
-            if (!Boolean.TRUE.equals(plato.getDisponible())) {
-                throw new IllegalArgumentException(MENSAJE_PLATO_NO_DISPONIBLE);
-            }
-
-            double precioUnitario = plato.getPrecio();
-            double subtotal = precioUnitario * detalleSolicitado.getCantidad();
-
-            detalles.add(DetallePedido.builder()
-                    .cantidad(detalleSolicitado.getCantidad())
-                    .precioUnitario(precioUnitario)
-                    .subtotal(subtotal)
-                    .plato(plato)
-                    .build());
-        }
-
-        return detalles;
-    }
 
     private Pedido construirPedido(
             DtPedido dtPedido,
@@ -226,7 +200,7 @@ public class PedidoService {
             List<DetallePedido> detalles,
             double total) {
         Pedido pedido = Pedido.builder()
-                .fecha(new Date())
+                .fecha(LocalDateTime.now())
                 .tiempoEstEntrega(dtPedido.getTiempoEstEntrega())
                 .total(total)
                 .domicilioEntrega(dtPedido.getDomicilioEntrega())

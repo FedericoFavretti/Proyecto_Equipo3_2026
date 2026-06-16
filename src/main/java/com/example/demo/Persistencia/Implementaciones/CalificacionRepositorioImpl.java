@@ -57,7 +57,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                     );
                     ps.setDouble(1, calificacion.getPuntaje());
                     ps.setString(2, calificacion.getComentario());
-                    ps.setDate(3, new java.sql.Date(calificacion.getFecha().getTime()));
+                    ps.setDate(3, java.sql.Date.valueOf(calificacion.getFecha().toLocalDate()));
                     ps.setString(4, calificacion.getTipo().toString());
                     return ps;
         }, keyHolder);
@@ -103,7 +103,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                     .id(rs.getLong("id"))
                     .puntaje(rs.getInt("puntaje"))
                     .comentario(rs.getString("comentario"))
-                    .fecha(rs.getDate("fecha"))
+                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
                     .tipo(TipoCalificacion.valueOf(rs.getString("tipo")))
                     .cliente(cliente)
                     .local(null)
@@ -115,7 +115,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                     .id(rs.getLong("id"))
                     .puntaje(rs.getInt("puntaje"))
                     .comentario(rs.getString("comentario"))
-                    .fecha(rs.getDate("fecha"))
+                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
                     .tipo(TipoCalificacion.valueOf(rs.getString("tipo")))
                     .cliente(null)
                     .local(local)

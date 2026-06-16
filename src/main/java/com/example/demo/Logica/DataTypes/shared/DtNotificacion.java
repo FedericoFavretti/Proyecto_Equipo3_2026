@@ -7,7 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+
 
 @Builder
 @Data
@@ -19,7 +20,7 @@ public class DtNotificacion {
     private String mensaje;
     private CanalNotificacion canal;
     private Boolean leida;
-    private Date fecha;
+    private LocalDateTime fecha;
     private DtPedido dtPedido;
     private DtReclamo dtReclamo;
 }

@@ -70,7 +70,7 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
                 rs.getString("motivo"),
                 rs.getString("tipoCompensacion"),
                 rs.getDouble("montoReintegro"),
-                rs.getDate("fecha"),
+                rs.getTimestamp("fecha").toLocalDateTime(),
                 pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(()->new RuntimeException("Pedido no encontrado"))
         );
     }

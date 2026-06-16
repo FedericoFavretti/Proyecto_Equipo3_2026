@@ -112,8 +112,8 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
     private Promocion mapearPromocion(ResultSet rs) throws SQLException {
         return new Promocion( rs.getLong("id"),
                 rs.getDouble("descuento"),
-                rs.getDate("fechaInicio"),
-                rs.getDate("fechaFin"),
+                rs.getTimestamp("fechaInicio").toLocalDateTime(),
+                rs.getTimestamp("fechaFin").toLocalDateTime(),
                 rs.getString("descripcion"),
                 platoRepositorio.buscarPorId(rs.getLong("idPlato")).orElseThrow(()-> new RuntimeException("Plato no encontrado")));
     }
