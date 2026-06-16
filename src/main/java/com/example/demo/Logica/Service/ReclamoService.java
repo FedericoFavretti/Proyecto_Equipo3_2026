@@ -42,6 +42,7 @@ public class ReclamoService {
         if(dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null && dtFiltroReclamo.getIdCliente() == null){
             throw new RuntimeException("Debe ingresar algun filtro para obtener los reclamos");
         }
+
         return null;
     }
 }

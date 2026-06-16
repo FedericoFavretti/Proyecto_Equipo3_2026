@@ -1,6 +1,7 @@
 package com.example.demo.Persistencia.Repositorios;
 
 import com.example.demo.Logica.Clases.Reclamo;
+import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,4 +12,5 @@ public interface ReclamoRepositorio {
     void guardar(Reclamo reclamo);
     void actualizar(Reclamo reclamo);
     void eliminar(long id);
+    List<Reclamo> buscarReclamosPorFiltro(DtFiltroReclamo dtFiltroReclamo);
 }

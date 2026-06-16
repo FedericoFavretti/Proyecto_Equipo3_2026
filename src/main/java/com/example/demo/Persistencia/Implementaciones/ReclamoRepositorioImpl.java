@@ -1,6 +1,7 @@
 package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Logica.Clases.Reclamo;
+import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -62,6 +63,11 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
     @Override
     public void eliminar(long id) {
         jdbcTemplate.update("DELETE FROM Reclamo WHERE id = ?", id);
+    }
+
+    @Override
+    public List<Reclamo> buscarReclamosPorFiltro(DtFiltroReclamo dtFiltroReclamo){
+        return null/*jdbcTemplate.query("SELECT * FROM reclamo WHERE ")*/;
     }
 
     private Reclamo mapearRecalamo(ResultSet rs) throws SQLException {

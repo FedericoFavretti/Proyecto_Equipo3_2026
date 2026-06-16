@@ -38,7 +38,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public AuthResponse authenticate(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
