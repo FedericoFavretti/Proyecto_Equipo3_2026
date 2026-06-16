@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DtResolverSolicitudLocalRequest {
+    private Long idLocal;
     private EstadoLocal estadoObjetivo;
 }
 

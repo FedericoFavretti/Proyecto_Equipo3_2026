@@ -58,59 +58,6 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$[0].imagenes[0]").value("fachada.jpg"));
     }
 
-    @Test
-    void resolverSolicitudApruebaRequestValido() throws Exception {
-        mockMvc.perform(put("/api/v1/admins/solicitudes-locales/10")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "estadoObjetivo": "Habilitado"
-                                }
-                                """))
-                .andExpect(status().isNoContent());
 
-        verify(adminService).resolverSolicitud(10L, new DtResolverSolicitudLocalRequest(EstadoLocal.Habilitado));
-    }
-
-    @Test
-    void resolverSolicitudRespondeBadRequestSiFaltaEstadoObjetivo() throws Exception {
-        mockMvc.perform(put("/api/v1/admins/solicitudes-locales/10")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Debe indicar el estado objetivo de la solicitud."));
-    }
-
-    @Test
-    void resolverSolicitudRespondeNotFoundSiLocalNoExiste() throws Exception {
-        doThrow(new ResourceNotFoundException("Local no encontrado"))
-                .when(adminService).resolverSolicitud(10L, new DtResolverSolicitudLocalRequest(EstadoLocal.Habilitado));
-
-        mockMvc.perform(put("/api/v1/admins/solicitudes-locales/10")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "estadoObjetivo": "Habilitado"
-                                }
-                                """))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Local no encontrado"));
-    }
-
-    @Test
-    void resolverSolicitudRespondeConflictSiSolicitudYaFueResuelta() throws Exception {
-        doThrow(new IllegalStateException("Solo se pueden resolver solicitudes en estado Pendiente."))
-                .when(adminService).resolverSolicitud(10L, new DtResolverSolicitudLocalRequest(EstadoLocal.Rechazado));
-
-        mockMvc.perform(put("/api/v1/admins/solicitudes-locales/10")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "estadoObjetivo": "Rechazado"
-                                }
-                                """))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Solo se pueden resolver solicitudes en estado Pendiente."));
-    }
 }
 

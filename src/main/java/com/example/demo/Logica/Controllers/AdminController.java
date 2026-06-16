@@ -24,14 +24,13 @@ public class AdminController implements iAdminController {
         return ResponseEntity.ok(adminService.listarSolicitudesPendientes());
     }
 
-    @PutMapping("/{idLocal}")
+    @PutMapping("/resolver_solicitud")
     public ResponseEntity<Void> resolverSolicitud(
-            @PathVariable Long idLocal,
             @RequestBody DtResolverSolicitudLocalRequest request) {
         if (request == null || request.getEstadoObjetivo() == null) {
             throw new IllegalArgumentException("Debe indicar el estado objetivo de la solicitud.");
         }
-        adminService.resolverSolicitud(idLocal, request);
+        adminService.resolverSolicitud(request);
         return ResponseEntity.noContent().build();
     }
 }

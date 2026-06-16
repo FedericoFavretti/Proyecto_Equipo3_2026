@@ -44,16 +44,16 @@ public class AdminService {
     }
 
     @Transactional
-    public void resolverSolicitud(Long idLocal, DtResolverSolicitudLocalRequest request) {
+    public void resolverSolicitud(DtResolverSolicitudLocalRequest request) {
         if (request == null || request.getEstadoObjetivo() == null) {
             throw new IllegalArgumentException(MENSAJE_ESTADO_OBJETIVO_REQUERIDO);
         }
-        validarIdLocal(idLocal);
+        validarIdLocal(request.getIdLocal());
 
         EstadoLocal estadoObjetivo = request.getEstadoObjetivo();
         validarEstadoObjetivo(estadoObjetivo);
 
-        Local local = localRepositorio.buscarPorId(idLocal)
+        Local local = localRepositorio.buscarPorId(request.getIdLocal())
                 .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_LOCAL_NO_ENCONTRADO));
 
         if (local.getEstadoLocal() != EstadoLocal.Pendiente) {

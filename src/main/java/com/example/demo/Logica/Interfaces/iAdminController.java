@@ -11,6 +11,6 @@ import java.util.List;
 
 public interface iAdminController {
     ResponseEntity<List<DtSolicitudLocalPendienteResponse>> listarSolicitudesPendientes();
-    ResponseEntity<Void> resolverSolicitud(Long idLocal, @RequestBody DtResolverSolicitudLocalRequest request);
+    ResponseEntity<Void> resolverSolicitud(@RequestBody DtResolverSolicitudLocalRequest request);
 }
 
