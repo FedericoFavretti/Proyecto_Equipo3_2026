@@ -1,5 +1,6 @@
 package com.example.demo.Logica.DataTypes.summary;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 
 @Builder
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 @AllArgsConstructor
 public class DtPedidoListadoResponse {
@@ -20,6 +22,7 @@ public class DtPedidoListadoResponse {
     private Double total;
     private Duration tiempoEstEntrega;
     private DtClienteResumenResponse cliente;
+    private DtLocalResumenResponse local;
     private Integer cantidadItems;
 }
 

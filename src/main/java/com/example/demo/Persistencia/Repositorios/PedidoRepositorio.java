@@ -18,6 +18,8 @@ public interface PedidoRepositorio {
     void actualizarPago(Long pedidoId, Boolean pagoSimulado, EstadoPedido estado);
     List<Pedido> listarPorLocal(Long idLocal);
     List<PedidoListadoView> listarRecibidosPorLocal(Long idLocal, DtPedidoListadoFiltro filtro);
+    List<PedidoListadoView> listarHistorialPorCliente(Long idCliente, DtPedidoListadoFiltro filtro);
+    boolean existePedidoPorCliente(Long idCliente);
     boolean existePedidoPendientePorLocal(Long idLocal);
 }
 

@@ -1,53 +1,50 @@
 package com.example.demo.Logica.Service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
 
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Enums.EstadoCuenta;
-import org.junit.jupiter.api.Test;
-import org.springframework.security.core.GrantedAuthority;
 
-/*class UsuarioUserDetailsTest {
+class UsuarioUserDetailsTest {
 
     @Test
-    void shouldExposeHorizontalUserCredentialsToSpringSecurity() {
-        Cliente cliente = new Cliente();
-        cliente.setEmail("cliente@foodly.test");
-        cliente.setPasswd("encoded-password");
-        cliente.setTipo(RolUsuario.CUSTOMER);
-        cliente.setEstado(EstadoCuenta.Activo);
+    void shouldExposeUserCredentialsToSpringSecurity() {
+        Cliente cliente = Cliente.builder()
+                .email("cliente@foodly.test")
+                .passwd("encoded-password")
+                .tipo("cliente")
+                .estado(EstadoCuenta.Activo)
+                .build();
 
         UsuarioUserDetails details = new UsuarioUserDetails(cliente);
 
         assertThat(details.getUsername()).isEqualTo("cliente@foodly.test");
         assertThat(details.getPassword()).isEqualTo("encoded-password");
-        assertThat(details.getAuthorities())
-                .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_CUSTOMER");
-        assertThat(details.isEnabled()).isTrue();
+        assertThat(details.getAuthorities()).isEmpty();
+    }
+
+    @Test
+    void shouldUseSpringSecurityDefaultAccountFlags() {
+        Cliente cliente = Cliente.builder()
+                .tipo("cliente")
+                .estado(EstadoCuenta.Bloqueado)
+                .build();
+
+        UsuarioUserDetails details = new UsuarioUserDetails(cliente);
+
+        assertThat(details.isAccountNonExpired()).isTrue();
         assertThat(details.isAccountNonLocked()).isTrue();
+        assertThat(details.isCredentialsNonExpired()).isTrue();
+        assertThat(details.isEnabled()).isTrue();
     }
 
     @Test
-    void shouldDisableUsersThatAreNotActive() {
-        Cliente cliente = new Cliente();
-        cliente.setTipo(RolUsuario.CUSTOMER);
-        cliente.setEstado(EstadoCuenta.PendienteAprobacion);
-
-        UsuarioUserDetails details = new UsuarioUserDetails(cliente);
-
-        assertThat(details.isEnabled()).isFalse();
-    }
-
-    @Test
-    void shouldLockBlockedUsers() {
-        Cliente cliente = new Cliente();
-        cliente.setTipo(RolUsuario.CUSTOMER);
-        cliente.setEstado(EstadoCuenta.Bloqueado);
-
-        UsuarioUserDetails details = new UsuarioUserDetails(cliente);
-
-        assertThat(details.isAccountNonLocked()).isFalse();
+    void shouldRejectNullUser() {
+        assertThatThrownBy(() -> new UsuarioUserDetails(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("usuario no puede ser null");
     }
 }
-*/

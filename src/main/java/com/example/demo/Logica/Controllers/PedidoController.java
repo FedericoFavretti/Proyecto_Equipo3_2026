@@ -73,5 +73,26 @@ public class PedidoController implements iPedidoController {
         List<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(idLocal, filtro);
         return ResponseEntity.ok(pedidos);
     }
+
+    @GetMapping("/clientes/{idCliente}")
+    public ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(
+            @PathVariable Long idCliente,
+            @RequestParam(required = false) EstadoPedido estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @RequestParam(required = false) Long idLocal,
+            @RequestParam(required = false, defaultValue = "fecha") String ordenarPor,
+            @RequestParam(required = false, defaultValue = "desc") String direccion) {
+        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
+                .estado(estado)
+                .fechaDesde(fechaDesde)
+                .fechaHasta(fechaHasta)
+                .idLocal(idLocal)
+                .ordenarPor(ordenarPor)
+                .direccion(direccion)
+                .build();
+        List<DtPedidoListadoResponse> pedidos = pedidoService.buscarYListarHistorialPedidosPropios(idCliente, filtro);
+        return ResponseEntity.ok(pedidos);
+    }
 }
 
