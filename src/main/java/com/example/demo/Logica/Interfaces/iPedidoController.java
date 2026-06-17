@@ -32,5 +32,14 @@ public interface iPedidoController {
             @RequestParam(required = false) String ordenarPor,
             @RequestParam(required = false) String direccion
     );
+    ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(
+            @PathVariable Long idCliente,
+            @RequestParam(required = false) EstadoPedido estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @RequestParam(required = false) Long idLocal,
+            @RequestParam(required = false) String ordenarPor,
+            @RequestParam(required = false) String direccion
+    );
 }
 

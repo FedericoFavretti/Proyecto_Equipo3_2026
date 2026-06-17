@@ -11,7 +11,6 @@ import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -58,12 +57,12 @@ class AdminServiceTest {
         Local local = localPendiente(10L);
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
 
-        adminService.resolverSolicitud(10L, new DtResolverSolicitudLocalRequest(EstadoLocal.Habilitado));
+        adminService.resolverSolicitud(new DtResolverSolicitudLocalRequest(10L, EstadoLocal.Habilitado));
 
         assertThat(local.getEstadoLocal()).isEqualTo(EstadoLocal.Habilitado);
         assertThat(local.getEstado()).isEqualTo(EstadoCuenta.Activo);
         assertThat(local.getEstaAbierto()).isFalse();
-        verify(usuarioRepositorio).actualizar(local);
+        verify(usuarioRepositorio).actualizarEstado(10L, EstadoCuenta.Activo);
         verify(localRepositorio).actualizar(local);
         verify(registroLocalNotificador).notificarLocalResolucionSolicitud(local);
     }
@@ -74,11 +73,11 @@ class AdminServiceTest {
         Local local = localPendiente(10L);
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
 
-        adminService.resolverSolicitud(10L, new DtResolverSolicitudLocalRequest(EstadoLocal.Rechazado));
+        adminService.resolverSolicitud(new DtResolverSolicitudLocalRequest(10L, EstadoLocal.Rechazado));
 
         assertThat(local.getEstadoLocal()).isEqualTo(EstadoLocal.Rechazado);
         assertThat(local.getEstado()).isEqualTo(EstadoCuenta.Bloqueado);
-        verify(usuarioRepositorio).actualizar(local);
+        verify(usuarioRepositorio).actualizarEstado(10L, EstadoCuenta.Bloqueado);
         verify(localRepositorio).actualizar(local);
         verify(registroLocalNotificador).notificarLocalResolucionSolicitud(local);
     }
@@ -87,7 +86,7 @@ class AdminServiceTest {
     void resolverSolicitudRechazaEstadoObjetivoInvalido() {
         AdminService adminService = crearServicio();
 
-        assertThatThrownBy(() -> adminService.resolverSolicitud(10L, new DtResolverSolicitudLocalRequest(EstadoLocal.Pendiente)))
+        assertThatThrownBy(() -> adminService.resolverSolicitud(new DtResolverSolicitudLocalRequest(10L, EstadoLocal.Pendiente)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El estado objetivo debe ser Habilitado o Rechazado.");
 
@@ -98,7 +97,7 @@ class AdminServiceTest {
     void resolverSolicitudRechazaRequestNulo() {
         AdminService adminService = crearServicio();
 
-        assertThatThrownBy(() -> adminService.resolverSolicitud(10L, null))
+        assertThatThrownBy(() -> adminService.resolverSolicitud(null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Debe indicar el estado objetivo de la solicitud.");
 
@@ -110,12 +109,12 @@ class AdminServiceTest {
         AdminService adminService = crearServicio();
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> adminService.resolverSolicitud(10L, new DtResolverSolicitudLocalRequest(EstadoLocal.Habilitado)))
+        assertThatThrownBy(() -> adminService.resolverSolicitud(new DtResolverSolicitudLocalRequest(10L, EstadoLocal.Habilitado)))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Local no encontrado");
 
         verify(localRepositorio).buscarPorId(10L);
-        verify(usuarioRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any());
+        verify(usuarioRepositorio, never()).actualizarEstado(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any());
         verify(registroLocalNotificador, never()).notificarLocalResolucionSolicitud(org.mockito.ArgumentMatchers.any());
     }
 
@@ -126,12 +125,12 @@ class AdminServiceTest {
         local.setEstadoLocal(EstadoLocal.Habilitado);
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
 
-        assertThatThrownBy(() -> adminService.resolverSolicitud(10L, new DtResolverSolicitudLocalRequest(EstadoLocal.Rechazado)))
+        assertThatThrownBy(() -> adminService.resolverSolicitud(new DtResolverSolicitudLocalRequest(10L, EstadoLocal.Rechazado)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Solo se pueden resolver solicitudes en estado Pendiente.");
 
         verify(localRepositorio).buscarPorId(10L);
-        verify(usuarioRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any());
+        verify(usuarioRepositorio, never()).actualizarEstado(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any());
         verify(localRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any());
     }
 
