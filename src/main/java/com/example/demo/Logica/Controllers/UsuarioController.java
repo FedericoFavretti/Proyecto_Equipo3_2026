@@ -28,5 +28,13 @@ public class UsuarioController implements iUsuarioController {
         usuarioService.activarCuenta(email);
         return ResponseEntity.ok("Cuenta activada correctamente.");
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> cerrarSesion(
+            @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        usuarioService.cerrarSesion(token);
+        return ResponseEntity.noContent().build();
+    }
 }
 

@@ -4,6 +4,9 @@ import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.DataTypes.shared.DtReclamo;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Component
 public class ReclamoMapper {
     private final PedidoMapper pedidoMapper;
@@ -35,6 +38,12 @@ public class ReclamoMapper {
                 .fecha(reclamo.getFecha())
                 .dtPedido(pedidoMapper.mapearDtPedidoDeClase(reclamo.getPedido()))
                 .build();
+    }
+
+    public List<DtReclamo> mapearReclamosDeClase(List<Reclamo> reclamos) {
+        return reclamos.stream()
+                .map(this::mapearDtReclamoDeClase)
+                .collect(Collectors.toList());
     }
 }
 

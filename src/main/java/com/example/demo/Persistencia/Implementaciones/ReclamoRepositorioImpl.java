@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,7 +51,7 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
 
     @Override
     public void actualizar(Reclamo reclamo) {
-        jdbcTemplate.update("UPDATE Reclamo SET motivo = ?, tipoCompensacion = ?, montoReintegro = ?, fecha = ?, idPedido = ? WHERE id = ?)",
+        jdbcTemplate.update("UPDATE Reclamo SET motivo = ?, tipoCompensacion = ?, montoReintegro = ?, fecha = ?, idPedido = ? WHERE id = ?",
                 reclamo.getMotivo(),
                 reclamo.getTipoCompensacion(),
                 reclamo.getMontoReintegro(),
@@ -66,8 +67,28 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
     }
 
     @Override
-    public List<Reclamo> buscarReclamosPorFiltro(DtFiltroReclamo dtFiltroReclamo){
-        return null/*jdbcTemplate.query("SELECT * FROM reclamo WHERE ")*/;
+    public List<Reclamo> buscarReclamosPorFiltro(DtFiltroReclamo filtro) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT r.*, p.* FROM reclamo r JOIN pedido p ON r.idpedido = p.idpedido WHERE 1=1"
+        );
+        List<Object> params = new ArrayList<>();
+
+        if (filtro.getIdCliente() != null) {
+            sql.append(" AND p.id = ?");
+            params.add(filtro.getIdCliente());
+        }
+
+        if (filtro.getEstadoPedido() != null) {
+            sql.append(" AND p.estado = ?");
+            params.add(filtro.getEstadoPedido().name());
+        }
+
+        if (filtro.getFechaReclamo() != null) {
+            sql.append(" AND r.fecha = ?");
+            params.add(filtro.getFechaReclamo());
+        }
+
+        return jdbcTemplate.query(sql.toString(), (rs, row) -> mapearRecalamo(rs), params.toArray());
     }
 
     private Reclamo mapearRecalamo(ResultSet rs) throws SQLException {

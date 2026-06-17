@@ -7,8 +7,11 @@ import com.example.demo.auth.dto.LoginRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 public interface iUsuarioController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request);
+    public ResponseEntity<Void> cerrarSesion(
+            @RequestHeader("Authorization") String authHeader);
 }
 

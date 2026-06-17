@@ -1,6 +1,8 @@
 
 package com.example.demo.jwt;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -90,5 +92,11 @@ public class JwtService {
         } catch (IllegalArgumentException exception) {
             return secretKey.getBytes(StandardCharsets.UTF_8);
         }
+    }
+    public LocalDateTime getExpiracion(String token) {
+        Date expiration = extractClaim(token, Claims::getExpiration);
+        return expiration.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
     }
 }
