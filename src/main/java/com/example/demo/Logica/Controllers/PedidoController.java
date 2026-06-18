@@ -2,6 +2,7 @@ package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.request.DtConfirmarPedidoRequest;
+import com.example.demo.Logica.DataTypes.request.DtRechazarPedidoRequest;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
 import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
@@ -38,8 +39,10 @@ public class PedidoController implements iPedidoController {
     }
 
     @PostMapping("/{idPedido}/rechazar")
-    public ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido) {
-        pedidoService.rechazarPedido(idPedido);
+    public ResponseEntity<Void> rechazarPedido(
+            @PathVariable Long idPedido,
+            @RequestBody DtRechazarPedidoRequest request) {
+        pedidoService.rechazarPedido(idPedido, request.getMotivo());
         return ResponseEntity.ok().build();
     }
 

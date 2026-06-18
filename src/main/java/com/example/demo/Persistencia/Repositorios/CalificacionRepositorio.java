@@ -12,4 +12,5 @@ public interface CalificacionRepositorio {
     void guardar(Calificacion calificacion);
     void actualizar(Calificacion calificacion);
     void eliminar(Long id);
+    List<Calificacion> listarPorLocal(Long idLocal);
 }

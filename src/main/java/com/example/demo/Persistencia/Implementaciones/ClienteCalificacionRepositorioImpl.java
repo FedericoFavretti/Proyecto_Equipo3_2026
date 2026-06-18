@@ -15,7 +15,7 @@ public class ClienteCalificacionRepositorioImpl implements ClienteCalificacionRe
 
     @Override
     public void calificar(Long idCliente, Long idCalificacion) {
-        jdbcTemplate.update("INSERT INTO cliente_calificacion (id_cliente, id_calificacion) values (?, ?)",
+        jdbcTemplate.update("INSERT INTO cliente_calificacion (idcliente, idcalificacion) values (?, ?)",
                 idCliente,
                 idCalificacion
         );

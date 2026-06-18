@@ -12,6 +12,7 @@ import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.DetallePedidoMapper;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
 import com.example.demo.Logica.Mappers.PedidoMapper;
@@ -130,8 +131,21 @@ public class PedidoService {
     }
 
     @Transactional
-    public void rechazarPedido(long idPedido) {
+    public void rechazarPedido(long idPedido, String motivo) {
+        Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado"));
 
+        if (!pedido.getEstado().equals(EstadoPedido.Pendiente)) {
+            throw new IllegalStateException("Solo se pueden rechazar pedidos en estado Pendiente.");
+        }
+
+        if (motivo == null || motivo.isBlank()) {
+            throw new IllegalArgumentException("Debe seleccionar o escribir un motivo de rechazo antes de continuar.");
+        }
+
+        pedido.setEstado(EstadoPedido.Rechazado);
+        pedidoRepositorio.actualizar(pedido);
+        notificacionPedidoService.notificarRechazo(pedido, motivo.trim());
     }
 
     @Transactional

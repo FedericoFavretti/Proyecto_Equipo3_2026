@@ -1,14 +1,17 @@
 package com.example.demo.Logica.Controllers;
-import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
-import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/usuarios")
@@ -34,6 +37,25 @@ public class UsuarioController implements iUsuarioController {
             @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         usuarioService.cerrarSesion(token);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping(value = "/perfil", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> editarDatosDeCuentaDeUsuario(
+            @RequestParam Map<String, String> datos,
+            @RequestPart(value = "foto", required = false) MultipartFile foto,
+            @RequestHeader("Authorization") String authHeader,
+            Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        usuarioService.editarDatosDeCuentaDeUsuario(authentication.getName(), authHeader, datos, foto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/clientes/{idCliente}/cuenta-dev")
+    public ResponseEntity<Void> eliminarCuentaDeUsuarioPropiaDev(@PathVariable Long idCliente) {
+        usuarioService.eliminarCuentaDeUsuarioPropia(idCliente);
         return ResponseEntity.noContent().build();
     }
 }
