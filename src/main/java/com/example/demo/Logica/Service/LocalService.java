@@ -3,6 +3,7 @@ package com.example.demo.Logica.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.time.LocalDateTime;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
@@ -15,10 +16,13 @@ import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Logica.Record.PlatoMasPedidoProjection;
-import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
-import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
-import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
-import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Persistencia.Repositorios.*;
+import com.example.demo.Logica.Clases.Promocion;
+import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
+import com.example.demo.Logica.Mappers.PromocionMapper;
+import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
+import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
+import com.example.demo.Logica.Clases.Cliente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -64,13 +68,16 @@ public class LocalService {
     private final PasswordEncoder passwordEncoder;
     private final LocalMapper localMapper;
     private final PlatoMapper platoMapper;
+    private final PromocionRepositorio promocionRepositorio;
+    private final PromocionMapper promocionMapper;
+    private final ClienteRepositorio clienteRepositorio;
 
     public LocalService(
             LocalRepositorio localRepositorio,
             PlatoRepositorio platoRepositorio,
             RegistroLocalNotificador registroLocalNotificador,
             UsuarioRepositorio usuarioRepositorio,
-            PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper) {
+            PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper, PromocionRepositorio promocionRepositorio, PromocionMapper promocionMapper, ClienteRepositorio clienteRepositorio) {
         this.localRepositorio = localRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;
@@ -79,6 +86,9 @@ public class LocalService {
         this.passwordEncoder = passwordEncoder;
         this.localMapper = localMapper;
         this.platoMapper = platoMapper;
+        this.promocionRepositorio = promocionRepositorio;
+        this.promocionMapper = promocionMapper;
+        this.clienteRepositorio = clienteRepositorio;
     }
 
     @Transactional
@@ -129,6 +139,73 @@ public class LocalService {
                 .orElseThrow(() -> new RuntimeException(MENSAJE_PLATO_NO_ENCONTRADO));
         plato.setDisponible(false);
         platoRepositorio.actualizar(plato);
+    }
+
+    @Transactional
+    public Promocion altaPromocion(DtPromocionRequest request) {
+        validarDatosPromocion(request);
+
+        Plato plato = platoRepositorio.buscarPorId(request.getIdPlato())
+                .orElseThrow(() -> new RuntimeException("Plato no encontrado"));
+
+        Promocion promocion = Promocion.builder()
+                .descuento(request.getDescuento())
+                .fechaInicio(request.getFechaInicio())
+                .fechaFin(request.getFechaFin())
+                .descripcion(request.getDescripcion())
+                .plato(plato)
+                .build();
+
+        promocionRepositorio.guardar(promocion);
+        return promocion;
+    }
+
+    @Transactional
+    public Promocion gestionarPromocionModificacion(long idPromocion, DtPromocionRequest request) {
+        validarDatosPromocion(request);
+
+        promocionRepositorio.buscarPorId(idPromocion)
+                .orElseThrow(() -> new RuntimeException("Promoción no encontrada"));
+
+        Plato plato = platoRepositorio.buscarPorId(request.getIdPlato())
+                .orElseThrow(() -> new RuntimeException("Plato no encontrado"));
+
+        Promocion promocion = Promocion.builder()
+                .id(idPromocion)
+                .descuento(request.getDescuento())
+                .fechaInicio(request.getFechaInicio())
+                .fechaFin(request.getFechaFin())
+                .descripcion(request.getDescripcion())
+                .plato(plato)
+                .build();
+
+        promocionRepositorio.actualizar(promocion);
+        return promocion;
+    }
+
+    @Transactional
+    public void gestionarPromocionBaja(long idPromocion) {
+        promocionRepositorio.buscarPorId(idPromocion)
+                .orElseThrow(() -> new RuntimeException("Promoción no encontrada"));
+        promocionRepositorio.eliminar(idPromocion);
+    }
+
+    private void validarDatosPromocion(DtPromocionRequest request) {
+        if (request == null || request.getIdPlato() == null) {
+            throw new IllegalArgumentException("Debe seleccionar al menos un plato para aplicar la promoción.");
+        }
+
+        if (request.getDescuento() == null || request.getDescuento() < 1 || request.getDescuento() > 100) {
+            throw new IllegalArgumentException("El porcentaje de descuento debe estar entre 1% y 100%.");
+        }
+
+        if (request.getFechaInicio() == null || request.getFechaFin() == null) {
+            throw new IllegalArgumentException("Debe indicar fecha de inicio y fecha de fin de la promoción.");
+        }
+
+        if (request.getFechaFin().isBefore(request.getFechaInicio())) {
+            throw new IllegalArgumentException("La fecha de fin de la promoción debe ser posterior a la fecha de inicio.");
+        }
     }
 
     @Transactional
@@ -335,6 +412,27 @@ public class LocalService {
         if (plato.getLocal() == null || plato.getLocal().getId() == null || !plato.getLocal().getId().equals(idLocal)) {
             throw new IllegalStateException(MENSAJE_PLATO_DE_OTRO_LOCAL);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<DtClienteLocalResponse> buscarYListarClientesDelLocal(Long idLocal, DtFiltroClienteLocal filtro) {
+        localRepositorio.buscarPorId(idLocal)
+                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+
+        List<Cliente> clientes = clienteRepositorio.buscarClientesDelLocal(idLocal, filtro);
+
+        if (clientes.isEmpty()) {
+            throw new IllegalArgumentException("Aún no tiene clientes registrados. Aparecerán aquí una vez que realicen su primer pedido.");
+        }
+
+        return clientes.stream()
+                .map(cliente -> DtClienteLocalResponse.builder()
+                        .id(cliente.getId())
+                        .nombre(cliente.getNombre())
+                        .apellido(cliente.getApellido())
+                        .calificacionGlobal(cliente.getCalificacionGlobal())
+                        .build())
+                .toList();
     }
 }
 

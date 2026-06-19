@@ -40,10 +40,11 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
 
     @Override
     public void guardar(Promocion promocion) {
-        jdbcTemplate.update("INSERT INTO Promocion (descuento, fechaInicio, fechaFin, descripcion, idPlato) VALUES (?, ?, ?, ?, ?)",
+        jdbcTemplate.update(
+                "INSERT INTO Promocion (descuento, fechaInicio, fechaFin, descripcion, idPlato) VALUES (?, ?, ?, ?, ?)",
                 promocion.getDescuento(),
-                promocion.getFechaInicio(),
-                promocion.getFechaFin(),
+                java.sql.Date.valueOf(promocion.getFechaInicio().toLocalDate()),
+                java.sql.Date.valueOf(promocion.getFechaFin().toLocalDate()),
                 promocion.getDescripcion(),
                 promocion.getPlato().getId()
         );
@@ -51,10 +52,11 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
 
     @Override
     public void actualizar(Promocion promocion) {
-        jdbcTemplate.update("UPDATE Promocion SET descuento = ?, fechaInicio = ?, fechaFin = ?, descripcion = ?, idPlato = ? WHERE id = ?)",
+        jdbcTemplate.update(
+                "UPDATE Promocion SET descuento = ?, fechaInicio = ?, fechaFin = ?, descripcion = ?, idPlato = ? WHERE id = ?",
                 promocion.getDescuento(),
-                promocion.getFechaInicio(),
-                promocion.getFechaFin(),
+                java.sql.Date.valueOf(promocion.getFechaInicio().toLocalDate()),
+                java.sql.Date.valueOf(promocion.getFechaFin().toLocalDate()),
                 promocion.getDescripcion(),
                 promocion.getPlato().getId(),
                 promocion.getId()
@@ -107,6 +109,15 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
         return jdbcTemplate.query(sql.toString(),
                 (rs, row) -> mapearPromocion(rs),
                 params.toArray());
+    }
+
+    @Override
+    public List<Promocion> buscarPorPlato(Long idPlato) {
+        return jdbcTemplate.query(
+                "SELECT * FROM Promocion WHERE idPlato = ?",
+                (rs, row) -> mapearPromocion(rs),
+                idPlato
+        );
     }
 
     private Promocion mapearPromocion(ResultSet rs) throws SQLException {

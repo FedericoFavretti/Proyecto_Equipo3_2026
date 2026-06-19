@@ -13,12 +13,16 @@ import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
+import com.example.demo.Logica.DataTypes.response.DtUsuarioListadoResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 @Service
 public class AdminService {
@@ -136,6 +140,56 @@ public class AdminService {
                 local.getDescripcion(),
                 local.getImagenes()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<DtUsuarioListadoResponse> buscarYListarUsuarios(DtFiltroUsuario filtro) {
+        List<DtUsuarioListadoResponse> usuarios = new ArrayList<>();
+
+        boolean incluirClientes = filtro == null || filtro.getTipoUsuario() == null
+                || "cliente".equalsIgnoreCase(filtro.getTipoUsuario());
+        boolean incluirLocales = filtro == null || filtro.getTipoUsuario() == null
+                || "local".equalsIgnoreCase(filtro.getTipoUsuario());
+
+        if (incluirClientes) {
+            clienteRepositorio.buscarConFiltros(filtro).forEach(cliente -> usuarios.add(
+                    DtUsuarioListadoResponse.builder()
+                            .id(cliente.getId())
+                            .email(cliente.getEmail())
+                            .tipoUsuario("cliente")
+                            .nombreVisible(cliente.getNombre() + " " + cliente.getApellido())
+                            .estado(cliente.getEstado())
+                            .calificacionGlobal(cliente.getCalificacionGlobal())
+                            .build()
+            ));
+        }
+
+        if (incluirLocales) {
+            localRepositorio.buscarUsuariosConFiltros(filtro).forEach(local -> usuarios.add(
+                    DtUsuarioListadoResponse.builder()
+                            .id(local.getId())
+                            .email(local.getEmail())
+                            .tipoUsuario("local")
+                            .nombreVisible(local.getNombre())
+                            .estado(local.getEstado())
+                            .calificacionGlobal(local.getCalificacionGlobal())
+                            .build()
+            ));
+        }
+
+        boolean descendente = filtro == null || filtro.getDireccion() == null
+                || !"asc".equalsIgnoreCase(filtro.getDireccion());
+        Comparator<DtUsuarioListadoResponse> comparador = Comparator.comparing(
+                DtUsuarioListadoResponse::getCalificacionGlobal,
+                Comparator.nullsLast(Comparator.naturalOrder())
+        );
+        usuarios.sort(descendente ? comparador.reversed() : comparador);
+
+        if (usuarios.isEmpty()) {
+            throw new IllegalArgumentException("No se encontraron usuarios que coincidan con los criterios de búsqueda seleccionados.");
+        }
+
+        return usuarios;
     }
 }
 

@@ -4,6 +4,8 @@ import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
+import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
+import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +14,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
+
 @Repository
 public class ClienteRepositorioImpl implements ClienteRepositorio {
     private final JdbcTemplate jdbcTemplate;
@@ -24,7 +28,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public List<Cliente> listarTodos() {
         return jdbcTemplate.query(
-                "SELECT * FROM Cliente",
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id",
                 (rs, row)-> mapearCliente(rs)
         );
     }
@@ -83,6 +87,78 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                 Integer.class, documento
         );
         return count != null && count > 0;
+    }
+
+    @Override
+    public List<Cliente> buscarConFiltros(DtFiltroUsuario filtro) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE 1=1"
+        );
+        List<Object> params = new ArrayList<>();
+
+        if (filtro != null && filtro.getTexto() != null && !filtro.getTexto().isBlank()) {
+            sql.append(" AND (u.email ILIKE ? OR c.nombre ILIKE ? OR c.apellido ILIKE ?)");
+            String termino = "%" + filtro.getTexto() + "%";
+            params.add(termino);
+            params.add(termino);
+            params.add(termino);
+        }
+
+        if (filtro != null && filtro.getEstado() != null) {
+            sql.append(" AND u.estado = ?");
+            params.add(filtro.getEstado().name());
+        }
+
+        sql.append(" ORDER BY ").append(resolverCampoOrdenCliente(filtro));
+        sql.append(" ").append(resolverDireccionOrden(filtro));
+
+        return jdbcTemplate.query(sql.toString(), (rs, row) -> mapearCliente(rs), params.toArray());
+    }
+
+    @Override
+    public List<Cliente> buscarClientesDelLocal(Long idLocal, DtFiltroClienteLocal filtro) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT DISTINCT u.*, c.*
+                FROM usuario u
+                JOIN cliente c ON u.id = c.id
+                JOIN pedido p ON p.idcliente = c.id
+                WHERE p.idlocal = ?
+                """);
+        List<Object> params = new ArrayList<>();
+        params.add(idLocal);
+
+        if (filtro != null && filtro.getNombre() != null && !filtro.getNombre().isBlank()) {
+            sql.append(" AND (c.nombre ILIKE ? OR c.apellido ILIKE ?)");
+            String termino = "%" + filtro.getNombre() + "%";
+            params.add(termino);
+            params.add(termino);
+        }
+
+        if (filtro != null && filtro.getCalificacionMinima() != null) {
+            sql.append(" AND c.calificacionGlobal >= ?");
+            params.add(filtro.getCalificacionMinima());
+        }
+
+        sql.append(" ORDER BY c.calificacionGlobal");
+        sql.append(" ").append(
+                filtro != null && "asc".equalsIgnoreCase(filtro.getDireccion()) ? "ASC" : "DESC"
+        );
+
+        return jdbcTemplate.query(sql.toString(), (rs, row) -> mapearCliente(rs), params.toArray());
+    }
+
+    private String resolverCampoOrdenCliente(DtFiltroUsuario filtro) {
+        if (filtro == null || filtro.getOrdenarPor() == null) {
+            return "c.calificacionGlobal";
+        }
+        return "calificacion".equalsIgnoreCase(filtro.getOrdenarPor()) ? "c.calificacionGlobal" : "c.calificacionGlobal";
+    }
+
+    private String resolverDireccionOrden(DtFiltroUsuario filtro) {
+        if (filtro == null || filtro.getDireccion() == null) {
+            return "DESC";
+        }
+        return "asc".equalsIgnoreCase(filtro.getDireccion()) ? "ASC" : "DESC";
     }
 
     private Cliente mapearCliente(ResultSet rs) throws SQLException {
