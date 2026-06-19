@@ -27,6 +27,14 @@ public class EmailService {
         );
     }
 
+    public void recuperarPasswdPorCorreo(String correo, String link) {
+        enviarCorreo(
+                correo,
+                "Recupera tu cuenta en Foodly",
+                "Hacé clic en el siguiente enlace para recuperar tu cuenta (válido por 30 minutos): " + link
+        );
+    }
+
     public void enviarCorreo(String destinatario, String asunto, String cuerpo) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {

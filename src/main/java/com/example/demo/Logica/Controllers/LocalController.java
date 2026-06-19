@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Interfaces.iLocalController;
@@ -67,6 +68,12 @@ public class LocalController implements iLocalController {
     public ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") Long idLocal) {
         localService.regitrarCierre(idLocal);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/estadisticas")
+    public ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal) {
+        DtEstadisticasLocal dtEstadisticasLocal = localService.obtenerEstadisticasLocal(idLocal);
+        return ResponseEntity.ok(dtEstadisticasLocal);
     }
 }
 

@@ -4,6 +4,7 @@ import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Record.PlatoMasPedidoProjection;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
@@ -203,7 +204,36 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         return cantidad != null && cantidad > 0;
     }
 
+    @Override
+    public List<PlatoMasPedidoProjection> obtenerPlatosMasPedidos(Long idLocal, int limite) {
+        String sql = """
+        SELECT dp.idplato AS id_plato, SUM(dp.cantidad) AS cantidad_total
+        FROM pedido p
+        JOIN detallepedido dp ON p.id = dp.idpedido
+        WHERE p.idlocal = ?
+        GROUP BY dp.idplato
+        ORDER BY cantidad_total DESC
+        LIMIT ?
+        """;
 
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new PlatoMasPedidoProjection(
+                rs.getLong("id_plato"),
+                rs.getInt("cantidad_total")
+        ), idLocal, limite);
+    }
+
+    @Override
+    public Double obtenerGananciasMesActual(Long idLocal) {
+        String sql = """
+        SELECT COALESCE(SUM(p.total), 0) AS ganancia
+        FROM pedido p
+        WHERE p.idlocal = ?
+          AND DATE_TRUNC('month', p.fecha) = DATE_TRUNC('month', CURRENT_DATE)
+          AND p.estado = ?
+        """;
+
+        return jdbcTemplate.queryForObject(sql, Double.class, idLocal, EstadoPedido.Confirmado.name());
+    }
 
     @Override
     public void guardar(Pedido pedido) {
@@ -346,6 +376,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
 
         return "asc".equalsIgnoreCase(filtro.getDireccion()) ? "ASC" : "DESC";
     }
+
 
 }
 

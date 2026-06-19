@@ -1,5 +1,6 @@
 package com.example.demo.Logica.Controllers;
 import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
+import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
@@ -34,6 +35,18 @@ public class UsuarioController implements iUsuarioController {
             @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         usuarioService.cerrarSesion(token);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/recuperar_contra_correo")
+    public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo) {
+        usuarioService.recuperarPasswdPorCorreo(correo);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/recuperar")
+    public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd) {
+        usuarioService.recuperarPasswd(dtRecuperarPasswd);
         return ResponseEntity.noContent().build();
     }
 }

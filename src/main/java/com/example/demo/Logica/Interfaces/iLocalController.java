@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import org.springframework.http.ResponseEntity;
@@ -23,5 +24,7 @@ public interface iLocalController {
     ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") Long idLocal);
 
     ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") Long idLocal);
+
+   ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal);
 }
 

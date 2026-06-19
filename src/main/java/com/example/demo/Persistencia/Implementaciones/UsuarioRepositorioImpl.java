@@ -99,6 +99,16 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
     @Override
     public void actualizar(Usuario usuario) {
+        jdbcTemplate.update("UPDATE usuario SET email = ?, passwd = ?, foto = ?, estado = ?, tipo = ?, sesiones_invalidadas_desde = ? WHERE id = ?",
+                usuario.getEmail(),
+                usuario.getPasswd(),
+                usuario.getFoto(),
+                usuario.getEstado(),
+                usuario.getEstado(),
+                usuario.getTipo(),
+                usuario.getSesionesInvalidadasDesde(),
+                usuario.getId()
+                );
         if (usuario instanceof Local) {
             localRepositorio.actualizar((Local) usuario);
         } else if (usuario instanceof Cliente) {
@@ -130,7 +140,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     @Override
     public void activarCuenta(Long id) {
         jdbcTemplate.update(
-                "UPDATE usuario SET estado = ? WHERE id = ?",
+                "UPDATE usuario SET  estado = ? WHERE id = ?",
                 EstadoCuenta.Activo.name(), id
         );
     }

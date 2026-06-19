@@ -10,12 +10,11 @@ import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
+import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
@@ -98,5 +97,48 @@ public class JwtService {
         return expiration.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
+    }
+    public String generarTokenRecuperacion(String correo) {
+        Date issuedAt = new Date();
+        Date expiration = new Date(issuedAt.getTime() + 30 * 60 * 1000);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tipo", "RECUPERACION_PASSWORD");
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(correo)
+                .issuedAt(issuedAt)
+                .expiration(expiration)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public String validarYObtenerCorreoRecuperacion(String token) {
+        Claims claims;
+        try {
+            claims = extractAllClaims(token);
+        } catch (ExpiredJwtException e) {
+            throw new IllegalArgumentException("El enlace de recuperación expiró.");
+        } catch (JwtException e) {
+            throw new IllegalArgumentException("Token inválido.");
+        }
+
+        if (!"RECUPERACION_PASSWORD".equals(claims.get("tipo"))) {
+            throw new IllegalArgumentException("Token inválido para esta operación.");
+        }
+
+        return claims.getSubject();
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails, LocalDateTime sesionesInvalidadasDesde) {
+        String username = extractUsername(token);
+        Date issuedAt = extractClaim(token, Claims::getIssuedAt);
+
+        boolean noExpirado = !isTokenExpired(token);
+        boolean emitidoDespuesDeInvalidacion = sesionesInvalidadasDesde == null
+                || issuedAt.toInstant().isAfter(sesionesInvalidadasDesde.atZone(ZoneId.systemDefault()).toInstant());
+
+        return username.equals(userDetails.getUsername()) && noExpirado && emitidoDespuesDeInvalidacion;
     }
 }

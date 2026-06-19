@@ -10,4 +10,5 @@ import java.util.List;
 public interface iReclamoController {
     public ResponseEntity<Void> reclamar(@RequestBody DtReclamo dtReclamo);
     public ResponseEntity<List<DtReclamo>> buscarReclamos(@RequestBody DtFiltroReclamo dtFiltroReclamo);
+    public ResponseEntity<Void> resolverReclamo(@RequestBody DtReclamo dtReclamo);
 }

@@ -177,7 +177,12 @@ public class PedidoService {
 
     @Transactional
     public void cancelarPedido(Long idPedido) {
-
+        Pedido pedido = pedidoRepositorio.buscarPorId(idPedido).orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        if (!pedido.getEstado().equals(EstadoPedido.Pendiente)) {
+            throw new RuntimeException("El pedido no se encuentra en estado pendiente.");
+        }
+        pedido.setEstado(EstadoPedido.Cancelado);
+        pedidoRepositorio.actualizar(pedido);
     }
 
     @Transactional(readOnly = true)

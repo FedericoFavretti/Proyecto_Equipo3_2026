@@ -1,6 +1,7 @@
 package com.example.demo.jwt;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -10,6 +11,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.example.demo.Logica.Clases.Usuario; // 👈 ajustá el package real
+import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio; // 👈 ajustá el package real
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -25,10 +29,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final UsuarioRepositorio usuarioRepositorio; // 👈 nuevo
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JwtService jwtService,
+                                   UserDetailsService userDetailsService,
+                                   UsuarioRepositorio usuarioRepositorio) { // 👈 nuevo
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.usuarioRepositorio = usuarioRepositorio; // 👈 nuevo
     }
 
     @Override
@@ -54,7 +62,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+
+
+            Usuario usuario = usuarioRepositorio.buscarPorEmail(username).orElse(null);
+            LocalDateTime sesionesInvalidadasDesde = usuario != null ? usuario.getSesionesInvalidadasDesde() : null;
+
+            if (jwtService.isTokenValid(jwt, userDetails, sesionesInvalidadasDesde)) { // 👈 cambiado
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
