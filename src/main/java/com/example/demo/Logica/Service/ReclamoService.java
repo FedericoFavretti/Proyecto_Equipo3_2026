@@ -7,13 +7,8 @@ import com.example.demo.Logica.DataTypes.shared.DtReclamo;
 import com.example.demo.Logica.Mappers.ReclamoMapper;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
-
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -39,10 +34,18 @@ public class ReclamoService {
         reclamoRepositorio.guardar(reclamo);
     }
 
-    public List<DtReclamo> buscarReclamos(@RequestBody DtFiltroReclamo dtFiltroReclamo){
+    public List<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo){
         if(dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null && dtFiltroReclamo.getIdCliente() == null){
             throw new RuntimeException("Debe ingresar algun filtro para obtener los reclamos");
         }
         return reclamoMapper.mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));
+    }
+
+    public void resolverReclamo(DtReclamo dtReclamo){
+        if(reclamoRepositorio.buscarPorId(dtReclamo.getId()).isEmpty()){
+            throw new RuntimeException("No existe el reclamo con el id: "+dtReclamo.getId());
+        }
+        Reclamo reclamo = reclamoMapper.mapearReclamoDeDt(dtReclamo);
+        reclamoRepositorio.actualizar(reclamo);
     }
 }

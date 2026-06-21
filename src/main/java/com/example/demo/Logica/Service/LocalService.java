@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Enums.EstadoCuenta;
@@ -13,6 +14,7 @@ import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
+import com.example.demo.Logica.Record.PlatoMasPedidoProjection;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
@@ -175,6 +177,21 @@ public class LocalService {
         validarSinPedidosPendientes(idLocal);
         local.setEstaAbierto(false);
         localRepositorio.actualizar(local);
+    }
+
+    @Transactional
+    public DtEstadisticasLocal obtenerEstadisticasLocal(Long idLocal) {
+        List<PlatoMasPedidoProjection> proyecciones = pedidoRepositorio.obtenerPlatosMasPedidos(idLocal, 5);
+        List<DtPlato> platosMasPedido = proyecciones.stream()
+                .map(p -> platoRepositorio.buscarPorId(p.idPlato())
+                        .orElseThrow(() -> new RuntimeException("Plato no encontrado")))
+                .map(platoMapper::mapearDtPlatoDeClase)
+                .toList();
+        Double gananciasMensuales = pedidoRepositorio.obtenerGananciasMesActual(idLocal);
+        return DtEstadisticasLocal.builder()
+                .platosMasPedido(platosMasPedido)
+                .gananciasMensuales(gananciasMensuales)
+                .build();
     }
 
     private void validarDatosPlato(DtPlato dtPlato) {

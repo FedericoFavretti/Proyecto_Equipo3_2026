@@ -1,5 +1,6 @@
 package com.example.demo.Logica.Controllers;
 
+import com.example.demo.Logica.DataTypes.request.DtResCuentaUsuario;
 import com.example.demo.Logica.DataTypes.request.DtResolverSolicitudLocalRequest;
 import com.example.demo.Logica.DataTypes.response.DtSolicitudLocalPendienteResponse;
 import com.example.demo.Logica.Interfaces.iAdminController;
@@ -32,6 +33,12 @@ public class AdminController implements iAdminController {
         }
         adminService.resolverSolicitud(request);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping
+    public ResponseEntity<Void> resolverCuentaUsuario(@RequestBody DtResCuentaUsuario dtResCuentaUsuario) {
+        adminService.resolverCuentaUsuario(dtResCuentaUsuario);
+        return ResponseEntity.ok().build();
     }
 }
 

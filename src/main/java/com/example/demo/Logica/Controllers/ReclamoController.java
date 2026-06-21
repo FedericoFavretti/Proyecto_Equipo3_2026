@@ -30,4 +30,11 @@ public class ReclamoController implements iReclamoController {
         reclamoService.buscarReclamos(dtFiltroReclamo);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/resolver_reclamo")
+    public ResponseEntity<Void> resolverReclamo(@RequestBody DtReclamo dtReclamo) {
+
+        return  ResponseEntity.ok().build();
+    }
+
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 @Repository
@@ -85,11 +86,20 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     }
 
     private Cliente mapearCliente(ResultSet rs) throws SQLException {
-        Cliente cliente = new Cliente(
-                rs.getString("documento"),
-                rs.getString("nombre"),
-                rs.getString("apellido"),
-                new DtDireccion(
+        Timestamp sesionesInvalidadasTs = rs.getTimestamp("sesiones_invalidadas_desde");
+        return Cliente.builder()
+                .id(rs.getLong("id"))
+                .email(rs.getString("email"))
+                .passwd(rs.getString("passwd"))
+                .foto(rs.getString("foto"))
+                .estado(EstadoCuenta.valueOf(rs.getString("estado")))
+                .sesionesInvalidadasDesde(
+                        sesionesInvalidadasTs != null ? sesionesInvalidadasTs.toLocalDateTime() : null
+                )
+                .documento(rs.getString("documento"))
+                .nombre(rs.getString("nombre"))
+                .apellido(rs.getString("apellido"))
+                .direccion(new DtDireccion(
                         rs.getString("calle"),
                         rs.getString("numero"),
                         rs.getString("ciudad"),
@@ -108,6 +118,10 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
             cliente.setEstado(EstadoCuenta.valueOf(estado));
         }
         return cliente;
+                ))
+                .calificacionGlobal(rs.getDouble("calificacionGlobal"))
+                .activo(rs.getBoolean("activo"))
+                .build();
     }
 }
 

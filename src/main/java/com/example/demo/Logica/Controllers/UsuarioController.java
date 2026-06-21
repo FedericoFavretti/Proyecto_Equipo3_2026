@@ -1,4 +1,7 @@
 package com.example.demo.Logica.Controllers;
+import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
+import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
 import com.example.demo.auth.dto.AuthResponse;
@@ -56,6 +59,15 @@ public class UsuarioController implements iUsuarioController {
     @DeleteMapping("/clientes/{idCliente}/cuenta-dev")
     public ResponseEntity<Void> eliminarCuentaDeUsuarioPropiaDev(@PathVariable Long idCliente) {
         usuarioService.eliminarCuentaDeUsuarioPropia(idCliente);
+    @PostMapping("/recuperar_contra_correo")
+    public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo) {
+        usuarioService.recuperarPasswdPorCorreo(correo);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/recuperar")
+    public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd) {
+        usuarioService.recuperarPasswd(dtRecuperarPasswd);
         return ResponseEntity.noContent().build();
     }
 }

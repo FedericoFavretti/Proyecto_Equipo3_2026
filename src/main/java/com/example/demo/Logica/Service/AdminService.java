@@ -1,17 +1,23 @@
 package com.example.demo.Logica.Service;
 
+import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
+import com.example.demo.Logica.Clases.Usuario;
+import com.example.demo.Logica.DataTypes.request.DtResCuentaUsuario;
 import com.example.demo.Logica.DataTypes.request.DtResolverSolicitudLocalRequest;
 import com.example.demo.Logica.DataTypes.response.DtSolicitudLocalPendienteResponse;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
+import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -26,14 +32,18 @@ public class AdminService {
     private final LocalRepositorio localRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
     private final RegistroLocalNotificador registroLocalNotificador;
+    private final ClienteRepositorio clienteRepositorio;
+    private final UsuarioService usuarioService;
 
     public AdminService(
             LocalRepositorio localRepositorio,
             UsuarioRepositorio usuarioRepositorio,
-            RegistroLocalNotificador registroLocalNotificador) {
+            RegistroLocalNotificador registroLocalNotificador, ClienteRepositorio clienteRepositorio, UsuarioService usuarioService) {
         this.localRepositorio = localRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;
+        this.clienteRepositorio = clienteRepositorio;
+        this.usuarioService = usuarioService;
     }
 
     @Transactional(readOnly = true)
@@ -68,6 +78,29 @@ public class AdminService {
         usuarioRepositorio.actualizarEstado(local.getId(), estadoCuenta);
         localRepositorio.actualizar(local);
         registroLocalNotificador.notificarLocalResolucionSolicitud(local);
+    }
+
+    @Transactional
+    public void resolverCuentaUsuario(DtResCuentaUsuario dtResCuentaUsuario) {
+        Usuario usuario = usuarioRepositorio.buscarPorId(dtResCuentaUsuario.getId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+
+        boolean activar = dtResCuentaUsuario.getActivo();
+
+        if (usuario instanceof Cliente cliente) {
+            cliente.setEstado(activar ? EstadoCuenta.Activo : EstadoCuenta.Bloqueado);
+            cliente.setActivo(activar);
+            clienteRepositorio.actualizar(cliente);
+        } else if (usuario instanceof Local local) {
+            local.setEstado(activar ? EstadoCuenta.Activo : EstadoCuenta.Bloqueado);
+            local.setEstadoLocal(activar ? EstadoLocal.Habilitado : EstadoLocal.Bloqueado);
+            localRepositorio.actualizar(local);
+        }
+
+        if (!activar) {
+            usuario.setSesionesInvalidadasDesde(LocalDateTime.now());
+            usuarioRepositorio.actualizar(usuario);
+        }
     }
 
     private void validarIdLocal(Long idLocal) {

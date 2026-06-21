@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
 
 
 @SuperBuilder
@@ -21,5 +22,5 @@ public abstract class Usuario {
     private String foto;
     private EstadoCuenta estado;
     private String tipo;
-
+    private LocalDateTime sesionesInvalidadasDesde;
 }

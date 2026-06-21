@@ -1,9 +1,6 @@
 package com.example.demo.Persistencia.Implementaciones;
 
-import java.sql.Array;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -113,9 +110,22 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     }
 
     private Local mapearLocal(ResultSet rs) throws SQLException {
-        Local local = new Local(
-                rs.getString("nombre"),
-                new DtDireccion(
+        String estadoCuenta = rs.getString("estado_cuenta");
+        Timestamp sesionesInvalidadasTs = rs.getTimestamp("sesiones_invalidadas_desde");
+
+        return Local.builder()
+                .id(rs.getLong("id"))
+                .email(rs.getString("email"))
+                .foto(rs.getString("foto"))
+                .tipo(rs.getString("tipo"))
+                .estado(estadoCuenta != null && !estadoCuenta.isBlank()
+                        ? EstadoCuenta.valueOf(estadoCuenta)
+                        : null)
+                .sesionesInvalidadasDesde(
+                        sesionesInvalidadasTs != null ? sesionesInvalidadasTs.toLocalDateTime() : null
+                )
+                .nombre(rs.getString("nombre"))
+                .direccion(new DtDireccion(
                         rs.getString("calle"),
                         rs.getString("numero"),
                         rs.getString("ciudad"),
@@ -137,6 +147,13 @@ public class LocalRepositorioImpl implements LocalRepositorio {
             local.setEstado(EstadoCuenta.valueOf(estadoCuenta));
         }
         return local;
+                ))
+                .descripcion(rs.getString("descripcion"))
+                .estadoLocal(EstadoLocal.valueOf(rs.getString("estado")))
+                .calificacionGlobal(rs.getDouble("calificacionGlobal"))
+                .estaAbierto(rs.getBoolean("estaAbierto"))
+                .imagenes(mapearImagenes(rs.getArray("imagenes")))
+                .build();
     }
 
 
