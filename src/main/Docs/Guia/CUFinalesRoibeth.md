@@ -118,6 +118,15 @@ El `CU-L08` correcto en la guía es **"Rechazar Pedido de Cliente"**.
   - Reclamos pendientes: `No es posible eliminar la cuenta mientras tenga reclamos pendientes de resolución.`
 - **Resultado esperado**: cuenta eliminada y credenciales inutilizables.
 
+### Nota de implementación backend actual
+
+- Se implementó con **anonimización segura** en lugar de delete físico para preservar historial de pedidos y reclamos.
+- Mientras no esté resuelta la autenticación/autorización real del actor, el acceso quedó expuesto mediante endpoint temporal DEV:
+  - `DELETE /api/v1/usuarios/clientes/{idCliente}/cuenta-dev`
+- Decisión temporal documentada:
+  - `Pedido` en estado `Pendiente` o `Confirmado` se considera “en curso”.
+  - Como la persistencia visible de `Reclamo` todavía no modela estado de forma consistente, por ahora cualquier reclamo asociado al cliente bloquea la eliminación.
+
 ## 4) CU-L14 — Consultar Calificación Global del Local
 
 - **Actor**: Local.

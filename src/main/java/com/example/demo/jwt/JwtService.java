@@ -15,6 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
@@ -88,7 +91,7 @@ public class JwtService {
     private byte[] decodeSecret() {
         try {
             return Decoders.BASE64.decode(secretKey);
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException | DecodingException exception) {
             return secretKey.getBytes(StandardCharsets.UTF_8);
         }
     }

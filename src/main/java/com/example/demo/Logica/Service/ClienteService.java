@@ -33,6 +33,8 @@ import java.util.Map;
 
 @Service
 public class ClienteService {
+    private static final String TIPO_USUARIO_CLIENTE = "cliente";
+
     private final ClienteRepositorio clienteRepositorio;
     private final PlatoRepositorio platoRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
@@ -89,6 +91,7 @@ public class ClienteService {
 
         Cliente cliente = clienteMapper.mapearClienteDeDt(dtCliente);
         cliente.setEstado(EstadoCuenta.Pendiente);
+        cliente.setTipo(TIPO_USUARIO_CLIENTE);
         cliente.setPasswd(passwdCodificada);
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);

@@ -14,8 +14,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -66,5 +69,33 @@ class PedidoControllerTest {
         mockMvc.perform(get("/api/v1/pedidos/clientes/20"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Aún no ha realizado ningún pedido. ¡Explore los locales disponibles y realice su primer pedido!"));
+    }
+    @Test
+    void rechazarPedidoDevuelveOkCuandoMotivoEsValido() throws Exception {
+        mockMvc.perform(post("/api/v1/pedidos/44/rechazar")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "motivo": "No contamos con disponibilidad para prepararlo"
+                                }
+                                """))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void rechazarPedidoRespondeBadRequestCuandoFaltaMotivo() throws Exception {
+        Mockito.doThrow(new IllegalArgumentException("Debe seleccionar o escribir un motivo de rechazo antes de continuar."))
+                .when(pedidoService)
+                .rechazarPedido(anyLong(), anyString());
+
+        mockMvc.perform(post("/api/v1/pedidos/44/rechazar")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "motivo": " "
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Debe seleccionar o escribir un motivo de rechazo antes de continuar."));
     }
 }

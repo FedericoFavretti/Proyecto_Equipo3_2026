@@ -20,7 +20,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class LocalRepositorioImpl implements LocalRepositorio {
     private static final String SELECT_LOCAL_CON_USUARIO = """
-            SELECT l.*, u.email, u.estado AS estado_cuenta, u.tipo, u.foto
+            SELECT l.*, u.email, u.passwd, u.estado AS estado_cuenta, u.tipo, u.foto
             FROM Local l
             LEFT JOIN usuario u ON u.id = l.id
             """;
@@ -200,12 +200,13 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                         sesionesInvalidadasTs != null ? sesionesInvalidadasTs.toLocalDateTime() : null
                 )
                 .nombre(rs.getString("nombre"))
-                .direccion(new DtDireccion(
-                        rs.getString("calle"),
-                        rs.getString("numero"),
-                        rs.getString("ciudad"),
-                        rs.getString("codigoPostal")
-                ))
+                .direccion(DtDireccion.builder()
+                        .calle(rs.getString("calle"))
+                        .ciudad(rs.getString("ciudad"))
+                        .numero(rs.getString("numero"))
+                        .codigoPostal(rs.getString("codigoPostal"))
+                        .build()
+                )
                 .descripcion(rs.getString("descripcion"))
                 .estadoLocal(EstadoLocal.valueOf(rs.getString("estado")))
                 .calificacionGlobal(rs.getDouble("calificacionGlobal"))

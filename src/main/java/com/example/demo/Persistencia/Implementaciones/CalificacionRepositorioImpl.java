@@ -72,9 +72,10 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                     return ps;
         }, keyHolder);
         Long idCalificacion = keyHolder.getKey().longValue();
-        if(calificacion.getTipo().equals(TipoCalificacion.Cliente_a_local)){
+        if (calificacion.getCliente() != null && calificacion.getCliente().getId() != null) {
             clienteCalificacionRepositorio.calificar(calificacion.getCliente().getId(), idCalificacion);
-        } else if (calificacion.getTipo().equals(TipoCalificacion.Local_a_cliente)) {
+        }
+        if (calificacion.getLocal() != null && calificacion.getLocal().getId() != null) {
             localCalificacionRepositorio.calificar(calificacion.getLocal().getId(), idCalificacion);
         }
     }
@@ -93,6 +94,22 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
     @Override
     public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Calificacion WHERE id = ?", id);
+    }
+
+    @Override
+    public List<Calificacion> listarPorLocal(Long idLocal) {
+        return jdbcTemplate.query(
+                """
+                SELECT c.*
+                FROM calificacion c
+                JOIN local_calificacion lc ON lc.idcalificacion = c.id
+                WHERE lc.idlocal = ? AND c.tipo = ?
+                ORDER BY c.fecha DESC, c.id DESC
+                """,
+                (rs, row) -> calificacionMapper(rs, row),
+                idLocal,
+                TipoCalificacion.Cliente_a_local.toString()
+        );
     }
 
     private void cM (Calificacion calificacion){
@@ -132,7 +149,38 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                     .cliente(null)
                     .local(local)
                     .build();
+    private Calificacion calificacionMapper(ResultSet rs,  int row) throws SQLException {
+        Long idCalificacion = rs.getLong("id");
+        TipoCalificacion tipo = TipoCalificacion.valueOf(rs.getString("tipo"));
+        Cliente cliente = obtenerClienteAsociado(idCalificacion);
+        Local local = obtenerLocalAsociado(idCalificacion);
+
+        return Calificacion.builder()
+                .id(idCalificacion)
+                .puntaje(rs.getInt("puntaje"))
+                .comentario(rs.getString("comentario"))
+                .fecha(rs.getTimestamp("fecha").toLocalDateTime())
+                .tipo(tipo)
+                .cliente(cliente)
+                .local(local)
+                .build();
+    }
+
+    private Cliente obtenerClienteAsociado(Long idCalificacion) {
+        try {
+            Long idCliente = clienteCalificacionRepositorio.obtenerCliente(idCalificacion);
+            return clienteRepositorio.buscarPorId(idCliente).orElse(null);
+        } catch (RuntimeException exception) {
+            return null;
         }
-        return null;
+    }
+
+    private Local obtenerLocalAsociado(Long idCalificacion) {
+        try {
+            Long idLocal = localCalificacionRepositorio.obtenerLocal(idCalificacion);
+            return localRepositorio.buscarPorId(idLocal).orElse(null);
+        } catch (RuntimeException exception) {
+            return null;
+        }
     }
 }

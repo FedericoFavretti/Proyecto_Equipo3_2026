@@ -131,6 +131,53 @@
         - implementar de verdad el alternativo de error PDF con reintento automatico
         - implementar notificacion real por web y push mobile
 
+-CU-L08 Rechazar Pedido de Cliente
+        Estado actual
+        Rechazo OK via POST /api/v1/pedidos/{idPedido}/rechazar enviando body JSON con motivo.
+        Se verifico correctamente sobre pedido existente en estado Pendiente, sin tocar el modelo/schema de Pedido.
+
+        API implementada
+        - POST /api/v1/pedidos/{idPedido}/rechazar
+
+        Request utilizada
+        {
+          "motivo": "No contamos con disponibilidad para prepararlo"
+        }
+
+        Cobertura validada
+        - motivo obligatorio con mensaje funcional del CU
+        - cambio de estado a Rechazado
+        - persistencia del motivo en Notificacion.mensaje asociado al pedido
+        - envio de correo al cliente con el motivo de rechazo
+        - 404 si el pedido no existe
+        - 409 si el pedido ya no esta en estado Pendiente
+
+        Ajustes aplicados
+        - se creo DtRechazarPedidoRequest como contrato HTTP especifico para CU-L08
+        - PedidoController e iPedidoController ahora reciben body JSON con motivo en /rechazar
+        - PedidoService implementa la validacion de motivo, existencia del pedido y estado Pendiente antes de rechazar
+        - el pedido se persiste con estado Rechazado y luego se delega la comunicacion del rechazo
+        - se reutilizo NotificacionPedidoService para crear una Notificacion de tipo Pedido con el motivo dentro de mensaje
+        - se eligio guardar el motivo en Notificacion.mensaje porque el modelo de dominio actual no contempla motivo dentro de Pedido
+        - NotificacionRepositorioImpl quedo corregido para setear realmente los parametros del INSERT/UPDATE; antes la notificacion podia parecer guardada pero no persistirse bien
+        - se agregaron tests de controller y service para motivo vacio, pedido inexistente y rechazo exitoso
+
+        Verificacion manual por API
+        - GET /api/v1/pedidos/locales/{idLocal}?estado=Pendiente permite ubicar pedidos pendientes para probar el CU
+        - POST /api/v1/pedidos/{idPedido}/rechazar con body JSON valido devolvio 200 OK
+        - POST /api/v1/pedidos/{idPedido}/rechazar con motivo vacio devolvio 400 Bad Request con el mensaje del CU
+        - se debe verificar en base de datos:
+          - pedido.estado = Rechazado
+          - existencia de fila en notificacion
+          - existencia de relacion en pedido_notificacion
+
+        Que falta para cerrar del todo el caso de uso
+        - autenticacion/autorizacion real del actor Local; hoy el rechazo sigue resolviendose solo por idPedido
+        - notificacion real por web y push mobile; por ahora queda persistencia + correo y logs para los otros canales
+        - decidir si el motivo debe seguir viviendo como mensaje de notificacion o si mas adelante el dominio necesitara un modelado estructurado del rechazo
+        - agregar prueba de integracion real contra BD para confirmar insercion en notificacion + pedido_notificacion
+        - revisar si el correo al cliente debe considerarse obligatorio o si necesita politica de reintento cuando falle infraestructura de mail
+
 -CU-L06 Buscar y Listar Pedidos Recibidos
         Estado actual
         Listado rediseñado via GET /api/v1/pedidos/locales/{idLocal} siguiendo camino B.
@@ -220,3 +267,183 @@
 
 -CU-C01 Login
     Funciona
+
+-CU-C05 Editar Datos de Cuenta de Usuario
+        Estado actual
+        Parcialmente funcional a nivel backend via PUT /api/v1/usuarios/perfil con autenticacion JWT.
+        Se verifico que la edicion parcial funciona al menos para cambios simples que no tocan credenciales, por ejemplo actualizar solo `nombre`.
+
+        API implementada
+        - PUT /api/v1/usuarios/perfil
+
+        Contrato actual verificado
+        - Header obligatorio: Authorization: Bearer {token}
+        - Content-Type: multipart/form-data
+        - Cliente puede editar: nombre, apellido, email, password, direccion.calle, direccion.numero, direccion.ciudad, direccion.codigoPostal y foto
+        - Local puede editar: nombre, descripcion, email, password, direccion.calle, direccion.numero, direccion.ciudad, direccion.codigoPostal y foto
+        - Admin puede editar: email y password
+
+        Ajustes aplicados
+        - se centralizo el CU en un endpoint unico dentro de UsuarioController
+        - UsuarioService ahora aplica whitelist por actor y actualizacion parcial segura sin reconstruir ciegamente el agregado
+        - UsuarioRepositorioImpl.actualizar(...) ya persiste primero la tabla base `usuario` y luego la tabla especifica (`cliente`, `local` o `administrador`)
+        - se agrego soporte real de persistencia para Administrador con AdministradorRepositorio y AdministradorRepositorioImpl
+        - ClienteRepositorioImpl y LocalRepositorioImpl ahora hidratan correctamente datos base del usuario (email, passwd, foto, estado, tipo) para no romper autenticacion ni updates posteriores
+        - si cambia email o password, el backend intenta invalidar el token actual para forzar relogin y evitar inconsistencias del JWT
+        - se instrumentaron logs en JwtAuthenticationFilter para distinguir mejor errores de parsing/validacion del token durante las pruebas
+
+        Verificacion manual por API
+        - login OK via POST /api/v1/usuarios/login devolviendo JWT
+        - edicion OK de solo `nombre` via PUT /api/v1/usuarios/perfil con Bearer token valido
+        - al intentar editar multiples campos incluyendo `email`, la request llega al service pero termina en 500 por problema de infraestructura en base
+
+        Error detectado actualmente
+        - cuando la edicion incluye `email` o `password`, UsuarioService intenta invalidar la sesion actual guardando el token en `token_blacklist`
+        - la base actual no tiene creada la tabla `token_blacklist`
+        - el error observado es:
+          - `ERROR: relation "token_blacklist" does not exist`
+          - `BadSqlGrammarException: INSERT INTO token_blacklist (token, expiracion) VALUES (?, ?) ON CONFLICT DO NOTHING`
+        - por eso hoy:
+          - cambiar solo campos no credenciales (ej. `nombre`) funciona
+          - cambiar credenciales o combinaciones que incluyan `email`/`password` rompe con 500
+
+        Como solucionarlo
+        - crear la tabla `token_blacklist` en PostgreSQL para que la invalidacion de tokens funcione como fue implementada
+        - estructura minima esperada por el repositorio actual:
+          - `token` TEXT PRIMARY KEY
+          - `expiracion` TIMESTAMP NOT NULL
+        - SQL sugerido:
+          - `CREATE TABLE token_blacklist (token TEXT PRIMARY KEY, expiracion TIMESTAMP NOT NULL);`
+        - despues de crearla, reintentar:
+          - login
+          - PUT /api/v1/usuarios/perfil cambiando `email` o `password`
+          - verificar que responda correctamente y que luego obligue a relogin
+
+        Que falta para cerrar del todo el caso de uso
+        - crear y versionar formalmente la tabla `token_blacklist` en el esquema/migracion del proyecto para no depender de ajustes manuales
+        - validar manualmente el flujo completo de cambio de `email` y de `password` con relogin posterior
+        - revisar si login debe bloquear cuentas no activas o pendientes; hoy la implementacion actual no parece exigir explicitamente estado Activo
+        - mapear mejor errores de infraestructura/autenticacion para no exponer 500 genericos cuando falten dependencias de base
+        - confirmar con frontend el armado definitivo del multipart/form-data y el manejo UX cuando el token se invalida por cambio de credenciales
+
+-CU-CL08 Buscar y Listar Historial de Pedidos Propios
+        Estado actual
+        Funcional a nivel backend de forma temporal via GET /api/v1/pedidos/clientes/{idCliente}.
+        Se puede listar historial propio por idCliente con filtros por estado, fecha e idLocal, reutilizando el contrato de listado de pedidos.
+
+        API implementada
+        - GET /api/v1/pedidos/clientes/{idCliente}
+
+        Cobertura validada
+        - listado de historial del cliente con local resumido en la respuesta
+        - filtro por estado
+        - filtro por rango de fechas
+        - filtro por idLocal
+        - ordenamiento por fecha, total y estado
+        - mensaje de sin pedidos
+        - mensaje de filtros sin resultados
+        - adaptacion del DTO compartido de listado sin crear DTO nuevo
+
+        Ajustes aplicados
+        - DtPedidoListadoResponse ahora soporta ambos contextos: cliente o local, con serializacion NON_NULL
+        - PedidoListadoView se extendio para soportar datos de local ademas de cliente
+        - PedidoListadoMapper ahora mapea cliente o local segun el contexto del listado
+        - DtPedidoListadoFiltro se extendio con idLocal
+        - PedidoRepositorio/PedidoRepositorioImpl incorporaron listarHistorialPorCliente(...) y existePedidoPorCliente(...)
+        - se corrigio un bug de PostgreSQL tipando NULL::bigint y NULL::varchar en la query compartida para evitar 500 por conversion de tipos
+
+        Shape actual de la respuesta
+        - id
+        - fecha
+        - estado
+        - total
+        - tiempoEstEntrega
+        - local { id, nombre }
+        - cantidadItems
+
+        Que falta para cerrar del todo el caso de uso
+        - reemplazar el endpoint temporal /clientes/{idCliente} por una resolucion real del cliente autenticado, alineada con la precondicion "cliente autenticado"
+        - mover el acceso a un endpoint semantico del actor, por ejemplo /api/v1/pedidos/mis-pedidos, cuando se resuelva autenticacion
+        - agregar test de integracion o verificacion manual completa sobre SQL real con datos de base para combinaciones de filtros
+        - revisar manejo HTTP de cliente inexistente; hoy depende de RuntimeException y deberia resolverse con contrato mas explicito
+        - confirmar con frontend/UX si el alternativo de "sin resultados" debe mantenerse como 400 o si corresponde 200 con lista vacia + mensaje
+
+-CU-L14 Consultar Calificacion Global del Local
+        Estado actual
+        Funcional a nivel backend con dos accesos:
+        - endpoint final autenticado via GET /api/v1/calificaciones/local/mi-calificacion
+        - endpoint temporal de desarrollo via GET /api/v1/calificaciones/local/{idLocal}/mi-calificacion-dev para probar por Postman sin JWT
+
+        API implementada
+        - GET /api/v1/calificaciones/local/mi-calificacion
+        - GET /api/v1/calificaciones/local/{idLocal}/mi-calificacion-dev
+
+        Cobertura validada
+        - calcula promedio global del local a partir de las calificaciones recibidas de tipo Cliente_a_local
+        - devuelve total de valoraciones
+        - devuelve detalle por puntuacion de 1 a 5
+        - informa el alternativo "Su local todavía no ha recibido calificaciones de los clientes."
+        - sincroniza local.calificacionGlobal como dato derivado/cache al consultar y al guardar nuevas calificaciones del cliente al local
+
+        Ajustes aplicados
+        - CalificacionRepositorio/CalificacionRepositorioImpl ahora pueden listar calificaciones recibidas por local
+        - la persistencia de calificaciones se corrigio para asociar cliente y local cuando ambos extremos vienen informados
+        - CalificacionService expone resumen como Map<String,Object> para respetar la restriccion de no crear DTO nuevo
+        - se agrego consultarCalificacionGlobalDelLocalPorId(...) para reutilizar la logica del endpoint temporal DEV
+
+        Importante: endpoint temporal
+        - GET /api/v1/calificaciones/local/{idLocal}/mi-calificacion-dev es SOLO para desarrollo/prueba manual sin JWT
+        - no responde a la precondicion real del CU ("local autenticado")
+        - debe eliminarse cuando quede cerrada la autenticacion real del actor
+
+        Hallazgo de seguridad verificado
+        - este endpoint temporal NO es el unico caso donde el actor Local se resuelve por path variable
+        - tambien existe GET /api/v1/pedidos/locales/{idLocal} en PedidoController para CU-L06, que lista pedidos del local usando idLocal en la URL en vez de Authentication
+        - eso esta MAL respecto a la guia, porque la precondicion dice "local autenticado" y no "cualquier caller que conozca el idLocal"
+        - ademas, hoy SecurityConfig tiene authorizeHttpRequests(...).anyRequest().permitAll(), por lo que Spring Security no esta exigiendo autenticacion/autorizacion real en las rutas
+        - tambien hay autenticacion manual duplicada en controllers: por ejemplo CalificacionController.consultarCalificacionGlobalDelLocal(...) y UsuarioController.editarDatosDeCuentaDeUsuario(...) verifican a mano `authentication == null || !authentication.isAuthenticated()` y devuelven 401 desde el propio controller
+
+        Que falta para cerrar del todo el caso de uso
+        - eliminar el endpoint temporal /local/{idLocal}/mi-calificacion-dev una vez que la prueba con JWT quede estable
+        - reemplazar la resolucion por idLocal en el endpoint final y en endpoints similares del actor Local por resolucion desde Authentication/JWT
+        - corregir SecurityConfig para dejar de usar anyRequest().permitAll() y proteger explicitamente las rutas segun actor/perfil
+        - revisar endpoints vecinos del perfil Local, en especial GET /api/v1/pedidos/locales/{idLocal}, PUT /api/v1/locales/{idLocal}/apertura y PUT /api/v1/locales/{idLocal}/cierre, porque hoy siguen exponiendo identidad del actor por path
+- cuando Spring Security quede bien configurado, retirar los chequeos manuales de 401 en controllers y dejar que la seguridad resuelva acceso/autorizacion antes de entrar al endpoint
+- aun despues de eso, varios endpoints seguiran necesitando Authentication/Principal, pero solo para identificar al usuario autenticado; no para duplicar la validacion de acceso dentro del controller
+
+-CU-CL03 Eliminar Cuenta de Usuario Propia
+        Estado actual
+        Implementado a nivel backend con anonimización segura y endpoint temporal de desarrollo mientras la autenticación real del actor queda pendiente.
+
+        API implementada
+        - DELETE /api/v1/usuarios/clientes/{idCliente}/cuenta-dev
+
+        Cobertura validada
+        - anonimiza datos personales del cliente
+        - bloquea la cuenta y desactiva el perfil cliente
+        - rechaza eliminación si existen pedidos activos
+        - rechaza eliminación si existen reclamos pendientes de resolución
+        - oculta clientes anonimizados de listados operativos basados en ClienteRepositorio.listarTodos()
+
+        Ajustes aplicados
+        - UsuarioService incorpora eliminarCuentaDeUsuarioPropia(...) con regla de anonimización en vez de delete físico
+        - PedidoRepositorio/PedidoRepositorioImpl incorporan existePedidoActivoPorCliente(...) considerando Pendiente y Confirmado como pedidos en curso
+        - ReclamoRepositorio/ReclamoRepositorioImpl incorporan existeReclamoPendientePorCliente(...)
+        - ClienteRepositorioImpl.listarTodos() ahora excluye clientes con activo=false para evitar “basura funcional” en listados operativos
+        - la anonimización deja email técnico no reutilizable, password inválida, documento neutral, dirección neutral y estado Bloqueado
+
+
+        Verificacion manual por API
+        - se confirmo que la ruta temporal existe y debe invocarse con metodo DELETE
+        - al probar la misma URL con PUT devolvio 405 Method Not Allowed, consistente con el @DeleteMapping implementado
+        - endpoint de prueba: DELETE /api/v1/usuarios/clientes/{idCliente}/cuenta-dev
+        Decisión/limitación documentada
+        - el dominio/documentación de reclamos menciona estado propio, pero la persistencia visible actual no lo modela explícitamente en la clase/repositorio
+        - por eso, en esta iteración, cualquier reclamo asociado al cliente se considera pendiente de resolución para no arriesgar inconsistencia funcional antes del despliegue
+
+        Que falta para cerrar del todo el caso de uso
+        - reemplazar el endpoint temporal /clientes/{idCliente}/cuenta-dev por resolución real desde Authentication/JWT
+        - definir formalmente si todos los pedidos Confirmado deben considerarse “en curso” o si hará falta un estado final adicional en el dominio
+        - completar el modelado persistente del estado de Reclamo para distinguir Pendiente / En_proceso / Solucionado sin aproximaciones
+        - validar manualmente por API y base de datos que la anonimización no rompa consultas históricas de pedidos y reclamos
+

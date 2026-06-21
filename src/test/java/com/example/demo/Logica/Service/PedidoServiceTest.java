@@ -16,6 +16,7 @@ import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.DetallePedidoMapper;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
 import com.example.demo.Logica.Mappers.PedidoMapper;
@@ -145,6 +146,43 @@ class PedidoServiceTest {
         verify(pedidoRepositorio).actualizar(eq(pedido));
         verify(facturaService).generarYGuardarFactura(eq(pedido));
         verify(notificacionPedidoService).notificarConfirmacion(eq(pedido), eq(factura));
+    }
+
+    @Test
+    void rechazarPedidoRechazaCuandoNoSeIngresaMotivo() {
+        Pedido pedido = pedidoPendiente();
+        when(pedidoRepositorio.buscarPorId(44L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoService.rechazarPedido(44L, " "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Debe seleccionar o escribir un motivo de rechazo antes de continuar.");
+
+        verify(pedidoRepositorio, never()).actualizar(any(Pedido.class));
+        verifyNoInteractions(notificacionPedidoService);
+    }
+
+    @Test
+    void rechazarPedidoRechazaCuandoPedidoNoExiste() {
+        when(pedidoRepositorio.buscarPorId(44L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> pedidoService.rechazarPedido(44L, "Sin disponibilidad"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Pedido no encontrado");
+
+        verify(pedidoRepositorio, never()).actualizar(any(Pedido.class));
+        verifyNoInteractions(notificacionPedidoService);
+    }
+
+    @Test
+    void rechazarPedidoMarcaEstadoYNotificaConMotivo() {
+        Pedido pedido = pedidoPendiente();
+        when(pedidoRepositorio.buscarPorId(44L)).thenReturn(Optional.of(pedido));
+
+        pedidoService.rechazarPedido(44L, " Sin disponibilidad ");
+
+        assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.Rechazado);
+        verify(pedidoRepositorio).actualizar(eq(pedido));
+        verify(notificacionPedidoService).notificarRechazo(eq(pedido), eq("Sin disponibilidad"));
     }
 
     @Test

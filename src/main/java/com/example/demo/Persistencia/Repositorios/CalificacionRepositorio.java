@@ -14,3 +14,5 @@ public interface CalificacionRepositorio {
     void eliminar(Long id);
     List<Calificacion> buscarPorIds(List<Long> ids);
 }
+    List<Calificacion> listarPorLocal(Long idLocal);
+}

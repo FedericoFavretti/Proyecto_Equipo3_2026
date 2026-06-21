@@ -30,6 +30,8 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
         return jdbcTemplate.query(
                 "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id",
                 (rs, row)-> mapearCliente(rs)
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE c.activo = true",
+                (rs, row) -> mapearCliente(rs)
         );
     }
 
@@ -58,22 +60,22 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
         );
     }
 
-        @Override
-        public void actualizar(Cliente cliente) {
-                jdbcTemplate.update(
-                        "UPDATE Cliente SET documento = ?, nombre = ?, apellido = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, calificacionGlobal = ?, activo = ? WHERE id = ?",
-                        cliente.getDocumento(),
-                        cliente.getNombre(),
-                        cliente.getApellido(),
-                        cliente.getDireccion().getCalle(),
-                        cliente.getDireccion().getNumero(),
-                        cliente.getDireccion().getCiudad(),
-                        cliente.getDireccion().getCodigoPostal(),
-                        cliente.getCalificacionGlobal(),
-                        cliente.getActivo(),
-                        cliente.getId()
-                );
-        }
+    @Override
+    public void actualizar(Cliente cliente) {
+        jdbcTemplate.update(
+                "UPDATE Cliente SET documento = ?, nombre = ?, apellido = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, calificacionGlobal = ?, activo = ? WHERE id = ?",
+                cliente.getDocumento(),
+                cliente.getNombre(),
+                cliente.getApellido(),
+                cliente.getDireccion().getCalle(),
+                cliente.getDireccion().getNumero(),
+                cliente.getDireccion().getCiudad(),
+                cliente.getDireccion().getCodigoPostal(),
+                cliente.getCalificacionGlobal(),
+                cliente.getActivo(),
+                cliente.getId()
+        );
+    }
 
     @Override
     public void eliminar(Long id) {
@@ -175,15 +177,16 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                 .documento(rs.getString("documento"))
                 .nombre(rs.getString("nombre"))
                 .apellido(rs.getString("apellido"))
-                .direccion(new DtDireccion(
-                        rs.getString("calle"),
-                        rs.getString("numero"),
-                        rs.getString("ciudad"),
-                        rs.getString("codigoPostal")
-                ))
+                .direccion(DtDireccion.builder()
+                        .calle(rs.getString("calle"))
+                        .ciudad(rs.getString("ciudad"))
+                        .numero(rs.getString("numero"))
+                        .codigoPostal(rs.getString("codigoPostal"))
+                        .build()
+                )
                 .calificacionGlobal(rs.getDouble("calificacionGlobal"))
-                .activo(rs.getBoolean("activo"))
-                .build();
+                .activo(rs.getBoolean("activo")
+                ).build();
     }
 }
 

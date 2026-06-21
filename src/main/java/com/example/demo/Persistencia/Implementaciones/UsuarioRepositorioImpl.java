@@ -5,6 +5,7 @@ import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.Enums.EstadoCuenta;
+import com.example.demo.Persistencia.Repositorios.AdministradorRepositorio;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
@@ -22,13 +23,16 @@ import java.util.Map;
 import java.util.Optional;
 @Repository
 public class UsuarioRepositorioImpl implements UsuarioRepositorio {
+    private final AdministradorRepositorio administradorRepositorio;
     private final LocalRepositorio localRepositorio;
     private final ClienteRepositorio clienteRepositorio;
     private final JdbcTemplate jdbcTemplate;
 
 
-    public UsuarioRepositorioImpl(LocalRepositorio localRepo,
+    public UsuarioRepositorioImpl(AdministradorRepositorio administradorRepositorio,
+                                  LocalRepositorio localRepo,
                                   ClienteRepositorio clienteRepo, JdbcTemplate jdbcTemplate) {
+        this.administradorRepositorio = administradorRepositorio;
         this.localRepositorio = localRepo;
         this.clienteRepositorio = clienteRepo;
         this.jdbcTemplate = jdbcTemplate;
@@ -37,6 +41,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     @Override
     public List<Usuario> listarTodos() {
         List<Usuario> usuarios = new ArrayList<>();
+        usuarios.addAll(administradorRepositorio.listarTodos());
         usuarios.addAll(localRepositorio.listarTodos());
         usuarios.addAll(clienteRepositorio.listarTodos());
         return usuarios;
@@ -48,6 +53,11 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
                 .map(u -> u);
         if (local.isPresent()) {
             return local;
+        }
+        Optional<Usuario> administrador = administradorRepositorio.buscarPorId(id)
+                .map(u -> u);
+        if (administrador.isPresent()) {
+            return administrador;
         }
         return clienteRepositorio.buscarPorId(id)
                 .map(u -> u);
@@ -69,6 +79,8 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
         if ("local".equalsIgnoreCase(tipo)) {
             return localRepositorio.buscarPorId(usuarioId).map(u -> u);
+        } else if ("admin".equalsIgnoreCase(tipo) || "administrador".equalsIgnoreCase(tipo)) {
+            return administradorRepositorio.buscarPorId(usuarioId).map(u -> u);
         } else if ("cliente".equalsIgnoreCase(tipo)) {
             return clienteRepositorio.buscarPorId(usuarioId).map(u -> u);
         }
@@ -99,6 +111,15 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
     @Override
     public void actualizar(Usuario usuario) {
+        jdbcTemplate.update(
+                "UPDATE usuario SET email = ?, passwd = ?, foto = ?, estado = ?, tipo = ? WHERE id = ?",
+                usuario.getEmail(),
+                usuario.getPasswd(),
+                usuario.getFoto(),
+                usuario.getEstado() != null ? usuario.getEstado().name() : null,
+                usuario.getTipo(),
+                usuario.getId()
+        );
         jdbcTemplate.update("UPDATE usuario SET email = ?, passwd = ?, foto = ?, estado = ?, tipo = ?, sesiones_invalidadas_desde = ? WHERE id = ?",
                 usuario.getEmail(),
                 usuario.getPasswd(),
@@ -113,6 +134,8 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
             localRepositorio.actualizar((Local) usuario);
         } else if (usuario instanceof Cliente) {
             clienteRepositorio.actualizar((Cliente) usuario);
+        } else if (usuario instanceof Administrador) {
+            administradorRepositorio.actualizar((Administrador) usuario);
         }
     }
 
@@ -129,7 +152,9 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     public void eliminar(Long id) {
         Optional<Usuario> usuario = buscarPorId(id);
         if (usuario.isPresent()) {
-            if (usuario.get() instanceof Local) {
+            if (usuario.get() instanceof Administrador) {
+                administradorRepositorio.eliminar(id);
+            } else if (usuario.get() instanceof Local) {
                 localRepositorio.eliminar(id);
             } else if (usuario.get() instanceof Cliente) {
                 clienteRepositorio.eliminar(id);
