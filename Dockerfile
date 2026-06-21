@@ -5,6 +5,7 @@ COPY mvnw pom.xml ./
 RUN ./mvnw dependency:go-offline
 COPY src ./src
 RUN ./mvnw package -Dmaven.test.skip=true
+RUN chmod +x mvnw
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
