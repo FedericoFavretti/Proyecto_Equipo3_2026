@@ -4,7 +4,6 @@ import com.example.demo.Logica.Clases.Notificacion;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.Enums.CanalNotificacion;
-import com.example.demo.Logica.Enums.TipoCalificacion;
 import com.example.demo.Logica.Enums.TipoNotificacion;
 import com.example.demo.Persistencia.Repositorios.*;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,14 +54,15 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
         jdbcTemplate.update(connection -> { PreparedStatement ps = connection.prepareStatement( "INSERT INTO Notificacion (tipo, mensaje, canal, leida, fecha) VALUES (?, ?, ?, ?, ?)",
                 new String[]{"id"}
                 );
-                notificacion.getTipo().toString();
-                notificacion.getMensaje();
-                notificacion.getCanal().toString();
-                notificacion.getLeida();
-                notificacion.getFecha();
+                ps.setString(1, notificacion.getTipo().toString());
+                ps.setString(2, notificacion.getMensaje());
+                ps.setString(3, notificacion.getCanal().toString());
+                ps.setBoolean(4, notificacion.getLeida());
+                ps.setTimestamp(5, Timestamp.valueOf(notificacion.getFecha()));
                 return ps;
         }, keyHolder);
         Long idNotificacion = keyHolder.getKey().longValue();
+        notificacion.setId(idNotificacion);
         if (notificacion.getTipo().equals(TipoNotificacion.Reclamo)) {
             reclamoNotificacionRepositorio.guardar(idNotificacion, notificacion.getReclamo().getId());
         } else if (notificacion.getTipo().equals(TipoNotificacion.Pedido)) {
@@ -71,12 +72,12 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
 
     @Override
     public void actualizar(Notificacion notificacion) {
-        jdbcTemplate.update("UPDATE Notificacion SET tipo = ?, mensaje = ?, canal = ?, leida = ?, fecha = ? WHERE id = ?)",
+        jdbcTemplate.update("UPDATE Notificacion SET tipo = ?, mensaje = ?, canal = ?, leida = ?, fecha = ? WHERE id = ?",
                 notificacion.getTipo().toString(),
                 notificacion.getMensaje(),
                 notificacion.getCanal().toString(),
                 notificacion.getLeida(),
-                notificacion.getFecha(),
+                Timestamp.valueOf(notificacion.getFecha()),
                 notificacion.getId()
         );
     }

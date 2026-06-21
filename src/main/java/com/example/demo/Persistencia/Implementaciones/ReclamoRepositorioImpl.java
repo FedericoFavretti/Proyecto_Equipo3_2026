@@ -91,6 +91,21 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
         return jdbcTemplate.query(sql.toString(), (rs, row) -> mapearRecalamo(rs), params.toArray());
     }
 
+    @Override
+    public boolean existeReclamoPendientePorCliente(Long idCliente) {
+        Integer cantidad = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM reclamo r
+                JOIN pedido p ON p.id = r.idpedido
+                WHERE p.idcliente = ?
+                """,
+                Integer.class,
+                idCliente
+        );
+        return cantidad != null && cantidad > 0;
+    }
+
     private Reclamo mapearRecalamo(ResultSet rs) throws SQLException {
         return new Reclamo(
                 rs.getLong("id"),

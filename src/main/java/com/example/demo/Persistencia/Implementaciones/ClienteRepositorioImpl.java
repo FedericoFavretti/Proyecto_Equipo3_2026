@@ -24,7 +24,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public List<Cliente> listarTodos() {
         return jdbcTemplate.query(
-                "SELECT * FROM Cliente",
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE c.activo = true",
                 (rs, row)-> mapearCliente(rs)
         );
     }
@@ -104,6 +104,20 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                         rs.getString("numero"),
                         rs.getString("ciudad"),
                         rs.getString("codigoPostal")
+                ),
+                rs.getDouble("calificacionGlobal"),
+                rs.getBoolean("activo")
+        );
+        cliente.setId(rs.getLong("id"));
+        cliente.setEmail(rs.getString("email"));
+        cliente.setPasswd(rs.getString("passwd"));
+        cliente.setFoto(rs.getString("foto"));
+        cliente.setTipo(rs.getString("tipo"));
+        String estado = rs.getString("estado");
+        if (estado != null && !estado.isBlank()) {
+            cliente.setEstado(EstadoCuenta.valueOf(estado));
+        }
+        return cliente;
                 ))
                 .calificacionGlobal(rs.getDouble("calificacionGlobal"))
                 .activo(rs.getBoolean("activo"))

@@ -21,6 +21,7 @@ public interface PedidoRepositorio {
     List<PedidoListadoView> listarRecibidosPorLocal(Long idLocal, DtPedidoListadoFiltro filtro);
     List<PedidoListadoView> listarHistorialPorCliente(Long idCliente, DtPedidoListadoFiltro filtro);
     boolean existePedidoPorCliente(Long idCliente);
+    boolean existePedidoActivoPorCliente(Long idCliente);
     boolean existePedidoPendientePorLocal(Long idLocal);
     List<PlatoMasPedidoProjection> obtenerPlatosMasPedidos(Long idLocal, int limite);
     Double obtenerGananciasMesActual(Long idLocal);
