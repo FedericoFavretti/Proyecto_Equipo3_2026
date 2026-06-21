@@ -125,29 +125,13 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                         sesionesInvalidadasTs != null ? sesionesInvalidadasTs.toLocalDateTime() : null
                 )
                 .nombre(rs.getString("nombre"))
-                .direccion(new DtDireccion(
-                        rs.getString("calle"),
-                        rs.getString("numero"),
-                        rs.getString("ciudad"),
-                        rs.getString("codigoPostal")
-                ),
-                rs.getString("descripcion"),
-                EstadoLocal.valueOf(rs.getString("estado")),
-                rs.getDouble("calificacionGlobal"),
-                rs.getBoolean("estaAbierto"),
-                mapearImagenes(rs.getArray("imagenes"))
-        );
-        local.setId(rs.getLong("id"));
-        local.setEmail(rs.getString("email"));
-        local.setPasswd(rs.getString("passwd"));
-        local.setFoto(rs.getString("foto"));
-        local.setTipo(rs.getString("tipo"));
-        String estadoCuenta = rs.getString("estado_cuenta");
-        if (estadoCuenta != null && !estadoCuenta.isBlank()) {
-            local.setEstado(EstadoCuenta.valueOf(estadoCuenta));
-        }
-        return local;
-                ))
+                .direccion(DtDireccion.builder()
+                        .calle(rs.getString("calle"))
+                        .ciudad(rs.getString("ciudad"))
+                        .numero(rs.getString("numero"))
+                        .codigoPostal(rs.getString("codigoPostal"))
+                        .build()
+                )
                 .descripcion(rs.getString("descripcion"))
                 .estadoLocal(EstadoLocal.valueOf(rs.getString("estado")))
                 .calificacionGlobal(rs.getDouble("calificacionGlobal"))

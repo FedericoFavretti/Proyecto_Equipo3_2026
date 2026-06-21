@@ -20,8 +20,6 @@ public interface iUsuarioController {
             @RequestHeader("Authorization") String authHeader,
             Authentication authentication);
     ResponseEntity<Void> eliminarCuentaDeUsuarioPropiaDev(@PathVariable Long idCliente);
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request);
-    public ResponseEntity<Void> cerrarSesion(@RequestHeader("Authorization") String authHeader);
     public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo);
     public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd);
 }

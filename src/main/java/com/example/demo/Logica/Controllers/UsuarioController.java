@@ -59,6 +59,9 @@ public class UsuarioController implements iUsuarioController {
     @DeleteMapping("/clientes/{idCliente}/cuenta-dev")
     public ResponseEntity<Void> eliminarCuentaDeUsuarioPropiaDev(@PathVariable Long idCliente) {
         usuarioService.eliminarCuentaDeUsuarioPropia(idCliente);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/recuperar_contra_correo")
     public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo) {
         usuarioService.recuperarPasswdPorCorreo(correo);

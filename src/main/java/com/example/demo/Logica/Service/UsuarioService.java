@@ -75,7 +75,6 @@ public class UsuarioService {
     private final TokenBlacklistRepositorio tokenBlacklistRepositorio;
     private final PasswordEncoder passwordEncoder;
     private final CloudinaryService cloudinaryService;
-    private final PasswordEncoder  passwordEncoder;
 
     public UsuarioService(UsuarioRepositorio usuarioRepositorio,
                           ClienteRepositorio clienteRepositorio,
@@ -88,7 +87,6 @@ public class UsuarioService {
                           TokenBlacklistRepositorio tokenBlacklistRepositorio,
                           PasswordEncoder passwordEncoder,
                           CloudinaryService cloudinaryService) {
-                          UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio,  PasswordEncoder passwordEncoder) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
@@ -157,7 +155,6 @@ public class UsuarioService {
         usuarioRepositorio.actualizar(usuario);
     }
 
-}
 
     @Transactional
     public void editarDatosDeCuentaDeUsuario(String emailAutenticado, String authHeader, Map<String, String> datos, MultipartFile foto) {
