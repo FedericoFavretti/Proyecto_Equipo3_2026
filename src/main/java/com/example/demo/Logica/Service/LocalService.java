@@ -192,13 +192,6 @@ public class LocalService {
         return promocion;
     }
 
-    @Transactional
-    public void gestionarPromocionBaja(long idPromocion) {
-        promocionRepositorio.buscarPorId(idPromocion)
-                .orElseThrow(() -> new RuntimeException("Promoción no encontrada"));
-        promocionRepositorio.eliminar(idPromocion);
-    }
-
     private void validarDatosPromocion(DtPromocionRequest request) {
         if (request == null || request.getIdPlato() == null) {
             throw new IllegalArgumentException("Debe seleccionar al menos un plato para aplicar la promoción.");

@@ -16,5 +16,6 @@ public interface UsuarioRepositorio {
     void eliminar(Long id);
     void activarCuenta(Long id);
     boolean existeCorreo(String email);
+    void actualizarPasswd(Long id, String passwdCodificada);
 
 }

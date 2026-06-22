@@ -29,8 +29,6 @@ public interface iLocalController {
 
     public ResponseEntity<Promocion> gestionarPromocionModificacion(@PathVariable("idPromocion") Long idPromocion, @RequestBody DtPromocionRequest request);
 
-    ResponseEntity<Void> gestionarPromocionBaja(@PathVariable("idPromocion") Long idPromocion);
-
     public ResponseEntity<Void> solicitarHabilitacion(@RequestPart("datos") DtLocal dtLocal, @RequestPart("imagenes") List<MultipartFile> imagenes);
 
     ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") Long idLocal);

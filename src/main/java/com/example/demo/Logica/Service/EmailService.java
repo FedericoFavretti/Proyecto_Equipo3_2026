@@ -35,6 +35,23 @@ public class EmailService {
         );
     }
 
+    public void enviarCodigoVerificacion(String correo, String codigo) {
+        enviarCorreo(
+                correo,
+                "Código de verificación - Foodly",
+                "Tu código de verificación para cambiar la contraseña es: " + codigo
+                        + ". Este código vence en 10 minutos. Si no solicitaste este cambio, ignorá este mensaje."
+        );
+    }
+
+    public void enviarConfirmacionCambioPasswd(String correo) {
+        enviarCorreo(
+                correo,
+                "Tu contraseña fue actualizada - Foodly",
+                "Te confirmamos que tu contraseña fue cambiada exitosamente. Si no realizaste este cambio, contactate con soporte de inmediato."
+        );
+    }
+
     public void enviarCorreo(String destinatario, String asunto, String cuerpo) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
