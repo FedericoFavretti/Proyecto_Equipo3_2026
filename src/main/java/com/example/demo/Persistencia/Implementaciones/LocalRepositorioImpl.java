@@ -5,12 +5,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
+import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
+import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -58,6 +61,78 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                 SELECT_LOCAL_CON_USUARIO + " WHERE LOWER(l.nombre) = LOWER(?)",
                 (rs, row) -> mapearLocal(rs), nombre
         ).stream().findFirst();
+    }
+
+    @Override
+    public List<Local> buscarHabilitadosConFiltros(DtFiltroLocal filtro) {
+        StringBuilder sql = new StringBuilder(SELECT_LOCAL_CON_USUARIO + " WHERE l.estado = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(EstadoLocal.Habilitado.name());
+
+        if (filtro != null && filtro.getNombre() != null && !filtro.getNombre().isBlank()) {
+            sql.append(" AND l.nombre ILIKE ?");
+            params.add("%" + filtro.getNombre() + "%");
+        }
+
+        if (filtro != null && filtro.getCalificacionMinima() != null) {
+            sql.append(" AND l.calificacionGlobal >= ?");
+            params.add(filtro.getCalificacionMinima());
+        }
+
+        if (filtro != null && filtro.getEstaAbierto() != null) {
+            sql.append(" AND l.estaAbierto = ?");
+            params.add(filtro.getEstaAbierto());
+        }
+
+        sql.append(" ORDER BY ").append(resolverCampoOrden(filtro));
+        sql.append(" ").append(resolverDireccionOrden(filtro));
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                (rs, row) -> mapearLocal(rs),
+                params.toArray()
+        );
+    }
+
+    @Override
+    public List<Local> buscarUsuariosConFiltros(DtFiltroUsuario filtro) {
+        StringBuilder sql = new StringBuilder(SELECT_LOCAL_CON_USUARIO + " WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (filtro != null && filtro.getTexto() != null && !filtro.getTexto().isBlank()) {
+            sql.append(" AND (u.email ILIKE ? OR l.nombre ILIKE ?)");
+            String termino = "%" + filtro.getTexto() + "%";
+            params.add(termino);
+            params.add(termino);
+        }
+
+        if (filtro != null && filtro.getEstado() != null) {
+            sql.append(" AND u.estado = ?");
+            params.add(filtro.getEstado().name());
+        }
+
+        sql.append(" ORDER BY l.calificacionGlobal");
+        sql.append(" ").append(filtro != null && "asc".equalsIgnoreCase(filtro.getDireccion()) ? "ASC" : "DESC");
+
+        return jdbcTemplate.query(sql.toString(), (rs, row) -> mapearLocal(rs), params.toArray());
+    }
+
+    private String resolverCampoOrden(DtFiltroLocal filtro) {
+        if (filtro == null || filtro.getOrdenarPor() == null) {
+            return "l.nombre";
+        }
+        return switch (filtro.getOrdenarPor().toLowerCase()) {
+            case "calificacion" -> "l.calificacionGlobal";
+            case "nombre" -> "l.nombre";
+            default -> "l.nombre";
+        };
+    }
+
+    private String resolverDireccionOrden(DtFiltroLocal filtro) {
+        if (filtro == null || filtro.getDireccion() == null) {
+            return "DESC";
+        }
+        return "asc".equalsIgnoreCase(filtro.getDireccion()) ? "ASC" : "DESC";
     }
 
     @Override

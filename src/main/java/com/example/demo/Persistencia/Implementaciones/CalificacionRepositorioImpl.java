@@ -49,6 +49,16 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
     }
 
     @Override
+    public List<Calificacion> buscarPorIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        String placeholders = ids.stream().map(id -> "?").collect(java.util.stream.Collectors.joining(","));
+        String sql = "SELECT * FROM Calificacion WHERE id IN (" + placeholders + ")";
+        return jdbcTemplate.query(sql, (rs, row) -> calificacionMapper(rs, row), ids.toArray());
+    }
+
+    @Override
     public void guardar(Calificacion calificacion) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -110,6 +120,35 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 calificacion.getId();
     }
 
+    private Calificacion calificacionMapper(ResultSet rs, int row) throws SQLException {
+        TipoCalificacion tipo = TipoCalificacion.valueOf(rs.getString("tipo"));
+
+        if (tipo.equals(TipoCalificacion.Cliente_a_local)) {
+            Long idCliente = clienteCalificacionRepositorio.obtenerCliente(rs.getLong("id"));
+            Cliente cliente = clienteRepositorio.buscarPorId(idCliente)
+                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+
+            return Calificacion.builder()
+                    .id(rs.getLong("id"))
+                    .puntaje(rs.getInt("puntaje"))
+                    .comentario(rs.getString("comentario"))
+                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
+                    .tipo(tipo)
+                    .cliente(cliente)
+                    .local(null)
+                    .build();
+        } else if (tipo.equals(TipoCalificacion.Local_a_cliente)) {
+            Long idLocal = localCalificacionRepositorio.obtenerLocal(rs.getLong("id"));
+            Local local = localRepositorio.buscarPorId(idLocal).orElseThrow(() -> new RuntimeException("Local no encontrado"));
+            return Calificacion.builder()
+                    .id(rs.getLong("id"))
+                    .puntaje(rs.getInt("puntaje"))
+                    .comentario(rs.getString("comentario"))
+                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
+                    .tipo(tipo)
+                    .cliente(null)
+                    .local(local)
+                    .build();
     private Calificacion calificacionMapper(ResultSet rs,  int row) throws SQLException {
         Long idCalificacion = rs.getLong("id");
         TipoCalificacion tipo = TipoCalificacion.valueOf(rs.getString("tipo"));

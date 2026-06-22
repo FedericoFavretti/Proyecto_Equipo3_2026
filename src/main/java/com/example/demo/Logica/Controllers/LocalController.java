@@ -7,6 +7,13 @@ import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Interfaces.iLocalController;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.Service.LocalService;
+import com.example.demo.Logica.Clases.Promocion;
+import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
+import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
+import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +56,24 @@ public class LocalController implements iLocalController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/promociones")
+    public ResponseEntity<Promocion> gestionarPromocionAlta(@RequestBody DtPromocionRequest request) {
+        Promocion promocion = localService.altaPromocion(request);
+        return ResponseEntity.ok(promocion);
+    }
+
+    @PutMapping("/promociones/{idPromocion}")
+    public ResponseEntity<Promocion> gestionarPromocionModificacion(@PathVariable("idPromocion") Long idPromocion, @RequestBody DtPromocionRequest request) {
+        Promocion promocion = localService.gestionarPromocionModificacion(idPromocion, request);
+        return ResponseEntity.ok(promocion);
+    }
+
+    @DeleteMapping("/promociones/{idPromocion}")
+    public ResponseEntity<Void> gestionarPromocionBaja(@PathVariable("idPromocion") Long idPromocion) {
+        localService.gestionarPromocionBaja(idPromocion);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping(value = "/solicitudes-habilitacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> solicitarHabilitacion(@RequestPart("datos") DtLocal dtLocal, @RequestPart("imagenes") List<MultipartFile> imagenes){
         List<String> urls = cloudinaryService.subirImagenes(imagenes);
@@ -73,6 +98,23 @@ public class LocalController implements iLocalController {
     public ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal) {
         DtEstadisticasLocal dtEstadisticasLocal = localService.obtenerEstadisticasLocal(idLocal);
         return ResponseEntity.ok(dtEstadisticasLocal);
+    }
+
+    @GetMapping("/{idLocal}/clientes")
+    public ResponseEntity<List<DtClienteLocalResponse>> buscarYListarClientesDelLocal(
+            @PathVariable("idLocal") Long idLocal,
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) Double calificacionMinima,
+            @RequestParam(required = false, defaultValue = "calificacion") String ordenarPor,
+            @RequestParam(required = false, defaultValue = "desc") String direccion) {
+        DtFiltroClienteLocal filtro = DtFiltroClienteLocal.builder()
+                .nombre(nombre)
+                .calificacionMinima(calificacionMinima)
+                .ordenarPor(ordenarPor)
+                .direccion(direccion)
+                .build();
+        List<DtClienteLocalResponse> clientes = localService.buscarYListarClientesDelLocal(idLocal, filtro);
+        return ResponseEntity.ok(clientes);
     }
 }
 

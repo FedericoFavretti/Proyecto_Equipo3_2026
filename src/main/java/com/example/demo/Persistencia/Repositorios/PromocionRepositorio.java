@@ -13,5 +13,6 @@ public interface PromocionRepositorio {
     void actualizar(Promocion promocion);
     void eliminar(long id);
     List<Promocion> buscarActivasConFiltros(DtFiltro filtro);
+    List<Promocion> buscarPorPlato(Long idPlato);
 }
 
