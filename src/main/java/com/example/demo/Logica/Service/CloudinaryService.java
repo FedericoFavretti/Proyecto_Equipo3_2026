@@ -2,6 +2,7 @@ package com.example.demo.Logica.Service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.example.demo.Logica.Exceptions.ExternalServiceException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class CloudinaryService {
+    private static final String MENSAJE_ERROR_SUBIDA = "Error al subir la imagen al servicio de almacenamiento.";
 
     private final Cloudinary cloudinary;
 
@@ -28,7 +30,6 @@ public class CloudinaryService {
         ));
     }
 
-
     public String subirImagen(MultipartFile archivo) {
         try {
             Map resultado = cloudinary.uploader().upload(
@@ -37,10 +38,9 @@ public class CloudinaryService {
             );
             return (String) resultado.get("secure_url");
         } catch (IOException e) {
-            throw new RuntimeException("Error al subir imagen", e);
+            throw new ExternalServiceException(MENSAJE_ERROR_SUBIDA, e);
         }
     }
-
 
     public List<String> subirImagenes(List<MultipartFile> archivos) {
         return archivos.stream()

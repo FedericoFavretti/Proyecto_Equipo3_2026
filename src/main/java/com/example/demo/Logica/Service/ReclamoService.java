@@ -4,6 +4,8 @@ import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
 import com.example.demo.Logica.DataTypes.shared.DtReclamo;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.ReclamoMapper;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
@@ -13,6 +15,10 @@ import java.util.List;
 
 @Service
 public class ReclamoService {
+    private static final String MENSAJE_MOTIVO_REQUERIDO = "Debe ingresar un motivo.";
+    private static final String MENSAJE_FILTRO_REQUERIDO =
+            "Debe ingresar algun filtro para obtener los reclamos.";
+
     private final ReclamoRepositorio reclamoRepositorio;
     private final PedidoRepositorio pedidoRepositorio;
     private final ReclamoMapper reclamoMapper;
@@ -25,9 +31,10 @@ public class ReclamoService {
 
     public void reclamar(DtReclamo dtReclamo){
         if(dtReclamo.getMotivo().isEmpty()){
-            throw new RuntimeException("Debe ingresar un motivo");
+            throw new BusinessRuleException(MENSAJE_MOTIVO_REQUERIDO);
         }
-        Pedido pedido = pedidoRepositorio.buscarPorId(dtReclamo.getDtPedido().getId()).orElseThrow(()->new RuntimeException("No existe el pedido con el id"));
+        Pedido pedido = pedidoRepositorio.buscarPorId(dtReclamo.getDtPedido().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", dtReclamo.getDtPedido().getId()));
         dtReclamo.setMontoReintegro(pedido.getTotal());
         dtReclamo.setFecha(LocalDateTime.now());
         Reclamo reclamo = reclamoMapper.mapearReclamoDeDt(dtReclamo);
@@ -36,14 +43,14 @@ public class ReclamoService {
 
     public List<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo){
         if(dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null && dtFiltroReclamo.getIdCliente() == null){
-            throw new RuntimeException("Debe ingresar algun filtro para obtener los reclamos");
+            throw new BusinessRuleException(MENSAJE_FILTRO_REQUERIDO);
         }
         return reclamoMapper.mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));
     }
 
     public void resolverReclamo(DtReclamo dtReclamo){
         if(reclamoRepositorio.buscarPorId(dtReclamo.getId()).isEmpty()){
-            throw new RuntimeException("No existe el reclamo con el id: "+dtReclamo.getId());
+            throw new ResourceNotFoundException("Reclamo", dtReclamo.getId());
         }
         Reclamo reclamo = reclamoMapper.mapearReclamoDeDt(dtReclamo);
         reclamoRepositorio.actualizar(reclamo);

@@ -6,6 +6,8 @@ import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
@@ -61,6 +63,11 @@ public class UsuarioService {
             "No es posible eliminar la cuenta mientras tenga pedidos en curso. Espere a que todos sus pedidos sean resueltos.";
     private static final String MENSAJE_RECLAMOS_PENDIENTES =
             "No es posible eliminar la cuenta mientras tenga reclamos pendientes de resolución.";
+    private static final String MENSAJE_USUARIO_NO_AUTENTICADO = "Usuario no autenticado.";
+    private static final String MENSAJE_TIPO_USUARIO_NO_COMPATIBLE =
+            "El tipo de usuario no es compatible con la edición de cuenta.";
+    private static final String MENSAJE_NO_SE_PUDO_INVALIDAR_SESION =
+            "No se pudo invalidar la sesión actual.";
     private static final DtDireccion DIRECCION_ANONIMIZADA =
             new DtDireccion("Anonimizada", "S/N", "N/D", "00000");
 
@@ -115,7 +122,7 @@ public class UsuarioService {
     public void activarCuenta(String email) {
         Optional<Usuario> usuarioOpt = usuarioRepositorio.buscarPorEmail(email);
         if (usuarioOpt.isEmpty()) {
-            throw new IllegalArgumentException("Usuario no encontrado.");
+            throw new ResourceNotFoundException("Usuario", email);
         }
         usuarioRepositorio.activarCuenta(usuarioOpt.get().getId());
     }
@@ -129,7 +136,7 @@ public class UsuarioService {
     @Transactional
     public void recuperarPasswdPorCorreo(String correo) {
         if (usuarioRepositorio.buscarPorEmail(correo).isEmpty()) {
-            throw new IllegalArgumentException("Usuario no encontrado.");
+            throw new ResourceNotFoundException("Usuario", correo);
         }
 
         String token = jwtService.generarTokenRecuperacion(correo);
@@ -142,7 +149,7 @@ public class UsuarioService {
     public void recuperarPasswd(DtRecuperarPasswd dtRecuperarPasswd){
         String correo = jwtService.validarYObtenerCorreoRecuperacion(dtRecuperarPasswd.getToken());
         Usuario usuario = usuarioRepositorio.buscarPorEmail(correo)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", correo));
         usuario.setPasswd(passwordEncoder.encode(dtRecuperarPasswd.getNuevaPasswd()));
         usuarioRepositorio.actualizar(usuario);
     }
@@ -150,7 +157,7 @@ public class UsuarioService {
     @Transactional
     public void cerrarTodasLasSesiones(Long idUsuario) {
         Usuario usuario = usuarioRepositorio.buscarPorId(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", idUsuario));
         usuario.setSesionesInvalidadasDesde(LocalDateTime.now());
         usuarioRepositorio.actualizar(usuario);
     }
@@ -159,11 +166,11 @@ public class UsuarioService {
     @Transactional
     public void editarDatosDeCuentaDeUsuario(String emailAutenticado, String authHeader, Map<String, String> datos, MultipartFile foto) {
         if (emailAutenticado == null || emailAutenticado.isBlank()) {
-            throw new AuthenticationCredentialsNotFoundException("Usuario no autenticado.");
+            throw new AuthenticationCredentialsNotFoundException(MENSAJE_USUARIO_NO_AUTENTICADO);
         }
 
         Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
 
         Map<String, String> datosActualizacion = datos == null ? Map.of() : datos;
         validarCamposPermitidos(usuario, datosActualizacion);
@@ -193,14 +200,14 @@ public class UsuarioService {
     @Transactional
     public void eliminarCuentaDeUsuarioPropia(Long idCliente) {
         Cliente cliente = clienteRepositorio.buscarPorId(idCliente)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
 
         if (pedidoRepositorio.existePedidoActivoPorCliente(idCliente)) {
-            throw new IllegalStateException(MENSAJE_PEDIDOS_ACTIVOS);
+            throw new BusinessRuleException(MENSAJE_PEDIDOS_ACTIVOS);
         }
 
         if (reclamoRepositorio.existeReclamoPendientePorCliente(idCliente)) {
-            throw new IllegalStateException(MENSAJE_RECLAMOS_PENDIENTES);
+            throw new BusinessRuleException(MENSAJE_RECLAMOS_PENDIENTES);
         }
 
         anonimizarCliente(cliente);
@@ -226,7 +233,7 @@ public class UsuarioService {
         if (usuario instanceof Administrador) {
             return CAMPOS_EDITABLES_ADMIN;
         }
-        throw new IllegalArgumentException("El tipo de usuario no es compatible con la edición de cuenta.");
+        throw new BusinessRuleException(MENSAJE_TIPO_USUARIO_NO_COMPATIBLE);
     }
 
     private boolean aplicarCambiosComunes(Usuario usuario, Map<String, String> datosActualizacion) {
@@ -238,7 +245,7 @@ public class UsuarioService {
                 throw formatoInvalido("email");
             }
             if (!nuevoEmail.equalsIgnoreCase(usuario.getEmail()) && usuarioRepositorio.existeCorreo(nuevoEmail)) {
-                throw new IllegalArgumentException(MENSAJE_EMAIL_DUPLICADO);
+                throw new ResourceConflictException(MENSAJE_EMAIL_DUPLICADO);
             }
             if (!nuevoEmail.equalsIgnoreCase(usuario.getEmail())) {
                 usuario.setEmail(nuevoEmail);
@@ -318,7 +325,7 @@ public class UsuarioService {
                 || nombre.isBlank()
                 || !extensionPermitida(nombre)
                 || !contentTypePermitido(contentType)) {
-            throw new IllegalArgumentException(MENSAJE_FOTO_INVALIDA);
+            throw new BusinessRuleException(MENSAJE_FOTO_INVALIDA);
         }
     }
 
@@ -338,13 +345,13 @@ public class UsuarioService {
 
     private void invalidarSesionActual(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("No se pudo invalidar la sesión actual.");
+            throw new BusinessRuleException(MENSAJE_NO_SE_PUDO_INVALIDAR_SESION);
         }
         cerrarSesion(authHeader.substring("Bearer ".length()));
     }
 
-    private IllegalArgumentException formatoInvalido(String campo) {
-        return new IllegalArgumentException(
+    private BusinessRuleException formatoInvalido(String campo) {
+        return new BusinessRuleException(
                 "El campo " + campo + " contiene un formato inválido. Por favor, revíselo e inténtelo de nuevo.");
     }
 

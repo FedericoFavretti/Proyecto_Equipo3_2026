@@ -11,6 +11,9 @@ import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ResourceConflictException;
+import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
@@ -19,7 +22,6 @@ import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,10 +53,12 @@ public class LocalService {
             "Debe completar todos los datos del plato.";
     private static final String MENSAJE_PLATO_YA_EXISTE =
             "El nombre del plato ya existe.";
-    private static final String MENSAJE_PLATO_NO_ENCONTRADO =
-            "Plato no encontrado";
     private static final String MENSAJE_PLATO_DE_OTRO_LOCAL =
             "El plato no pertenece al local indicado.";
+    private static final String MENSAJE_LOCAL_NO_HABILITADO =
+            "El local debe estar habilitado para realizar esta operacion.";
+    private static final String MENSAJE_NOMBRE_LOCAL_DUPLICADO =
+            "El nombre del local ya se encuentra registrado.";
 
     private final LocalRepositorio localRepositorio;
     private final PlatoRepositorio platoRepositorio;
@@ -86,11 +90,11 @@ public class LocalService {
         validarDatosPlato(dtPlato);
 
         if (platoRepositorio.buscarPorNombre(dtPlato.getNombre()).isPresent()) {
-            throw new IllegalArgumentException(MENSAJE_PLATO_YA_EXISTE);
+            throw new ResourceConflictException(MENSAJE_PLATO_YA_EXISTE);
         }
 
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
-                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
         validarLocalHabilitado(local);
         local.setId(dtPlato.getDtLocal().getId());
 
@@ -104,17 +108,17 @@ public class LocalService {
         validarDatosPlato(dtPlato);
 
         Plato platoExistente = platoRepositorio.buscarPorId(idPlato)
-                .orElseThrow(() -> new RuntimeException(MENSAJE_PLATO_NO_ENCONTRADO));
+                .orElseThrow(() -> new ResourceNotFoundException("Plato", idPlato));
 
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
-                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
         validarLocalHabilitado(local);
         validarPlatoPerteneceAlLocal(platoExistente, local.getId());
 
         platoRepositorio.buscarPorNombre(dtPlato.getNombre())
                 .filter(plato -> !plato.getId().equals(idPlato))
                 .ifPresent(plato -> {
-                    throw new IllegalArgumentException(MENSAJE_PLATO_YA_EXISTE);
+                    throw new ResourceConflictException(MENSAJE_PLATO_YA_EXISTE);
                 });
 
         Plato plato = platoMapper.mapearPlatoDeDt(dtPlato);
@@ -126,7 +130,7 @@ public class LocalService {
     @Transactional
     public void gestionarPlatoBaja(long idPlato) {
         Plato plato = platoRepositorio.buscarPorId(idPlato)
-                .orElseThrow(() -> new RuntimeException(MENSAJE_PLATO_NO_ENCONTRADO));
+                .orElseThrow(() -> new ResourceNotFoundException("Plato", idPlato));
         plato.setDisponible(false);
         platoRepositorio.actualizar(plato);
     }
@@ -140,7 +144,7 @@ public class LocalService {
         validarSolicitudRegistroLocal(dtLocal);
 
         if (localRepositorio.buscarPorNombre(dtLocal.getNombre()).isPresent()) {
-            throw new IllegalArgumentException("El nombre del local ya se encuentra registrado.");
+            throw new ResourceConflictException(MENSAJE_NOMBRE_LOCAL_DUPLICADO);
         }
 
         Local local = localMapper.mapearLocalDeDt(dtLocal);
@@ -161,7 +165,7 @@ public class LocalService {
     @Transactional
     public void registrarApertura(long idLocal) {
         Local local = localRepositorio.buscarPorId(idLocal)
-                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
         validarLocalHabilitado(local);
         validarLocalCerrado(local);
         local.setEstaAbierto(true);
@@ -171,7 +175,7 @@ public class LocalService {
     @Transactional
     public void regitrarCierre(long idLocal) {
         Local local = localRepositorio.buscarPorId(idLocal)
-                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
         validarLocalHabilitado(local);
         validarLocalAbierto(local);
         validarSinPedidosPendientes(idLocal);
@@ -184,7 +188,7 @@ public class LocalService {
         List<PlatoMasPedidoProjection> proyecciones = pedidoRepositorio.obtenerPlatosMasPedidos(idLocal, 5);
         List<DtPlato> platosMasPedido = proyecciones.stream()
                 .map(p -> platoRepositorio.buscarPorId(p.idPlato())
-                        .orElseThrow(() -> new RuntimeException("Plato no encontrado")))
+                        .orElseThrow(() -> new ResourceNotFoundException("Plato", p.idPlato())))
                 .map(platoMapper::mapearDtPlatoDeClase)
                 .toList();
         Double gananciasMensuales = pedidoRepositorio.obtenerGananciasMesActual(idLocal);
@@ -201,19 +205,19 @@ public class LocalService {
                 || textoVacio(dtPlato.getDescripcion())
                 || listaVacia(dtPlato.getImagenes())
                 || dtPlato.getDisponible() == null) {
-            throw new IllegalArgumentException(MENSAJE_DATOS_PLATO_INCOMPLETOS);
+            throw new BusinessRuleException(MENSAJE_DATOS_PLATO_INCOMPLETOS);
         }
 
         if (textoVacio(dtPlato.getNombre())) {
-            throw new IllegalArgumentException(MENSAJE_NOMBRE_PLATO_OBLIGATORIO);
+            throw new BusinessRuleException(MENSAJE_NOMBRE_PLATO_OBLIGATORIO);
         }
 
         if (precioInvalido(dtPlato.getPrecio())) {
-            throw new IllegalArgumentException(MENSAJE_PRECIO_PLATO_INVALIDO);
+            throw new BusinessRuleException(MENSAJE_PRECIO_PLATO_INVALIDO);
         }
 
         if (dtPlato.getImagenes().stream().anyMatch(this::imagenPlatoNoPermitida)) {
-            throw new IllegalArgumentException(MENSAJE_IMAGEN_PLATO_INVALIDA);
+            throw new BusinessRuleException(MENSAJE_IMAGEN_PLATO_INVALIDA);
         }
     }
 
@@ -247,7 +251,7 @@ public class LocalService {
         List<String> camposFaltantes = new ArrayList<>();
 
         if (dtLocal == null) {
-            throw new IllegalArgumentException(String.format(
+            throw new BusinessRuleException(String.format(
                     MENSAJE_CAMPOS_REQUERIDOS,
                     "email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
         }
@@ -274,16 +278,16 @@ public class LocalService {
         }
 
         if (!camposFaltantes.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     String.format(MENSAJE_CAMPOS_REQUERIDOS, String.join(", ", camposFaltantes)));
         }
 
         if (!FORMATO_EMAIL.matcher(dtLocal.getEmail()).matches()) {
-            throw new IllegalArgumentException(MENSAJE_EMAIL_INVALIDO);
+            throw new BusinessRuleException(MENSAJE_EMAIL_INVALIDO);
         }
 
         if (dtLocal.getImagenes().stream().anyMatch(this::imagenNoPermitida)) {
-            throw new IllegalArgumentException(MENSAJE_IMAGEN_INVALIDA);
+            throw new BusinessRuleException(MENSAJE_IMAGEN_INVALIDA);
         }
     }
 
@@ -309,32 +313,31 @@ public class LocalService {
 
     private void validarLocalHabilitado(Local local) {
         if (local.getEstadoLocal() != EstadoLocal.Habilitado) {
-            throw new IllegalStateException("El local debe estar habilitado para realizar esta operacion.");
+            throw new BusinessRuleException(MENSAJE_LOCAL_NO_HABILITADO);
         }
     }
 
     private void validarLocalCerrado(Local local) {
         if (Boolean.TRUE.equals(local.getEstaAbierto())) {
-            throw new IllegalStateException(MENSAJE_LOCAL_YA_ABIERTO);
+            throw new BusinessRuleException(MENSAJE_LOCAL_YA_ABIERTO);
         }
     }
 
     private void validarLocalAbierto(Local local) {
         if (!Boolean.TRUE.equals(local.getEstaAbierto())) {
-            throw new IllegalStateException(MENSAJE_LOCAL_YA_CERRADO);
+            throw new BusinessRuleException(MENSAJE_LOCAL_YA_CERRADO);
         }
     }
 
     private void validarSinPedidosPendientes(long idLocal) {
         if (pedidoRepositorio.existePedidoPendientePorLocal(idLocal)) {
-            throw new IllegalStateException(MENSAJE_LOCAL_CON_PEDIDOS_PENDIENTES);
+            throw new BusinessRuleException(MENSAJE_LOCAL_CON_PEDIDOS_PENDIENTES);
         }
     }
 
     private void validarPlatoPerteneceAlLocal(Plato plato, Long idLocal) {
         if (plato.getLocal() == null || plato.getLocal().getId() == null || !plato.getLocal().getId().equals(idLocal)) {
-            throw new IllegalStateException(MENSAJE_PLATO_DE_OTRO_LOCAL);
+            throw new BusinessRuleException(MENSAJE_PLATO_DE_OTRO_LOCAL);
         }
     }
 }
-
