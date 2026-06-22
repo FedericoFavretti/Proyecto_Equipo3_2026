@@ -8,6 +8,8 @@ import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Mappers.ClienteMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Logica.Mappers.PromocionMapper;
@@ -34,6 +36,12 @@ import java.util.Map;
 @Service
 public class ClienteService {
     private static final String TIPO_USUARIO_CLIENTE = "cliente";
+    private static final String MENSAJE_PASSWORD_OBLIGATORIA = "La contraseña es obligatoria.";
+    private static final String MENSAJE_CORREO_DUPLICADO =
+            "El correo ya está asociado a una cuenta. ¿Desea iniciar sesión?";
+    private static final String MENSAJE_DOCUMENTO_DUPLICADO =
+            "El documento ya está asociado a una cuenta.";
+    private static final String MENSAJE_FILTRO_NULO = "El filtro no puede ser nulo.";
 
     private final ClienteRepositorio clienteRepositorio;
     private final PlatoRepositorio platoRepositorio;
@@ -75,18 +83,16 @@ public class ClienteService {
     @Transactional
     public Cliente registrarUsuario(DtCliente dtCliente) {
         if (dtCliente == null || dtCliente.getPasswd() == null || dtCliente.getPasswd().isBlank()) {
-            throw new IllegalArgumentException("La contraseña es obligatoria.");
+            throw new BusinessRuleException(MENSAJE_PASSWORD_OBLIGATORIA);
         }
 
         String passwdCodificada = passwordEncoder.encode(dtCliente.getPasswd());
 
         if (usuarioRepositorio.existeCorreo(dtCliente.getEmail())) {
-            throw new IllegalArgumentException(
-                    "El correo ya está asociado a una cuenta. ¿Desea iniciar sesión?");
+            throw new ResourceConflictException(MENSAJE_CORREO_DUPLICADO);
         }
         if (clienteRepositorio.existeDocumento(dtCliente.getDocumento())) {
-            throw new IllegalArgumentException(
-                    "El documento ya está asociado a una cuenta.");
+            throw new ResourceConflictException(MENSAJE_DOCUMENTO_DUPLICADO);
         }
 
         Cliente cliente = clienteMapper.mapearClienteDeDt(dtCliente);
@@ -107,7 +113,7 @@ public class ClienteService {
     @Transactional
     public DtBusquedaPlatosPromocionesResponse buscarPlatosYPromociones(DtFiltro dtFiltro) {
         if (dtFiltro == null) {
-            throw new IllegalArgumentException("El filtro no puede ser nulo.");
+            throw new BusinessRuleException(MENSAJE_FILTRO_NULO);
         }
 
         List<DtPlato> platos = platoRepositorio.buscarConFiltros(dtFiltro)
@@ -119,10 +125,6 @@ public class ClienteService {
                 .stream()
                 .map(promocionMapper::mapearDtPromocionDeClase)
                 .collect(Collectors.toList());
-
-        if (platos.isEmpty() && promociones.isEmpty()) {
-            throw new IllegalArgumentException("No se encontraron platos o promociones que coincidan con su búsqueda.");
-        }
 
         return DtBusquedaPlatosPromocionesResponse.builder()
                 .platos(platos)
@@ -202,6 +204,3 @@ public class ClienteService {
                 .build();
     }
 }
-
-
-

@@ -12,6 +12,9 @@ import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ExternalServiceException;
+import com.example.demo.Logica.Exceptions.PagoRechazadoException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.DetallePedidoMapper;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
@@ -54,6 +57,21 @@ public class PedidoService {
             "Aún no ha realizado ningún pedido. ¡Explore los locales disponibles y realice su primer pedido!";
     private static final String MENSAJE_FILTROS_SIN_RESULTADOS =
             "No se encontraron pedidos que coincidan con los criterios seleccionados.";
+    private static final String MENSAJE_SOLO_PENDIENTE_CONFIRMAR =
+            "Solo se pueden confirmar pedidos en estado Pendiente.";
+    private static final String MENSAJE_SOLO_PENDIENTE_RECHAZAR =
+            "Solo se pueden rechazar pedidos en estado Pendiente.";
+    private static final String MENSAJE_MOTIVO_RECHAZO_REQUERIDO =
+            "Debe seleccionar o escribir un motivo de rechazo antes de continuar.";
+    private static final String MENSAJE_PEDIDO_NO_PENDIENTE =
+            "El pedido no se encuentra en estado pendiente.";
+    private static final String MENSAJE_LOCAL_REQUERIDO = "Debe indicar el local del pedido.";
+    private static final String MENSAJE_CLIENTE_REQUERIDO = "Debe indicar el cliente del pedido.";
+    private static final String MENSAJE_FECHA_DESDE_INVALIDA =
+            "La fecha desde no puede ser posterior a la fecha hasta.";
+    private static final String MENSAJE_ORDEN_INVALIDO = "El campo de orden no es válido.";
+    private static final String MENSAJE_DIRECCION_ORDEN_INVALIDA = "La dirección de orden no es válida.";
+    private static final String MENSAJE_ERROR_NOTIFICACION_PAGO = "Error procesando notificación de pago.";
 
     private final PedidoRepositorio pedidoRepositorio;
     private final ClienteRepositorio clienteRepositorio;
@@ -104,20 +122,20 @@ public class PedidoService {
     @Transactional
     public Pedido confirmarPedido(long idPedido, Long tiempoEstimadoEntregaMinutos) {
         Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
-                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", idPedido));
 
         if (!pedido.getEstado().equals(EstadoPedido.Pendiente)) {
-            throw new RuntimeException("Solo se pueden confirmar pedidos en estado Pendiente.");
+            throw new BusinessRuleException(MENSAJE_SOLO_PENDIENTE_CONFIRMAR);
         }
 
         if (tiempoEstimadoEntregaMinutos == null || tiempoEstimadoEntregaMinutos <= 0) {
-            throw new IllegalArgumentException(MENSAJE_TIEMPO_REQUERIDO);
+            throw new BusinessRuleException(MENSAJE_TIEMPO_REQUERIDO);
         }
 
         pedido.setTiempoEstEntrega(Duration.ofMinutes(tiempoEstimadoEntregaMinutos));
 
         if (!pagoSimuladoService.procesarPago(pedido)) {
-            throw new RuntimeException(MENSAJE_PAGO_FALLIDO);
+            throw new PagoRechazadoException(MENSAJE_PAGO_FALLIDO);
         }
 
         pedido.setPagoSimulado(true);
@@ -133,14 +151,14 @@ public class PedidoService {
     @Transactional
     public void rechazarPedido(long idPedido, String motivo) {
         Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", idPedido));
 
         if (!pedido.getEstado().equals(EstadoPedido.Pendiente)) {
-            throw new IllegalStateException("Solo se pueden rechazar pedidos en estado Pendiente.");
+            throw new BusinessRuleException(MENSAJE_SOLO_PENDIENTE_RECHAZAR);
         }
 
         if (motivo == null || motivo.isBlank()) {
-            throw new IllegalArgumentException("Debe seleccionar o escribir un motivo de rechazo antes de continuar.");
+            throw new BusinessRuleException(MENSAJE_MOTIVO_RECHAZO_REQUERIDO);
         }
 
         pedido.setEstado(EstadoPedido.Rechazado);
@@ -154,14 +172,14 @@ public class PedidoService {
         DtPedido dtPedido = dtPedidoConDetalles.getDtPedido();
 
         Local local = localRepositorio.buscarPorId(dtPedido.getDtLocal().getId())
-                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Local", dtPedido.getDtLocal().getId()));
 
         if (!Boolean.TRUE.equals(local.getEstaAbierto())) {
-            throw new RuntimeException(MENSAJE_LOCAL_CERRADO);
+            throw new BusinessRuleException(MENSAJE_LOCAL_CERRADO);
         }
 
         Cliente cliente = clienteRepositorio.buscarPorId(dtPedido.getDtCliente().getId())
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", dtPedido.getDtCliente().getId()));
 
         List<DetallePedido> detalles = construirDetalles(dtPedidoConDetalles.getDetalles(), local);
         double total = detalles.stream()
@@ -191,9 +209,10 @@ public class PedidoService {
 
     @Transactional
     public void cancelarPedido(Long idPedido) {
-        Pedido pedido = pedidoRepositorio.buscarPorId(idPedido).orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", idPedido));
         if (!pedido.getEstado().equals(EstadoPedido.Pendiente)) {
-            throw new RuntimeException("El pedido no se encuentra en estado pendiente.");
+            throw new BusinessRuleException(MENSAJE_PEDIDO_NO_PENDIENTE);
         }
         pedido.setEstado(EstadoPedido.Cancelado);
         pedidoRepositorio.actualizar(pedido);
@@ -202,7 +221,7 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public List<DtPedidoListadoResponse> listarPedidos(Long idLocal, DtPedidoListadoFiltro filtro) {
         localRepositorio.buscarPorId(idLocal)
-                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
         validarFiltroListado(filtro);
 
         return pedidoRepositorio.listarRecibidosPorLocal(idLocal, filtro).stream()
@@ -213,7 +232,7 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public List<DtPedidoListadoResponse> buscarYListarHistorialPedidosPropios(Long idCliente, DtPedidoListadoFiltro filtro) {
         clienteRepositorio.buscarPorId(idCliente)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
         validarFiltroListado(filtro);
 
         List<DtPedidoListadoResponse> pedidos = pedidoRepositorio.listarHistorialPorCliente(idCliente, filtro).stream()
@@ -225,14 +244,14 @@ public class PedidoService {
         }
 
         if (tieneFiltrosAplicados(filtro)) {
-            throw new IllegalArgumentException(MENSAJE_FILTROS_SIN_RESULTADOS);
+            throw new BusinessRuleException(MENSAJE_FILTROS_SIN_RESULTADOS);
         }
 
         if (!pedidoRepositorio.existePedidoPorCliente(idCliente)) {
-            throw new IllegalArgumentException(MENSAJE_SIN_PEDIDOS_CLIENTE);
+            throw new BusinessRuleException(MENSAJE_SIN_PEDIDOS_CLIENTE);
         }
 
-        throw new IllegalArgumentException(MENSAJE_FILTROS_SIN_RESULTADOS);
+        throw new BusinessRuleException(MENSAJE_FILTROS_SIN_RESULTADOS);
     }
 
     public void procesarPagoConfirmado(String paymentId) {
@@ -244,7 +263,7 @@ public class PedidoService {
                 pedidoRepositorio.actualizarPago(pedidoId, true, EstadoPedido.Confirmado);
             }
         } catch (MPException | MPApiException e) {
-            throw new RuntimeException("Error procesando notificación: " + e.getMessage(), e);
+            throw new ExternalServiceException(MENSAJE_ERROR_NOTIFICACION_PAGO, e);
         }
     }
 
@@ -255,18 +274,18 @@ public class PedidoService {
             validarCantidad(detalleSolicitado);
 
             if (detalleSolicitado.getDtPlato() == null || detalleSolicitado.getDtPlato().getId() == null) {
-                throw new IllegalArgumentException(MENSAJE_SIN_PLATOS);
+                throw new BusinessRuleException(MENSAJE_SIN_PLATOS);
             }
 
             Plato plato = platoRepositorio.buscarPorId(detalleSolicitado.getDtPlato().getId())
-                    .orElseThrow(() -> new RuntimeException("Plato no encontrado"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Plato", detalleSolicitado.getDtPlato().getId()));
 
             if (!Boolean.TRUE.equals(plato.getDisponible())) {
-                throw new IllegalArgumentException(MENSAJE_PLATO_NO_DISPONIBLE);
+                throw new BusinessRuleException(MENSAJE_PLATO_NO_DISPONIBLE);
             }
 
             if (plato.getLocal() == null || !plato.getLocal().getId().equals(local.getId())) {
-                throw new IllegalArgumentException(MENSAJE_PLATO_OTRO_LOCAL);
+                throw new BusinessRuleException(MENSAJE_PLATO_OTRO_LOCAL);
             }
 
             double precioUnitario = plato.getPrecio();
@@ -288,23 +307,23 @@ public class PedidoService {
                 || dtPedidoConDetalles.getDtPedido() == null
                 || dtPedidoConDetalles.getDetalles() == null
                 || dtPedidoConDetalles.getDetalles().isEmpty()) {
-            throw new IllegalArgumentException(MENSAJE_SIN_PLATOS);
+            throw new BusinessRuleException(MENSAJE_SIN_PLATOS);
         }
 
         if (dtPedidoConDetalles.getDtPedido().getDtLocal() == null
                 || dtPedidoConDetalles.getDtPedido().getDtLocal().getId() == null) {
-            throw new IllegalArgumentException("Debe indicar el local del pedido.");
+            throw new BusinessRuleException(MENSAJE_LOCAL_REQUERIDO);
         }
 
         if (dtPedidoConDetalles.getDtPedido().getDtCliente() == null
                 || dtPedidoConDetalles.getDtPedido().getDtCliente().getId() == null) {
-            throw new IllegalArgumentException("Debe indicar el cliente del pedido.");
+            throw new BusinessRuleException(MENSAJE_CLIENTE_REQUERIDO);
         }
     }
 
     private void validarCantidad(DtDetallePedido detalleSolicitado) {
         if (detalleSolicitado == null || detalleSolicitado.getCantidad() <= 0) {
-            throw new IllegalArgumentException(MENSAJE_CANTIDAD_INVALIDA);
+            throw new BusinessRuleException(MENSAJE_CANTIDAD_INVALIDA);
         }
     }
 
@@ -316,20 +335,20 @@ public class PedidoService {
         if (filtro.getFechaDesde() != null
                 && filtro.getFechaHasta() != null
                 && filtro.getFechaDesde().isAfter(filtro.getFechaHasta())) {
-            throw new IllegalArgumentException("La fecha desde no puede ser posterior a la fecha hasta.");
+            throw new BusinessRuleException(MENSAJE_FECHA_DESDE_INVALIDA);
         }
 
         if (filtro.getOrdenarPor() != null) {
             List<String> camposValidos = List.of("fecha", "total", "estado");
             if (!camposValidos.contains(filtro.getOrdenarPor().toLowerCase())) {
-                throw new IllegalArgumentException("El campo de orden no es válido.");
+                throw new BusinessRuleException(MENSAJE_ORDEN_INVALIDO);
             }
         }
 
         if (filtro.getDireccion() != null) {
             List<String> direccionesValidas = List.of("asc", "desc");
             if (!direccionesValidas.contains(filtro.getDireccion().toLowerCase())) {
-                throw new IllegalArgumentException("La dirección de orden no es válida.");
+                throw new BusinessRuleException(MENSAJE_DIRECCION_ORDEN_INVALIDA);
             }
         }
     }

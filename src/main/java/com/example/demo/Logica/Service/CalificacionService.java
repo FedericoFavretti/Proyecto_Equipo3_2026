@@ -4,6 +4,7 @@ import com.example.demo.Logica.Clases.Calificacion;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.DataTypes.shared.DtCalificacion;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Enums.TipoCalificacion;
 import com.example.demo.Logica.Mappers.CalificacionMapper;
@@ -22,6 +23,12 @@ import java.util.Map;
 public class CalificacionService {
     private static final String MENSAJE_SIN_CALIFICACIONES =
             "Su local todavía no ha recibido calificaciones de los clientes.";
+    private static final String MENSAJE_PUNTAJE_INVALIDO =
+            "El puntaje debe estar comprendido entre 1 y 5.";
+    private static final String MENSAJE_CLIENTE_O_LOCAL_REQUERIDO =
+            "Debe indicarse tanto el cliente como el local asociados a la calificación.";
+    private static final String MENSAJE_USUARIO_NO_ES_LOCAL =
+            "El usuario autenticado no corresponde a un local.";
 
     private final CalificacionRepositorio calificacionRepositorio;
     private final LocalRepositorio localRepositorio;
@@ -42,10 +49,10 @@ public class CalificacionService {
     @Transactional
     public void calificar(DtCalificacion dtCalificacion) {
         if (dtCalificacion.getPuntaje() < 1 || dtCalificacion.getPuntaje() > 5) {
-            throw new IllegalArgumentException("El puntaje debe estar comprendido entre 1 y 5.");
+            throw new BusinessRuleException(MENSAJE_PUNTAJE_INVALIDO);
         }
         if (dtCalificacion.getDtCliente() == null || dtCalificacion.getDtLocal() == null) {
-            throw new IllegalArgumentException("Debe indicarse tanto el cliente como el local asociados a la calificación.");
+            throw new BusinessRuleException(MENSAJE_CLIENTE_O_LOCAL_REQUERIDO);
         }
         if (dtCalificacion.getTipo() == null && dtCalificacion.getDtCliente() != null) {
             dtCalificacion.setTipo(TipoCalificacion.Cliente_a_local);
@@ -61,9 +68,9 @@ public class CalificacionService {
     @Transactional
     public Map<String, Object> consultarCalificacionGlobalDelLocal(String emailAutenticado) {
         Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
         if (!(usuario instanceof Local local)) {
-            throw new IllegalArgumentException("El usuario autenticado no corresponde a un local.");
+            throw new BusinessRuleException(MENSAJE_USUARIO_NO_ES_LOCAL);
         }
 
         return consultarCalificacionGlobalDelLocalPorId(local.getId());
@@ -72,10 +79,10 @@ public class CalificacionService {
     @Transactional
     public Map<String, Object> consultarCalificacionGlobalDelLocalPorId(Long idLocal) {
         Local local = localRepositorio.buscarPorId(idLocal)
-                .orElseThrow(() -> new ResourceNotFoundException("Local no encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
         List<Calificacion> calificaciones = calificacionRepositorio.listarPorLocal(local.getId());
         if (calificaciones.isEmpty()) {
-            throw new IllegalArgumentException(MENSAJE_SIN_CALIFICACIONES);
+            throw new BusinessRuleException(MENSAJE_SIN_CALIFICACIONES);
         }
         return construirResumenYActualizarCache(local, calificaciones);
     }
@@ -110,7 +117,7 @@ public class CalificacionService {
             return;
         }
         Local local = localRepositorio.buscarPorId(idLocal)
-                .orElseThrow(() -> new ResourceNotFoundException("Local no encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
         List<Calificacion> calificaciones = calificacionRepositorio.listarPorLocal(idLocal);
         double promedio = calificaciones.stream()
                 .mapToInt(Calificacion::getPuntaje)

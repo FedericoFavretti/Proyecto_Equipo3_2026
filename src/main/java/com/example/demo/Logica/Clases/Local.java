@@ -2,14 +2,10 @@ package com.example.demo.Logica.Clases;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.sql.Time;
 import java.util.List;
-import java.time.Instant;
 
 @SuperBuilder
 @Data

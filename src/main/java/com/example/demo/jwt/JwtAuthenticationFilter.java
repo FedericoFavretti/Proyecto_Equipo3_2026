@@ -15,9 +15,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.example.demo.Logica.Clases.Usuario; // 👈 ajustá el package real
-import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio; // 👈 ajustá el package real
-
+import com.example.demo.Logica.Clases.Usuario;
+import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,14 +32,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final UsuarioRepositorio usuarioRepositorio; // 👈 nuevo
-
+    private final UsuarioRepositorio usuarioRepositorio;
     public JwtAuthenticationFilter(JwtService jwtService,
                                    UserDetailsService userDetailsService,
-                                   UsuarioRepositorio usuarioRepositorio) { // 👈 nuevo
+                                   UsuarioRepositorio usuarioRepositorio) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
-        this.usuarioRepositorio = usuarioRepositorio; // 👈 nuevo
+        this.usuarioRepositorio = usuarioRepositorio;
     }
 
     @Override
@@ -99,7 +97,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Usuario usuario = usuarioRepositorio.buscarPorEmail(username).orElse(null);
                 LocalDateTime sesionesInvalidadasDesde = usuario != null ? usuario.getSesionesInvalidadasDesde() : null;
 
-                if (jwtService.isTokenValid(jwt, userDetails, sesionesInvalidadasDesde)) { // 👈 cambiado
+                if (jwtService.isTokenValid(jwt, userDetails, sesionesInvalidadasDesde)) {
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,

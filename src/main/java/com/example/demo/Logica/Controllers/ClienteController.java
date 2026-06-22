@@ -1,7 +1,6 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Cliente;
-import com.example.demo.Logica.DataTypes.shared.DtCalificacion;
 import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
@@ -18,7 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
 @RestController
