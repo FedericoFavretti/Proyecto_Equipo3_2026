@@ -149,21 +149,8 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                     .cliente(null)
                     .local(local)
                     .build();
-    private Calificacion calificacionMapper(ResultSet rs,  int row) throws SQLException {
-        Long idCalificacion = rs.getLong("id");
-        TipoCalificacion tipo = TipoCalificacion.valueOf(rs.getString("tipo"));
-        Cliente cliente = obtenerClienteAsociado(idCalificacion);
-        Local local = obtenerLocalAsociado(idCalificacion);
-
-        return Calificacion.builder()
-                .id(idCalificacion)
-                .puntaje(rs.getInt("puntaje"))
-                .comentario(rs.getString("comentario"))
-                .fecha(rs.getTimestamp("fecha").toLocalDateTime())
-                .tipo(tipo)
-                .cliente(cliente)
-                .local(local)
-                .build();
+        }
+        return null;
     }
 
     private Cliente obtenerClienteAsociado(Long idCalificacion) {

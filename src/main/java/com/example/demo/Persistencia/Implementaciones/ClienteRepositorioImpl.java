@@ -30,8 +30,6 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
         return jdbcTemplate.query(
                 "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id",
                 (rs, row)-> mapearCliente(rs)
-                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE c.activo = true",
-                (rs, row) -> mapearCliente(rs)
         );
     }
 
