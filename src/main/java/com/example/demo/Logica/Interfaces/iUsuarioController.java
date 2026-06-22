@@ -3,6 +3,9 @@ package com.example.demo.Logica.Interfaces;
 import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
+import com.example.demo.Logica.DataTypes.request.DtIniciarCambioPasswdRequest;
+import com.example.demo.Logica.DataTypes.request.DtVerificarCodigoRequest;
+import com.example.demo.Logica.DataTypes.request.DtConfirmarCambioPasswdRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,5 +25,9 @@ public interface iUsuarioController {
     ResponseEntity<Void> eliminarCuentaDeUsuarioPropiaDev(@PathVariable Long idCliente);
     public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo);
     public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd);
+    ResponseEntity<Void> iniciarCambioPasswd(@RequestBody DtIniciarCambioPasswdRequest request);
+    ResponseEntity<Void> verificarCodigoCambioPasswd(@RequestBody DtVerificarCodigoRequest request);
+    ResponseEntity<Void> confirmarCambioPasswd(@RequestBody DtConfirmarCambioPasswdRequest request);
+
 }
 

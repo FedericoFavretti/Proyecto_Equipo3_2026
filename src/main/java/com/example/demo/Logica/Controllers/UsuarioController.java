@@ -6,6 +6,9 @@ import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
+import com.example.demo.Logica.DataTypes.request.DtIniciarCambioPasswdRequest;
+import com.example.demo.Logica.DataTypes.request.DtVerificarCodigoRequest;
+import com.example.demo.Logica.DataTypes.request.DtConfirmarCambioPasswdRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -72,6 +75,24 @@ public class UsuarioController implements iUsuarioController {
     public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd) {
         usuarioService.recuperarPasswd(dtRecuperarPasswd);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/cambiar-passwd/iniciar")
+    public ResponseEntity<Void> iniciarCambioPasswd(@RequestBody DtIniciarCambioPasswdRequest request) {
+        usuarioService.iniciarCambioPasswd(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/cambiar-passwd/verificar-codigo")
+    public ResponseEntity<Void> verificarCodigoCambioPasswd(@RequestBody DtVerificarCodigoRequest request) {
+        usuarioService.verificarCodigoCambioPasswd(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/cambiar-passwd/confirmar")
+    public ResponseEntity<Void> confirmarCambioPasswd(@RequestBody DtConfirmarCambioPasswdRequest request) {
+        usuarioService.confirmarCambioPasswd(request);
+        return ResponseEntity.ok().build();
     }
 }
 

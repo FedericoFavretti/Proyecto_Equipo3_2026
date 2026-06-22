@@ -18,6 +18,11 @@ import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.jwt.JwtService;
+import com.example.demo.Logica.Clases.CodigoVerificacion;
+import com.example.demo.Logica.DataTypes.request.DtIniciarCambioPasswdRequest;
+import com.example.demo.Logica.DataTypes.request.DtVerificarCodigoRequest;
+import com.example.demo.Logica.DataTypes.request.DtConfirmarCambioPasswdRequest;
+import com.example.demo.Persistencia.Repositorios.CodigoVerificacionRepositorio;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,6 +37,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 
 
 @Service
@@ -74,6 +81,7 @@ public class UsuarioService {
     private final TokenBlacklistRepositorio tokenBlacklistRepositorio;
     private final PasswordEncoder passwordEncoder;
     private final CloudinaryService cloudinaryService;
+    private final CodigoVerificacionRepositorio codigoVerificacionRepositorio;
 
     public UsuarioService(UsuarioRepositorio usuarioRepositorio,
                           ClienteRepositorio clienteRepositorio,
@@ -85,7 +93,8 @@ public class UsuarioService {
                           UserDetailsService userDetailsService,
                           TokenBlacklistRepositorio tokenBlacklistRepositorio,
                           PasswordEncoder passwordEncoder,
-                          CloudinaryService cloudinaryService) {
+                          CloudinaryService cloudinaryService,
+                          CodigoVerificacionRepositorio codigoVerificacionRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
@@ -97,6 +106,7 @@ public class UsuarioService {
         this.tokenBlacklistRepositorio = tokenBlacklistRepositorio;
         this.passwordEncoder = passwordEncoder;
         this.cloudinaryService = cloudinaryService;
+        this.codigoVerificacionRepositorio = codigoVerificacionRepositorio;
     }
 
     @Transactional
@@ -358,5 +368,121 @@ public class UsuarioService {
         cliente.setApellido("");
         cliente.setDocumento("ANON-" + idCliente);
         cliente.setDireccion(DIRECCION_ANONIMIZADA);
+    }
+
+    @Transactional
+    public void iniciarCambioPasswd(DtIniciarCambioPasswdRequest request) {
+        if (request == null || request.getIdUsuario() == null || request.getPasswdActual() == null) {
+            throw new IllegalArgumentException("Debe indicar el usuario y la contraseña actual.");
+        }
+
+        Usuario usuario = usuarioRepositorio.buscarPorId(request.getIdUsuario())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(request.getPasswdActual(), usuario.getPasswd())) {
+            throw new IllegalArgumentException("La contraseña actual ingresada es incorrecta.");
+        }
+
+        String codigo = generarCodigoNumerico();
+
+        CodigoVerificacion codigoVerificacion = CodigoVerificacion.builder()
+                .idUsuario(usuario.getId())
+                .codigo(codigo)
+                .fechaExpiracion(LocalDateTime.now().plusMinutes(10))
+                .intentosFallidos(0)
+                .bloqueadoHasta(null)
+                .usado(false)
+                .build();
+
+        codigoVerificacionRepositorio.guardar(codigoVerificacion);
+        emailService.enviarCodigoVerificacion(usuario.getEmail(), codigo);
+    }
+
+    @Transactional
+    public void verificarCodigoCambioPasswd(DtVerificarCodigoRequest request) {
+        if (request == null || request.getIdUsuario() == null || request.getCodigo() == null) {
+            throw new IllegalArgumentException("Debe indicar el usuario y el código de verificación.");
+        }
+
+        CodigoVerificacion codigoVerificacion = codigoVerificacionRepositorio
+                .buscarVigentePorUsuario(request.getIdUsuario())
+                .orElseThrow(() -> new IllegalArgumentException("No hay ningún código de verificación pendiente. Solicite uno nuevo."));
+
+        if (codigoVerificacion.getBloqueadoHasta() != null
+                && LocalDateTime.now().isBefore(codigoVerificacion.getBloqueadoHasta())) {
+            throw new IllegalArgumentException("Ha superado el número de intentos permitidos. Intente nuevamente en 15 minutos.");
+        }
+
+        if (LocalDateTime.now().isAfter(codigoVerificacion.getFechaExpiracion())) {
+            throw new IllegalArgumentException("El código de verificación ha expirado. Solicite uno nuevo.");
+        }
+
+        if (!codigoVerificacion.getCodigo().equals(request.getCodigo())) {
+            int intentos = codigoVerificacion.getIntentosFallidos() + 1;
+            codigoVerificacion.setIntentosFallidos(intentos);
+
+            if (intentos >= 3) {
+                codigoVerificacion.setBloqueadoHasta(LocalDateTime.now().plusMinutes(15));
+                codigoVerificacionRepositorio.actualizar(codigoVerificacion);
+                throw new IllegalArgumentException("Ha superado el número de intentos permitidos. Intente nuevamente en 15 minutos.");
+            }
+
+            codigoVerificacionRepositorio.actualizar(codigoVerificacion);
+            throw new IllegalArgumentException("El código ingresado es incorrecto. Intentos restantes: " + (3 - intentos));
+        }
+    }
+
+    @Transactional
+    public void confirmarCambioPasswd(DtConfirmarCambioPasswdRequest request) {
+        if (request == null || request.getIdUsuario() == null
+                || request.getPasswdNueva() == null || request.getPasswdConfirmacion() == null) {
+            throw new IllegalArgumentException("Debe completar la nueva contraseña y su confirmación.");
+        }
+
+        CodigoVerificacion codigoVerificacion = codigoVerificacionRepositorio
+                .buscarVigentePorUsuario(request.getIdUsuario())
+                .orElseThrow(() -> new IllegalArgumentException("No hay ninguna verificación pendiente. Inicie el proceso nuevamente."));
+
+        if (codigoVerificacion.getIntentosFallidos() >= 3) {
+            throw new IllegalArgumentException("No se puede continuar: se superó el número de intentos permitidos.");
+        }
+
+        if (LocalDateTime.now().isAfter(codigoVerificacion.getFechaExpiracion())) {
+            throw new IllegalArgumentException("El código de verificación ha expirado. Solicite uno nuevo.");
+        }
+
+        if (!request.getPasswdNueva().equals(request.getPasswdConfirmacion())) {
+            throw new IllegalArgumentException("Las contraseñas ingresadas no coinciden.");
+        }
+
+        if (!cumpleRequisitosPasswd(request.getPasswdNueva())) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.");
+        }
+
+        Usuario usuario = usuarioRepositorio.buscarPorId(request.getIdUsuario())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String passwdCodificada = passwordEncoder.encode(request.getPasswdNueva());
+        usuarioRepositorio.actualizarPasswd(usuario.getId(), passwdCodificada);
+
+        codigoVerificacion.setUsado(true);
+        codigoVerificacionRepositorio.actualizar(codigoVerificacion);
+
+        emailService.enviarConfirmacionCambioPasswd(usuario.getEmail());
+    }
+
+    private String generarCodigoNumerico() {
+        SecureRandom random = new SecureRandom();
+        int numero = 100000 + random.nextInt(900000);
+        return String.valueOf(numero);
+    }
+
+    private boolean cumpleRequisitosPasswd(String passwd) {
+        if (passwd.length() < 8) {
+            return false;
+        }
+        boolean tieneMayuscula = passwd.chars().anyMatch(Character::isUpperCase);
+        boolean tieneNumero = passwd.chars().anyMatch(Character::isDigit);
+        return tieneMayuscula && tieneNumero;
     }
 }

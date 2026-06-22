@@ -171,6 +171,14 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     }
 
     @Override
+    public void actualizarPasswd(Long id, String passwdCodificada) {
+        jdbcTemplate.update(
+                "UPDATE usuario SET passwd = ? WHERE id = ?",
+                passwdCodificada, id
+        );
+    }
+
+    @Override
     public boolean existeCorreo(String email) {
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM usuario WHERE email = ?",
