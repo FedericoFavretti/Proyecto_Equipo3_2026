@@ -49,12 +49,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PagoRechazadoException.class)
     public ResponseEntity<ErrorResponse> handlePagoRechazado(PagoRechazadoException ex, WebRequest req) {
-        return build(HttpStatus.PAYMENT_REQUIRED, ex.getMessage(), req); // 402
+        return build(HttpStatus.PAYMENT_REQUIRED, ex.getMessage(), req);
     }
 
     @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAuthCredentials(AuthenticationCredentialsNotFoundException ex, WebRequest req) {
-        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), req); // 401
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), req);
     }
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String mensaje, WebRequest req) {
         ErrorResponse error = new ErrorResponse(

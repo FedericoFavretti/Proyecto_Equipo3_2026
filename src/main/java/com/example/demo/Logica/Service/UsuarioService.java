@@ -12,18 +12,13 @@ import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
-import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
 import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
-import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Persistencia.Repositorios.TokenBlacklistRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.jwt.JwtService;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import io.jsonwebtoken.Claims;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,14 +27,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
-import com.example.demo.Logica.Clases.Usuario;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 @Service
@@ -287,7 +279,7 @@ public class UsuarioService {
     }
 
     private void aplicarCambiosAdministrador(Administrador administrador, Map<String, String> datosActualizacion) {
-        // El administrador hoy solo expone edición de datos base de la cuenta.
+
     }
 
     private boolean tieneCambiosEnDireccion(Map<String, String> datosActualizacion) {
