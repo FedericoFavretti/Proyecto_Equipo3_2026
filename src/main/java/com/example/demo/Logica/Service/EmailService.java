@@ -23,7 +23,7 @@ public class EmailService {
                 email,
                 "Activá tu cuenta en Foodly",
                 "Hacé clic en el siguiente enlace para activar tu cuenta: "
-                        + "http://localhost:8080/api/v1/usuarios/activar?email=" + email
+                        + "http://proyectoequipo32026.railway.internal:8080/api/v1/usuarios/activar?email=" + email
         );
     }
 

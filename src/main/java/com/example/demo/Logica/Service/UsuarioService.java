@@ -142,7 +142,7 @@ public class UsuarioService {
         }
 
         String token = jwtService.generarTokenRecuperacion(correo);
-        String link = "http://localhost:8080/api/v1/usuarios/recuperar?token=" + token;
+        String link = "http://proyectoequipo32026.railway.internal:8080/api/v1/usuarios/recuperar?token=" + token;
 
         emailService.recuperarPasswdPorCorreo(correo, link);
     }
