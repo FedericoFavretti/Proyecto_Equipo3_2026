@@ -169,6 +169,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                 .passwd(rs.getString("passwd"))
                 .foto(rs.getString("foto"))
                 .estado(EstadoCuenta.valueOf(rs.getString("estado")))
+                .tipo(rs.getString("tipo"))
                 .sesionesInvalidadasDesde(
                         sesionesInvalidadasTs != null ? sesionesInvalidadasTs.toLocalDateTime() : null
                 )
