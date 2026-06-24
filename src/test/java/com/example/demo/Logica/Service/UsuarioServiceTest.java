@@ -3,7 +3,10 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
-import com.example.demo.Logica.DataTypes.response.DtPerfilUsuarioResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilAdminResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilClienteResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilLocalResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilResponse;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
@@ -101,19 +104,19 @@ class UsuarioServiceTest {
 
         when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente));
 
-        DtPerfilUsuarioResponse perfil = usuarioService.obtenerPerfil("cliente@foodly.com");
+        DtPerfilResponse perfil = usuarioService.obtenerPerfil("cliente@foodly.com");
 
         assertThat(perfil.getId()).isEqualTo(10L);
         assertThat(perfil.getEmail()).isEqualTo("cliente@foodly.com");
         assertThat(perfil.getTipo()).isEqualTo("cliente");
-        assertThat(perfil.getNombre()).isEqualTo("Ana");
-        assertThat(perfil.getApellido()).isEqualTo("Perez");
-        assertThat(perfil.getDocumento()).isEqualTo("51234567");
-        assertThat(perfil.getDireccion()).isEqualTo(new DtDireccion("Colonia", "100", "Montevideo", "11100"));
-        assertThat(perfil.getActivo()).isTrue();
-        assertThat(perfil.getDescripcion()).isNull();
-        assertThat(perfil.getEstadoLocal()).isNull();
-        assertThat(perfil.getNivelAcceso()).isNull();
+        assertThat(perfil.getPerfil()).isInstanceOf(DtPerfilClienteResponse.class);
+
+        DtPerfilClienteResponse detalle = (DtPerfilClienteResponse) perfil.getPerfil();
+        assertThat(detalle.getNombre()).isEqualTo("Ana");
+        assertThat(detalle.getApellido()).isEqualTo("Perez");
+        assertThat(detalle.getDocumento()).isEqualTo("51234567");
+        assertThat(detalle.getDireccion()).isEqualTo(new DtDireccion("Colonia", "100", "Montevideo", "11100"));
+        assertThat(detalle.getActivo()).isTrue();
     }
 
     @Test
@@ -123,19 +126,19 @@ class UsuarioServiceTest {
 
         when(usuarioRepositorio.buscarPorEmail("local@foodly.com")).thenReturn(Optional.of(local));
 
-        DtPerfilUsuarioResponse perfil = usuarioService.obtenerPerfil("local@foodly.com");
+        DtPerfilResponse perfil = usuarioService.obtenerPerfil("local@foodly.com");
 
         assertThat(perfil.getId()).isEqualTo(20L);
         assertThat(perfil.getEmail()).isEqualTo("local@foodly.com");
         assertThat(perfil.getTipo()).isEqualTo("local");
-        assertThat(perfil.getNombre()).isEqualTo("La Cocina");
-        assertThat(perfil.getDescripcion()).isEqualTo("Comida casera");
-        assertThat(perfil.getEstadoLocal()).isEqualTo(EstadoLocal.Habilitado);
-        assertThat(perfil.getEstaAbierto()).isTrue();
-        assertThat(perfil.getImagenes()).containsExactly("fachada.jpg");
-        assertThat(perfil.getApellido()).isNull();
-        assertThat(perfil.getDocumento()).isNull();
-        assertThat(perfil.getNivelAcceso()).isNull();
+        assertThat(perfil.getPerfil()).isInstanceOf(DtPerfilLocalResponse.class);
+
+        DtPerfilLocalResponse detalle = (DtPerfilLocalResponse) perfil.getPerfil();
+        assertThat(detalle.getNombre()).isEqualTo("La Cocina");
+        assertThat(detalle.getDescripcion()).isEqualTo("Comida casera");
+        assertThat(detalle.getEstadoLocal()).isEqualTo(EstadoLocal.Habilitado);
+        assertThat(detalle.getEstaAbierto()).isTrue();
+        assertThat(detalle.getImagenes()).containsExactly("fachada.jpg");
     }
 
     @Test
@@ -145,15 +148,15 @@ class UsuarioServiceTest {
 
         when(usuarioRepositorio.buscarPorEmail("admin@foodly.com")).thenReturn(Optional.of(administrador));
 
-        DtPerfilUsuarioResponse perfil = usuarioService.obtenerPerfil("admin@foodly.com");
+        DtPerfilResponse perfil = usuarioService.obtenerPerfil("admin@foodly.com");
 
         assertThat(perfil.getId()).isEqualTo(30L);
         assertThat(perfil.getEmail()).isEqualTo("admin@foodly.com");
         assertThat(perfil.getTipo()).isEqualTo("admin");
-        assertThat(perfil.getNivelAcceso()).isEqualTo("super");
-        assertThat(perfil.getNombre()).isNull();
-        assertThat(perfil.getDescripcion()).isNull();
-        assertThat(perfil.getDocumento()).isNull();
+        assertThat(perfil.getPerfil()).isInstanceOf(DtPerfilAdminResponse.class);
+
+        DtPerfilAdminResponse detalle = (DtPerfilAdminResponse) perfil.getPerfil();
+        assertThat(detalle.getNivelAcceso()).isEqualTo("super");
     }
 
     @Test

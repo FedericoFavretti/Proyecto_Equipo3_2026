@@ -4,7 +4,10 @@ import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
-import com.example.demo.Logica.DataTypes.response.DtPerfilUsuarioResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilAdminResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilClienteResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilLocalResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilResponse;
 import com.example.demo.Logica.DataTypes.response.DtUsuarioInfo;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
@@ -109,7 +112,7 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public DtPerfilUsuarioResponse obtenerPerfil(String emailAutenticado) {
+    public DtPerfilResponse obtenerPerfil(String emailAutenticado) {
         if (emailAutenticado == null || emailAutenticado.isBlank()) {
             throw new AuthenticationCredentialsNotFoundException("Usuario no autenticado.");
         }
@@ -360,8 +363,8 @@ public class UsuarioService {
         );
     }
 
-    private DtPerfilUsuarioResponse mapearPerfil(Usuario usuario) {
-        DtPerfilUsuarioResponse.DtPerfilUsuarioResponseBuilder builder = DtPerfilUsuarioResponse.builder()
+    private DtPerfilResponse mapearPerfil(Usuario usuario) {
+        DtPerfilResponse.DtPerfilResponseBuilder builder = DtPerfilResponse.builder()
                 .id(usuario.getId())
                 .email(usuario.getEmail())
                 .foto(usuario.getFoto())
@@ -369,22 +372,28 @@ public class UsuarioService {
                 .tipo(usuario.getTipo());
 
         if (usuario instanceof Cliente cliente) {
-            builder.nombre(cliente.getNombre())
+            builder.perfil(DtPerfilClienteResponse.builder()
+                    .nombre(cliente.getNombre())
                     .apellido(cliente.getApellido())
                     .documento(cliente.getDocumento())
                     .direccion(cliente.getDireccion())
                     .calificacionGlobal(cliente.getCalificacionGlobal())
-                    .activo(cliente.getActivo());
+                    .activo(cliente.getActivo())
+                    .build());
         } else if (usuario instanceof Local local) {
-            builder.nombre(local.getNombre())
+            builder.perfil(DtPerfilLocalResponse.builder()
+                    .nombre(local.getNombre())
                     .direccion(local.getDireccion())
                     .descripcion(local.getDescripcion())
                     .estadoLocal(local.getEstadoLocal())
                     .calificacionGlobal(local.getCalificacionGlobal())
                     .estaAbierto(local.getEstaAbierto())
-                    .imagenes(local.getImagenes());
+                    .imagenes(local.getImagenes())
+                    .build());
         } else if (usuario instanceof Administrador administrador) {
-            builder.nivelAcceso(administrador.getNivelAcceso());
+            builder.perfil(DtPerfilAdminResponse.builder()
+                    .nivelAcceso(administrador.getNivelAcceso())
+                    .build());
         }
 
         return builder.build();

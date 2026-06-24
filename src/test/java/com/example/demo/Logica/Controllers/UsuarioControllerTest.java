@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
-import com.example.demo.Logica.DataTypes.response.DtPerfilUsuarioResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilClienteResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilResponse;
 import com.example.demo.Logica.DataTypes.response.DtUsuarioInfo;
 import com.example.demo.Logica.Service.UsuarioService;
 import com.example.demo.auth.dto.AuthResponse;
@@ -45,12 +46,14 @@ class UsuarioControllerTest {
         UsuarioController controller = new UsuarioController(usuarioService);
         TestingAuthenticationToken authentication =
                 new TestingAuthenticationToken("cliente@foodly.com", null, "ROLE_cliente");
-        DtPerfilUsuarioResponse perfil = DtPerfilUsuarioResponse.builder()
+        DtPerfilResponse perfil = DtPerfilResponse.builder()
                 .id(10L)
                 .email("cliente@foodly.com")
                 .tipo("cliente")
-                .nombre("Ana")
-                .apellido("Perez")
+                .perfil(DtPerfilClienteResponse.builder()
+                        .nombre("Ana")
+                        .apellido("Perez")
+                        .build())
                 .build();
 
         when(usuarioService.obtenerPerfil("cliente@foodly.com")).thenReturn(perfil);

@@ -1,6 +1,6 @@
 package com.example.demo.Logica.Controllers;
 import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
-import com.example.demo.Logica.DataTypes.response.DtPerfilUsuarioResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilResponse;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
 import com.example.demo.auth.dto.AuthResponse;
@@ -30,7 +30,7 @@ public class UsuarioController implements iUsuarioController {
     }
 
     @GetMapping("/perfil")
-    public ResponseEntity<DtPerfilUsuarioResponse> obtenerPerfil(Authentication authentication) {
+    public ResponseEntity<DtPerfilResponse> obtenerPerfil(Authentication authentication) {
         if (autenticacionInvalida(authentication)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

@@ -1,6 +1,6 @@
 package com.example.demo.Logica.Interfaces;
 
-import com.example.demo.Logica.DataTypes.response.DtPerfilUsuarioResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilResponse;
 import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 public interface iUsuarioController {
     ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request);
-    ResponseEntity<DtPerfilUsuarioResponse> obtenerPerfil(Authentication authentication);
+    ResponseEntity<DtPerfilResponse> obtenerPerfil(Authentication authentication);
     ResponseEntity<Void> cerrarSesion(@RequestHeader("Authorization") String authHeader);
     ResponseEntity<Void> editarDatosDeCuentaDeUsuario(
             @RequestParam Map<String, String> datos,
