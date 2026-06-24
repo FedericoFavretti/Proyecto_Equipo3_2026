@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/pagos")
 public class PagoController {
 
-    private final PedidoService PedidoService;
+    private final PedidoService pedidoService;
 
-    public PagoController(PedidoService PedidoService) {
-        this.PedidoService = PedidoService;
+    public PagoController(PedidoService pedidoService) {
+        this.pedidoService = pedidoService;
     }
 
     @PostMapping("/webhook")
@@ -23,7 +23,7 @@ public class PagoController {
             @RequestParam(name = "data.id", required = false) String dataId) {
 
         if ("payment".equals(type) && dataId != null) {
-            PedidoService.procesarPagoConfirmado(dataId);
+            pedidoService.procesarPagoConfirmado(dataId);
         }
         return ResponseEntity.ok().build();
     }

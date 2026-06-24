@@ -37,7 +37,7 @@ public class ReclamoController implements iReclamoController {
     @PreAuthorize("hasRole('Local')")
     @PostMapping("/resolver_reclamo")
     public ResponseEntity<Void> resolverReclamo(@RequestBody DtReclamo dtReclamo) {
-
+        reclamoService.resolverReclamo(dtReclamo);
         return  ResponseEntity.ok().build();
     }
 
