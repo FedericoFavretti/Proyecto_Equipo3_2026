@@ -1,7 +1,6 @@
 package com.example.demo.Logica.Controllers;
-import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
 import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
-import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
+import com.example.demo.Logica.DataTypes.response.DtPerfilUsuarioResponse;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
 import com.example.demo.auth.dto.AuthResponse;
@@ -29,6 +28,15 @@ public class UsuarioController implements iUsuarioController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(usuarioService.login(request));
     }
+
+    @GetMapping("/perfil")
+    public ResponseEntity<DtPerfilUsuarioResponse> obtenerPerfil(Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(usuarioService.obtenerPerfil(authentication.getName()));
+    }
+
     @GetMapping("/activar")
     public ResponseEntity<String> activarCuenta(@RequestParam String email) {
         usuarioService.activarCuenta(email);
@@ -49,7 +57,7 @@ public class UsuarioController implements iUsuarioController {
             @RequestPart(value = "foto", required = false) MultipartFile foto,
             @RequestHeader("Authorization") String authHeader,
             Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
+        if (autenticacionInvalida(authentication)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         usuarioService.editarDatosDeCuentaDeUsuario(authentication.getName(), authHeader, datos, foto);
@@ -72,6 +80,13 @@ public class UsuarioController implements iUsuarioController {
     public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd) {
         usuarioService.recuperarPasswd(dtRecuperarPasswd);
         return ResponseEntity.noContent().build();
+    }
+
+    private boolean autenticacionInvalida(Authentication authentication) {
+        return authentication == null
+                || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || "anonymousUser".equalsIgnoreCase(authentication.getName());
     }
 }
 

@@ -28,4 +28,3 @@ public class Pedido {
     private String mpPreferenciaId;
     private String mpInitPoint;
 }
-

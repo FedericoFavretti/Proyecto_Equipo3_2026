@@ -3,6 +3,7 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
+import com.example.demo.Logica.DataTypes.response.DtPerfilUsuarioResponse;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
@@ -12,6 +13,8 @@ import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import com.example.demo.Persistencia.Repositorios.TokenBlacklistRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.auth.dto.AuthResponse;
+import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.jwt.JwtService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +22,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -29,6 +35,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -59,6 +66,95 @@ class UsuarioServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private CloudinaryService cloudinaryService;
+
+    @Test
+    void loginDevuelveTokenYUsuarioInfo() {
+        UsuarioService usuarioService = crearServicio();
+        Cliente cliente = clienteExistente();
+        User userDetails = new User(
+                "cliente@foodly.com",
+                "hash-anterior",
+                List.of(new SimpleGrantedAuthority("ROLE_cliente"))
+        );
+
+        when(userDetailsService.loadUserByUsername("cliente@foodly.com")).thenReturn(userDetails);
+        when(jwtService.generateToken(userDetails)).thenReturn("jwt-token");
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente));
+
+        AuthResponse response = usuarioService.login(new LoginRequest("cliente@foodly.com", "Clave123"));
+
+        assertThat(response.token()).isEqualTo("jwt-token");
+        assertThat(response.usuario()).isNotNull();
+        assertThat(response.usuario().id()).isEqualTo(10L);
+        assertThat(response.usuario().email()).isEqualTo("cliente@foodly.com");
+        assertThat(response.usuario().tipo()).isEqualTo("cliente");
+
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(userDetailsService).loadUserByUsername("cliente@foodly.com");
+        verify(jwtService).generateToken(userDetails);
+    }
+
+    @Test
+    void obtenerPerfilClienteDevuelveSoloDatosSegurosYEspecificosDelCliente() {
+        UsuarioService usuarioService = crearServicio();
+        Cliente cliente = clienteExistente();
+
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente));
+
+        DtPerfilUsuarioResponse perfil = usuarioService.obtenerPerfil("cliente@foodly.com");
+
+        assertThat(perfil.getId()).isEqualTo(10L);
+        assertThat(perfil.getEmail()).isEqualTo("cliente@foodly.com");
+        assertThat(perfil.getTipo()).isEqualTo("cliente");
+        assertThat(perfil.getNombre()).isEqualTo("Ana");
+        assertThat(perfil.getApellido()).isEqualTo("Perez");
+        assertThat(perfil.getDocumento()).isEqualTo("51234567");
+        assertThat(perfil.getDireccion()).isEqualTo(new DtDireccion("Colonia", "100", "Montevideo", "11100"));
+        assertThat(perfil.getActivo()).isTrue();
+        assertThat(perfil.getDescripcion()).isNull();
+        assertThat(perfil.getEstadoLocal()).isNull();
+        assertThat(perfil.getNivelAcceso()).isNull();
+    }
+
+    @Test
+    void obtenerPerfilLocalDevuelveCamposEspecificosDelLocal() {
+        UsuarioService usuarioService = crearServicio();
+        Local local = localExistente();
+
+        when(usuarioRepositorio.buscarPorEmail("local@foodly.com")).thenReturn(Optional.of(local));
+
+        DtPerfilUsuarioResponse perfil = usuarioService.obtenerPerfil("local@foodly.com");
+
+        assertThat(perfil.getId()).isEqualTo(20L);
+        assertThat(perfil.getEmail()).isEqualTo("local@foodly.com");
+        assertThat(perfil.getTipo()).isEqualTo("local");
+        assertThat(perfil.getNombre()).isEqualTo("La Cocina");
+        assertThat(perfil.getDescripcion()).isEqualTo("Comida casera");
+        assertThat(perfil.getEstadoLocal()).isEqualTo(EstadoLocal.Habilitado);
+        assertThat(perfil.getEstaAbierto()).isTrue();
+        assertThat(perfil.getImagenes()).containsExactly("fachada.jpg");
+        assertThat(perfil.getApellido()).isNull();
+        assertThat(perfil.getDocumento()).isNull();
+        assertThat(perfil.getNivelAcceso()).isNull();
+    }
+
+    @Test
+    void obtenerPerfilAdministradorDevuelveNivelAcceso() {
+        UsuarioService usuarioService = crearServicio();
+        Administrador administrador = administradorExistente();
+
+        when(usuarioRepositorio.buscarPorEmail("admin@foodly.com")).thenReturn(Optional.of(administrador));
+
+        DtPerfilUsuarioResponse perfil = usuarioService.obtenerPerfil("admin@foodly.com");
+
+        assertThat(perfil.getId()).isEqualTo(30L);
+        assertThat(perfil.getEmail()).isEqualTo("admin@foodly.com");
+        assertThat(perfil.getTipo()).isEqualTo("admin");
+        assertThat(perfil.getNivelAcceso()).isEqualTo("super");
+        assertThat(perfil.getNombre()).isNull();
+        assertThat(perfil.getDescripcion()).isNull();
+        assertThat(perfil.getDocumento()).isNull();
+    }
 
     @Test
     void editarDatosDeCuentaClienteActualizaCamposPermitidosYRevocaTokenSiCambianCredenciales() {

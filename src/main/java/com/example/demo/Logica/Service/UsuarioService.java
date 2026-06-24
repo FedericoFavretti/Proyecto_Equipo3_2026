@@ -4,25 +4,22 @@ import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
+import com.example.demo.Logica.DataTypes.response.DtPerfilUsuarioResponse;
+import com.example.demo.Logica.DataTypes.response.DtUsuarioInfo;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
+import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
-import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
-import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
-import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Persistencia.Repositorios.TokenBlacklistRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.jwt.JwtService;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import io.jsonwebtoken.Claims;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -36,8 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
-import com.example.demo.Logica.Clases.Usuario;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 @Service
@@ -106,9 +101,23 @@ public class UsuarioService {
                 new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
         UserDetails user = userDetailsService.loadUserByUsername(request.email());
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(request.email())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
 
         String token = jwtService.generateToken(user);
-        return new AuthResponse(token);
+        return new AuthResponse(token, mapearUsuarioInfo(usuario));
+    }
+
+    @Transactional(readOnly = true)
+    public DtPerfilUsuarioResponse obtenerPerfil(String emailAutenticado) {
+        if (emailAutenticado == null || emailAutenticado.isBlank()) {
+            throw new AuthenticationCredentialsNotFoundException("Usuario no autenticado.");
+        }
+
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+        return mapearPerfil(usuario);
     }
 
     @Transactional
@@ -341,6 +350,44 @@ public class UsuarioService {
             throw new IllegalArgumentException("No se pudo invalidar la sesión actual.");
         }
         cerrarSesion(authHeader.substring("Bearer ".length()));
+    }
+
+    private DtUsuarioInfo mapearUsuarioInfo(Usuario usuario) {
+        return new DtUsuarioInfo(
+                usuario.getId(),
+                usuario.getEmail(),
+                usuario.getTipo()
+        );
+    }
+
+    private DtPerfilUsuarioResponse mapearPerfil(Usuario usuario) {
+        DtPerfilUsuarioResponse.DtPerfilUsuarioResponseBuilder builder = DtPerfilUsuarioResponse.builder()
+                .id(usuario.getId())
+                .email(usuario.getEmail())
+                .foto(usuario.getFoto())
+                .estadoCuenta(usuario.getEstado())
+                .tipo(usuario.getTipo());
+
+        if (usuario instanceof Cliente cliente) {
+            builder.nombre(cliente.getNombre())
+                    .apellido(cliente.getApellido())
+                    .documento(cliente.getDocumento())
+                    .direccion(cliente.getDireccion())
+                    .calificacionGlobal(cliente.getCalificacionGlobal())
+                    .activo(cliente.getActivo());
+        } else if (usuario instanceof Local local) {
+            builder.nombre(local.getNombre())
+                    .direccion(local.getDireccion())
+                    .descripcion(local.getDescripcion())
+                    .estadoLocal(local.getEstadoLocal())
+                    .calificacionGlobal(local.getCalificacionGlobal())
+                    .estaAbierto(local.getEstaAbierto())
+                    .imagenes(local.getImagenes());
+        } else if (usuario instanceof Administrador administrador) {
+            builder.nivelAcceso(administrador.getNivelAcceso());
+        }
+
+        return builder.build();
     }
 
     private IllegalArgumentException formatoInvalido(String campo) {
