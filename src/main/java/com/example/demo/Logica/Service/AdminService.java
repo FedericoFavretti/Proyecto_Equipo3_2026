@@ -88,7 +88,11 @@ public class AdminService {
         Usuario usuario = usuarioRepositorio.buscarPorId(dtResCuentaUsuario.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", dtResCuentaUsuario.getId()));
 
-        boolean activar = dtResCuentaUsuario.getActivo();
+        Boolean activarObj = dtResCuentaUsuario.getActivo();
+        if (activarObj == null) {
+            throw new BusinessRuleException("El campo 'activo' es obligatorio");
+        }
+        boolean activar = activarObj;
 
         if (usuario instanceof Cliente cliente) {
             cliente.setEstado(activar ? EstadoCuenta.Activo : EstadoCuenta.Bloqueado);
@@ -98,47 +102,21 @@ public class AdminService {
             local.setEstado(activar ? EstadoCuenta.Activo : EstadoCuenta.Bloqueado);
             local.setEstadoLocal(activar ? EstadoLocal.Habilitado : EstadoLocal.Bloqueado);
             localRepositorio.actualizar(local);
+        } else {
+            throw new BusinessRuleException("Tipo de usuario no soportado para este cambio de estado");
         }
 
         if (!activar) {
-            usuario.setSesionesInvalidadasDesde(LocalDateTime.now());
-            usuarioRepositorio.actualizar(usuario);
+            cerrarTodasLasSesiones(usuario.getId());
         }
     }
 
-    private void validarIdLocal(Long idLocal) {
-        if (idLocal == null || idLocal <= 0) {
-            throw new BusinessRuleException(MENSAJE_ID_LOCAL_INVALIDO);
-        }
-    }
-
-    private void validarEstadoObjetivo(EstadoLocal estadoObjetivo) {
-        if (estadoObjetivo != EstadoLocal.Habilitado && estadoObjetivo != EstadoLocal.Rechazado) {
-            throw new BusinessRuleException(MENSAJE_ESTADO_OBJETIVO_INVALIDO);
-        }
-    }
-
-    private void validarCorreoLocal(Local local) {
-        if (local.getEmail() == null || local.getEmail().isBlank()) {
-            throw new BusinessRuleException(MENSAJE_LOCAL_SIN_CORREO);
-        }
-    }
-
-    private EstadoCuenta estadoCuentaSegunResolucion(EstadoLocal estadoObjetivo) {
-        return estadoObjetivo == EstadoLocal.Habilitado
-                ? EstadoCuenta.Activo
-                : EstadoCuenta.Bloqueado;
-    }
-
-    private DtSolicitudLocalPendienteResponse mapearPendiente(Local local) {
-        return new DtSolicitudLocalPendienteResponse(
-                local.getId(),
-                local.getEmail(),
-                local.getNombre(),
-                local.getDireccion(),
-                local.getDescripcion(),
-                local.getImagenes()
-        );
+    @Transactional
+    public void cerrarTodasLasSesiones(Long idUsuario) {
+        Usuario usuario = usuarioRepositorio.buscarPorId(idUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", idUsuario));
+        usuario.setSesionesInvalidadasDesde(LocalDateTime.now());
+        usuarioRepositorio.actualizar(usuario);
     }
 
     @Transactional(readOnly = true)
@@ -189,6 +167,41 @@ public class AdminService {
         }
 
         return usuarios;
+    }
+
+    private void validarIdLocal(Long idLocal) {
+        if (idLocal == null || idLocal <= 0) {
+            throw new BusinessRuleException(MENSAJE_ID_LOCAL_INVALIDO);
+        }
+    }
+
+    private void validarEstadoObjetivo(EstadoLocal estadoObjetivo) {
+        if (estadoObjetivo != EstadoLocal.Habilitado && estadoObjetivo != EstadoLocal.Rechazado) {
+            throw new BusinessRuleException(MENSAJE_ESTADO_OBJETIVO_INVALIDO);
+        }
+    }
+
+    private void validarCorreoLocal(Local local) {
+        if (local.getEmail() == null || local.getEmail().isBlank()) {
+            throw new BusinessRuleException(MENSAJE_LOCAL_SIN_CORREO);
+        }
+    }
+
+    private EstadoCuenta estadoCuentaSegunResolucion(EstadoLocal estadoObjetivo) {
+        return estadoObjetivo == EstadoLocal.Habilitado
+                ? EstadoCuenta.Activo
+                : EstadoCuenta.Bloqueado;
+    }
+
+    private DtSolicitudLocalPendienteResponse mapearPendiente(Local local) {
+        return new DtSolicitudLocalPendienteResponse(
+                local.getId(),
+                local.getEmail(),
+                local.getNombre(),
+                local.getDireccion(),
+                local.getDescripcion(),
+                local.getImagenes()
+        );
     }
 }
 

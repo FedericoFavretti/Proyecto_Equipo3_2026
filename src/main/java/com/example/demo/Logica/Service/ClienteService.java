@@ -54,16 +54,14 @@ public class ClienteService {
     private final PromocionMapper promocionMapper;
     private final LocalRepositorio localRepositorio;
     private final LocalMapper localMapper;
-    private final ClienteCalificacionRepositorio clienteCalificacionRepositorio;
-    private final CalificacionRepositorio calificacionRepositorio;
+
 
     public ClienteService (ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio,
                            PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio,
                            EmailService emailService, PasswordEncoder passwordEncode,
                            ClienteMapper clienteMapper, PlatoMapper platoMapper,
                            PromocionMapper promocionMapper, LocalRepositorio localRepositorio,
-                           LocalMapper localMapper, ClienteCalificacionRepositorio clienteCalificacionRepositorio,
-                           CalificacionRepositorio calificacionRepositorio) {
+                           LocalMapper localMapper) {
         this.clienteRepositorio = clienteRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.promocionRepositorio = promocionRepositorio;
@@ -75,8 +73,6 @@ public class ClienteService {
         this.promocionMapper = promocionMapper;
         this.localRepositorio = localRepositorio;
         this.localMapper = localMapper;
-        this.clienteCalificacionRepositorio = clienteCalificacionRepositorio;
-        this.calificacionRepositorio = calificacionRepositorio;
     }
 
 
@@ -170,37 +166,5 @@ public class ClienteService {
                 throw new IllegalArgumentException("La dirección de orden no es válida.");
             }
         }
-    }
-
-    @Transactional(readOnly = true)
-    public DtCalificacionGlobalResponse consultarCalificacionGlobal(Long idCliente) {
-        clienteRepositorio.buscarPorId(idCliente)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
-
-        List<Long> idsCalificaciones = clienteCalificacionRepositorio.obtenerCalificacionesDeCliente(idCliente);
-        List<Calificacion> calificaciones = calificacionRepositorio.buscarPorIds(idsCalificaciones);
-
-        if (calificaciones.isEmpty()) {
-            throw new IllegalArgumentException("Aún no ha recibido calificaciones de ningún local.");
-        }
-
-        double promedio = calificaciones.stream()
-                .mapToInt(Calificacion::getPuntaje)
-                .average()
-                .orElse(0.0);
-
-        Map<Integer, Integer> detalle = new HashMap<>();
-        for (int puntaje = 1; puntaje <= 5; puntaje++) {
-            detalle.put(puntaje, 0);
-        }
-        for (Calificacion calificacion : calificaciones) {
-            detalle.merge(calificacion.getPuntaje(), 1, Integer::sum);
-        }
-
-        return DtCalificacionGlobalResponse.builder()
-                .promedio(promedio)
-                .totalCalificaciones(calificaciones.size())
-                .detallePorPuntuacion(detalle)
-                .build();
     }
 }

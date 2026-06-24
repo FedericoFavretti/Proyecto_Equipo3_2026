@@ -7,12 +7,16 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final String MENSAJE_ACCESO_DENEGADO = "No tiene permisos para acceder a este recurso.";
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, WebRequest req) {
@@ -37,11 +41,6 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, mensaje, req);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest req) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", req);
-    }
-
     @ExceptionHandler(ExternalServiceException.class)
     public ResponseEntity<ErrorResponse> handleExternalService(ExternalServiceException ex, WebRequest req) {
         return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), req);
@@ -56,6 +55,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAuthCredentials(AuthenticationCredentialsNotFoundException ex, WebRequest req) {
         return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), req);
     }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, WebRequest req) {
+        return build(HttpStatus.FORBIDDEN, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleSpringAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex, WebRequest req) {
+        return build(HttpStatus.FORBIDDEN, MENSAJE_ACCESO_DENEGADO, req);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest req) {
+        log.error("Error no manejado en {}: {}", req.getDescription(false), ex.getMessage(), ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", req);
+    }
+
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String mensaje, WebRequest req) {
         ErrorResponse error = new ErrorResponse(
                 mensaje,

@@ -1,10 +1,12 @@
 package com.example.demo.Logica.Controllers;
 
+import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
 import com.example.demo.Logica.DataTypes.shared.DtCalificacion;
 import com.example.demo.Logica.Interfaces.iCalificacionController;
 import com.example.demo.Logica.Service.CalificacionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,12 +26,14 @@ public class CalificacionController implements iCalificacionController {
         this.calificacionService = calificacionService;
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/calificar")
     public ResponseEntity<Void> calificar(@RequestBody DtCalificacion dtCalificacion){
         calificacionService.calificar(dtCalificacion);
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('Local')")
     @GetMapping("/local/mi-calificacion")
     public ResponseEntity<Map<String, Object>> consultarCalificacionGlobalDelLocal(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
@@ -38,9 +42,10 @@ public class CalificacionController implements iCalificacionController {
         return ResponseEntity.ok(calificacionService.consultarCalificacionGlobalDelLocal(authentication.getName()));
     }
 
-    @GetMapping("/local/{idLocal}/mi-calificacion-dev")
-    public ResponseEntity<Map<String, Object>> consultarCalificacionGlobalDelLocalDev(@PathVariable Long idLocal) {
-        return ResponseEntity.ok(calificacionService.consultarCalificacionGlobalDelLocalPorId(idLocal));
+    @PreAuthorize("hasRole('Cliente')")
+    @GetMapping("/{idCliente}/calificacion")
+    public ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente) {
+        DtCalificacionGlobalResponse response = calificacionService.consultarCalificacionGlobal(idCliente);
+        return ResponseEntity.ok(response);
     }
-
 }

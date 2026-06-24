@@ -1,5 +1,8 @@
 package com.example.demo.Logica.Service;
 
+import com.example.demo.Logica.Clases.Administrador;
+import com.example.demo.Logica.Clases.Cliente;
+import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 
@@ -18,10 +21,17 @@ public class UsuarioUserDetails implements UserDetails {
         this.usuario = Objects.requireNonNull(usuario, "usuario no puede ser null");
     }
 
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        String rol = "";
+        if (usuario instanceof Administrador) {
+            rol = "Admin";
+        } else if (usuario instanceof Local) {
+            rol = "Local";
+        } else if (usuario instanceof Cliente) {
+            rol = "Cliente";
+        }
+        return List.of(new SimpleGrantedAuthority("ROLE_" + rol));
     }
 
     @Override
@@ -41,9 +51,8 @@ public class UsuarioUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
+        return usuario.getEstado() != EstadoCuenta.Bloqueado;
     }
-
 
     @Override
     public boolean isCredentialsNonExpired() {

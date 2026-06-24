@@ -112,6 +112,21 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
         );
     }
 
+    @Override
+    public List<Calificacion> listarPorCliente(Long idCliente){
+        return jdbcTemplate.query(
+                """
+                SELECT c.*
+                FROM calificacion c
+                JOIN local_calificacion lc ON lc.idcalificacion = c.id
+                WHERE lc.idcliente = ? AND c.tipo = ?
+                ORDER BY c.fecha DESC, c.id DESC
+                """,
+                (rs, row) -> calificacionMapper(rs, row),
+                idCliente,
+                TipoCalificacion.Local_a_cliente.toString()
+        );
+    }
     private void cM (Calificacion calificacion){
         calificacion.getPuntaje();
                 calificacion.getComentario();
@@ -151,23 +166,5 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                     .build();
         }
         return null;
-    }
-
-    private Cliente obtenerClienteAsociado(Long idCalificacion) {
-        try {
-            Long idCliente = clienteCalificacionRepositorio.obtenerCliente(idCalificacion);
-            return clienteRepositorio.buscarPorId(idCliente).orElse(null);
-        } catch (RuntimeException exception) {
-            return null;
-        }
-    }
-
-    private Local obtenerLocalAsociado(Long idCalificacion) {
-        try {
-            Long idLocal = localCalificacionRepositorio.obtenerLocal(idCalificacion);
-            return localRepositorio.buscarPorId(idLocal).orElse(null);
-        } catch (RuntimeException exception) {
-            return null;
-        }
     }
 }

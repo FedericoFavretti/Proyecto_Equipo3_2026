@@ -4,6 +4,8 @@ import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
+import com.example.demo.Logica.DataTypes.request.*;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
@@ -12,16 +14,10 @@ import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
-import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
 import com.example.demo.Persistencia.Repositorios.TokenBlacklistRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
-import com.example.demo.auth.dto.AuthResponse;
-import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.jwt.JwtService;
 import com.example.demo.Logica.Clases.CodigoVerificacion;
-import com.example.demo.Logica.DataTypes.request.DtIniciarCambioPasswdRequest;
-import com.example.demo.Logica.DataTypes.request.DtVerificarCodigoRequest;
-import com.example.demo.Logica.DataTypes.request.DtConfirmarCambioPasswdRequest;
 import com.example.demo.Persistencia.Repositorios.CodigoVerificacionRepositorio;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -110,14 +106,19 @@ public class UsuarioService {
     }
 
     @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public DtLoginResponse login(DtLoginRequest dtLoginRequest) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+                new UsernamePasswordAuthenticationToken(dtLoginRequest.getEmail(), dtLoginRequest.getPasswd()));
 
-        UserDetails user = userDetailsService.loadUserByUsername(request.email());
-
+        UserDetails user = userDetailsService.loadUserByUsername(dtLoginRequest.getEmail());
+        Usuario u = usuarioRepositorio.buscarPorEmail(dtLoginRequest.getEmail()).orElseThrow(() -> new ResourceNotFoundException("Usuario", dtLoginRequest.getEmail()));
         String token = jwtService.generateToken(user);
-        return new AuthResponse(token);
+        return DtLoginResponse.builder()
+                .id(u.getId())
+                .email(user.getUsername())
+                .token(token)
+                .tipo(u.getTipo())
+                .build();
     }
 
     @Transactional
@@ -142,7 +143,7 @@ public class UsuarioService {
         }
 
         String token = jwtService.generarTokenRecuperacion(correo);
-        String link = "https://proyectoequipo32026-testing.up.railway.app:8080/api/v1/usuarios/recuperar?token=" + token;
+        String link = "https://localhost:8080/api/v1/usuarios/recuperar?token=" + token;
 
         emailService.recuperarPasswdPorCorreo(correo, link);
     }
@@ -155,15 +156,6 @@ public class UsuarioService {
         usuario.setPasswd(passwordEncoder.encode(dtRecuperarPasswd.getNuevaPasswd()));
         usuarioRepositorio.actualizar(usuario);
     }
-
-    @Transactional
-    public void cerrarTodasLasSesiones(Long idUsuario) {
-        Usuario usuario = usuarioRepositorio.buscarPorId(idUsuario)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", idUsuario));
-        usuario.setSesionesInvalidadasDesde(LocalDateTime.now());
-        usuarioRepositorio.actualizar(usuario);
-    }
-
 
     @Transactional
     public void editarDatosDeCuentaDeUsuario(String emailAutenticado, String authHeader, Map<String, String> datos, MultipartFile foto) {

@@ -11,6 +11,7 @@ import com.example.demo.Logica.Clases.Promocion;
 import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
 import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ public class LocalController implements iLocalController {
         this.cloudinaryService = cloudinaryService;
     }
 
+    @PreAuthorize("hasRole('Local')")
     @PostMapping(value = "/platos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Plato> gestionarPlatoAlta(@RequestPart("datos") DtPlato dtPlato, @RequestPart("imagenes") List<MultipartFile> imagenes) {
         List<String> urls = cloudinaryService.subirImagenes(imagenes);
@@ -40,6 +42,7 @@ public class LocalController implements iLocalController {
         return ResponseEntity.ok(plato);
     }
 
+    @PreAuthorize("hasRole('Local')")
     @PutMapping(value = "/platos/{idPlato}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Plato> gestionarPlatoModificacion(@PathVariable("idPlato") Long idPlato, @RequestPart("datos") DtPlato dtPlato, @RequestPart(value = "imagenes", required = false) List<MultipartFile> imagenes) {
         if (imagenes != null && !imagenes.isEmpty()) {
@@ -50,18 +53,21 @@ public class LocalController implements iLocalController {
         return ResponseEntity.ok(plato);
     }
 
+    @PreAuthorize("hasRole('Local')")
     @DeleteMapping("/platos/{idPlato}")
     public ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") Long idPlato) {
         localService.gestionarPlatoBaja(idPlato);
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('Local')")
     @PostMapping("/promociones")
     public ResponseEntity<Promocion> gestionarPromocionAlta(@RequestBody DtPromocionRequest request) {
         Promocion promocion = localService.altaPromocion(request);
         return ResponseEntity.ok(promocion);
     }
 
+    @PreAuthorize("hasRole('Local')")
     @PutMapping("/promociones/{idPromocion}")
     public ResponseEntity<Promocion> gestionarPromocionModificacion(@PathVariable("idPromocion") Long idPromocion, @RequestBody DtPromocionRequest request) {
         Promocion promocion = localService.gestionarPromocionModificacion(idPromocion, request);
@@ -76,24 +82,28 @@ public class LocalController implements iLocalController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('Local')")
     @PutMapping("/{idLocal}/apertura")
     public ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") Long idLocal) {
         localService.registrarApertura(idLocal);
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('Local')")
     @PutMapping("/{idLocal}/cierre")
     public ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") Long idLocal) {
         localService.regitrarCierre(idLocal);
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('Local')")
     @GetMapping("/estadisticas")
     public ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal) {
         DtEstadisticasLocal dtEstadisticasLocal = localService.obtenerEstadisticasLocal(idLocal);
         return ResponseEntity.ok(dtEstadisticasLocal);
     }
 
+    @PreAuthorize("hasRole('Local')")
     @GetMapping("/{idLocal}/clientes")
     public ResponseEntity<List<DtClienteLocalResponse>> buscarYListarClientesDelLocal(
             @PathVariable("idLocal") Long idLocal,

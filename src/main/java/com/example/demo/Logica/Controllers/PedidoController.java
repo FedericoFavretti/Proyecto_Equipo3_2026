@@ -14,6 +14,7 @@ import com.example.demo.Logica.Mappers.PedidoResponseMapper;
 import com.example.demo.Logica.Service.PedidoService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -30,6 +31,7 @@ public class PedidoController implements iPedidoController {
         this.pedidoResponseMapper = pedidoResponseMapper;
     }
 
+    @PreAuthorize("hasRole('Local')")
     @PostMapping("/{idPedido}/confirmar")
     public ResponseEntity<DtPedidoResponse> confirmarPedido(
             @PathVariable Long idPedido,
@@ -38,6 +40,7 @@ public class PedidoController implements iPedidoController {
         return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 
+    @PreAuthorize("hasRole('Local')")
     @PostMapping("/{idPedido}/rechazar")
     public ResponseEntity<Void> rechazarPedido(
             @PathVariable Long idPedido,
@@ -46,18 +49,21 @@ public class PedidoController implements iPedidoController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('Cliente')")
     @PostMapping
     public ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles) {
         Pedido pedido = pedidoService.realizarPedido(dtPedidoConDetalles);
         return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 
+    @PreAuthorize("hasRole('Cliente')")
     @PostMapping("/{idPedido}/cancelar")
     public ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido) {
         pedidoService.cancelarPedido(idPedido);
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('Local')")
     @GetMapping("/locales/{idLocal}")
     public ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(
             @PathVariable Long idLocal,
@@ -77,6 +83,7 @@ public class PedidoController implements iPedidoController {
         return ResponseEntity.ok(pedidos);
     }
 
+    @PreAuthorize("hasRole('Local')")
     @GetMapping("/clientes/{idCliente}")
     public ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(
             @PathVariable Long idCliente,

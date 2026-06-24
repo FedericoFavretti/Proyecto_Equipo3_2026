@@ -1,11 +1,7 @@
 package com.example.demo.Logica.Interfaces;
 
-import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
-import com.example.demo.auth.dto.AuthResponse;
-import com.example.demo.auth.dto.LoginRequest;
-import com.example.demo.Logica.DataTypes.request.DtIniciarCambioPasswdRequest;
-import com.example.demo.Logica.DataTypes.request.DtVerificarCodigoRequest;
-import com.example.demo.Logica.DataTypes.request.DtConfirmarCambioPasswdRequest;
+import com.example.demo.Logica.DataTypes.request.*;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 public interface iUsuarioController {
-    ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request);
+    ResponseEntity<DtLoginResponse> login(@Valid @RequestBody DtLoginRequest dtLoginRequest);
     ResponseEntity<Void> cerrarSesion(@RequestHeader("Authorization") String authHeader);
     ResponseEntity<Void> editarDatosDeCuentaDeUsuario(
             @RequestParam Map<String, String> datos,

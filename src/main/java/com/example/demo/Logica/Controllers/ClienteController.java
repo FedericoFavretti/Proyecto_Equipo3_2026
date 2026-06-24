@@ -11,6 +11,7 @@ import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
 import com.example.demo.Logica.DataTypes.response.DtLocalBusquedaResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.MediaType;
@@ -30,6 +31,7 @@ public class ClienteController implements iClienteController {
         this.cloudinaryService = cloudinaryService;
     }
 
+
     @PostMapping(value = "/registro", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Cliente> registrarUsuario(@RequestPart("datos") DtCliente dtCliente, @RequestPart("foto") MultipartFile foto) {
         String url = cloudinaryService.subirImagen(foto);
@@ -44,12 +46,14 @@ public class ClienteController implements iClienteController {
         return ResponseEntity.ok(cliente);
     }
 
+    @PreAuthorize("hasRole('Cliente')")
     @PostMapping("/busqueda")
     public ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(@RequestBody DtFiltro dtFiltro) {
         DtBusquedaPlatosPromocionesResponse response = clienteService.buscarPlatosYPromociones(dtFiltro);
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('Cliente')")
     @GetMapping
     public ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(
             @RequestParam(required = false) String nombre,
@@ -67,13 +71,5 @@ public class ClienteController implements iClienteController {
         List<DtLocalBusquedaResponse> locales = clienteService.buscarYListarLocales(filtro);
         return ResponseEntity.ok(locales);
     }
-
-    @GetMapping("/{idCliente}/calificacion")
-    public ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente) {
-        DtCalificacionGlobalResponse response = clienteService.consultarCalificacionGlobal(idCliente);
-        return ResponseEntity.ok(response);
-    }
-
-
 }
 

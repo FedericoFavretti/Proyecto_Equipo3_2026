@@ -29,6 +29,5 @@ public interface iClienteController {
             @RequestParam(required = false, defaultValue = "nombre") String ordenarPor,
             @RequestParam(required = false, defaultValue = "desc") String direccion
     );
-    ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente);
 }
 

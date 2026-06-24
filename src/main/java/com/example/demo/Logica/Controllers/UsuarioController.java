@@ -1,18 +1,14 @@
 package com.example.demo.Logica.Controllers;
-import com.example.demo.Logica.DataTypes.request.DtLoginRequest;
-import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
+
+import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
-import com.example.demo.auth.dto.AuthResponse;
-import com.example.demo.auth.dto.LoginRequest;
-import com.example.demo.Logica.DataTypes.request.DtIniciarCambioPasswdRequest;
-import com.example.demo.Logica.DataTypes.request.DtVerificarCodigoRequest;
-import com.example.demo.Logica.DataTypes.request.DtConfirmarCambioPasswdRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,8 +25,8 @@ public class UsuarioController implements iUsuarioController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(usuarioService.login(request));
+    public ResponseEntity<DtLoginResponse> login(@Valid @RequestBody DtLoginRequest dtLoginRequest) {
+        return ResponseEntity.ok(usuarioService.login(dtLoginRequest));
     }
     @GetMapping("/activar")
     public ResponseEntity<String> activarCuenta(@RequestParam String email) {
@@ -38,6 +34,7 @@ public class UsuarioController implements iUsuarioController {
         return ResponseEntity.ok("Cuenta activada correctamente.");
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
     public ResponseEntity<Void> cerrarSesion(
             @RequestHeader("Authorization") String authHeader) {
@@ -46,6 +43,7 @@ public class UsuarioController implements iUsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PutMapping(value = "/perfil", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> editarDatosDeCuentaDeUsuario(
             @RequestParam Map<String, String> datos,
@@ -59,11 +57,13 @@ public class UsuarioController implements iUsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/clientes/{idCliente}/cuenta-dev")
     public ResponseEntity<Void> eliminarCuentaDeUsuarioPropiaDev(@PathVariable Long idCliente) {
         usuarioService.eliminarCuentaDeUsuarioPropia(idCliente);
         return ResponseEntity.noContent().build();
     }
+
 
     @PostMapping("/recuperar_contra_correo")
     public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo) {
@@ -77,18 +77,21 @@ public class UsuarioController implements iUsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/cambiar-passwd/iniciar")
     public ResponseEntity<Void> iniciarCambioPasswd(@RequestBody DtIniciarCambioPasswdRequest request) {
         usuarioService.iniciarCambioPasswd(request);
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/cambiar-passwd/verificar-codigo")
     public ResponseEntity<Void> verificarCodigoCambioPasswd(@RequestBody DtVerificarCodigoRequest request) {
         usuarioService.verificarCodigoCambioPasswd(request);
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/cambiar-passwd/confirmar")
     public ResponseEntity<Void> confirmarCambioPasswd(@RequestBody DtConfirmarCambioPasswdRequest request) {
         usuarioService.confirmarCambioPasswd(request);

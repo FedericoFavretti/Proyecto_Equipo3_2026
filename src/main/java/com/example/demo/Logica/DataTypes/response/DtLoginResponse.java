@@ -12,8 +12,7 @@ import lombok.NoArgsConstructor;
 public class DtLoginResponse {
     private Long id;
     private String token;
-    private String tipo = "Bearer";
+    private String tipo;
     private String email;
-    private Long terminaEn;
 }
 

@@ -8,6 +8,7 @@ import com.example.demo.Logica.Service.AdminService;
 import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
 import com.example.demo.Logica.DataTypes.response.DtUsuarioListadoResponse;
 import com.example.demo.Logica.Enums.EstadoCuenta;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,11 +24,13 @@ public class AdminController implements iAdminController {
         this.adminService = adminService;
     }
 
+    @PreAuthorize("hasRole('Admin')")
     @GetMapping("/solicitudes-locales/pendientes")
     public ResponseEntity<List<DtSolicitudLocalPendienteResponse>> listarSolicitudesPendientes() {
         return ResponseEntity.ok(adminService.listarSolicitudesPendientes());
     }
 
+    @PreAuthorize("hasRole('Admin')")
     @PutMapping("/solicitudes-locales/resolver_solicitud")
     public ResponseEntity<Void> resolverSolicitud(
             @RequestBody DtResolverSolicitudLocalRequest request) {
@@ -38,14 +41,14 @@ public class AdminController implements iAdminController {
         return ResponseEntity.noContent().build();
     }
 
-
-
+    @PreAuthorize("hasRole('Admin')")
     @PostMapping("/solicitudes-locales")
     public ResponseEntity<Void> resolverCuentaUsuario(@RequestBody DtResCuentaUsuario dtResCuentaUsuario) {
         adminService.resolverCuentaUsuario(dtResCuentaUsuario);
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('Admin')")
     @GetMapping("/usuarios")
     public ResponseEntity<List<DtUsuarioListadoResponse>> buscarYListarUsuarios(
             @RequestParam(required = false) String texto,
@@ -63,5 +66,8 @@ public class AdminController implements iAdminController {
         List<DtUsuarioListadoResponse> usuarios = adminService.buscarYListarUsuarios(filtro);
         return ResponseEntity.ok(usuarios);
     }
+
+
+
 }
 
