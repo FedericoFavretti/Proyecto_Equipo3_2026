@@ -2,7 +2,6 @@ package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.DataTypes.shared.DtCliente;
-import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
 import com.example.demo.Logica.Interfaces.iClienteController;
@@ -10,10 +9,7 @@ import com.example.demo.Logica.Service.ClienteService;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
 import com.example.demo.Logica.DataTypes.response.DtLocalBusquedaResponse;
-import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,7 +50,7 @@ public class ClienteController implements iClienteController {
     }
 
     @PreAuthorize("hasRole('Cliente')")
-    @GetMapping("/listar_locales")
+    @PostMapping("/listar_locales")
     public ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(@RequestBody DtFiltroLocal dtFiltroLocal) {
         List<DtLocalBusquedaResponse> locales = clienteService.buscarYListarLocales(dtFiltroLocal);
         return ResponseEntity.ok(locales);

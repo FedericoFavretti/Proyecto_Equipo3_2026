@@ -38,10 +38,7 @@ public class AdminService {
     private final ClienteRepositorio clienteRepositorio;
     private final UsuarioService usuarioService;
 
-    public AdminService(
-            LocalRepositorio localRepositorio,
-            UsuarioRepositorio usuarioRepositorio,
-            RegistroLocalNotificador registroLocalNotificador, ClienteRepositorio clienteRepositorio, UsuarioService usuarioService) {
+    public AdminService(LocalRepositorio localRepositorio, UsuarioRepositorio usuarioRepositorio, RegistroLocalNotificador registroLocalNotificador, ClienteRepositorio clienteRepositorio, UsuarioService usuarioService) {
         this.localRepositorio = localRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;

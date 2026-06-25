@@ -82,8 +82,6 @@ public class PedidoService {
     private final PagoSimuladoService pagoSimuladoService;
     private final NotificacionPedidoService notificacionPedidoService;
     private final PedidoListadoMapper pedidoListadoMapper;
-    private final DetallePedidoMapper detallePedidoMapper;
-    private final PedidoMapper pedidoMapper;
 
     @Value("${mercadopago.back-url-success}")
     private String backUrlSuccess;
@@ -115,8 +113,6 @@ public class PedidoService {
         this.pagoSimuladoService = pagoSimuladoService;
         this.notificacionPedidoService = notificacionPedidoService;
         this.pedidoListadoMapper = pedidoListadoMapper;
-        this.detallePedidoMapper = detallePedidoMapper;
-        this.pedidoMapper = pedidoMapper;
     }
 
     @Transactional

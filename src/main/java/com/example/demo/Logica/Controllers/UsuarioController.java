@@ -40,7 +40,7 @@ public class UsuarioController implements iUsuarioController {
             @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         usuarioService.cerrarSesion(token);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -54,27 +54,31 @@ public class UsuarioController implements iUsuarioController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         usuarioService.editarDatosDeCuentaDeUsuario(authentication.getName(), authHeader, datos, foto);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("isAuthenticated()")
-    @DeleteMapping("/clientes/{idCliente}/cuenta-dev")
-    public ResponseEntity<Void> eliminarCuentaDeUsuarioPropiaDev(@PathVariable Long idCliente) {
-        usuarioService.eliminarCuentaDeUsuarioPropia(idCliente);
+    @DeleteMapping("/mi-cuenta")
+    public ResponseEntity<Void> eliminarMiCuenta(Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        usuarioService.eliminarMiCuenta(authentication.getName());
         return ResponseEntity.noContent().build();
     }
+
 
 
     @PostMapping("/recuperar_contra_correo")
     public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo) {
         usuarioService.recuperarPasswdPorCorreo(correo);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/recuperar")
     public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd) {
         usuarioService.recuperarPasswd(dtRecuperarPasswd);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("isAuthenticated()")

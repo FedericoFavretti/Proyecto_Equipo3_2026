@@ -46,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
+
         String authHeader = request.getHeader(AUTHORIZATION_HEADER);
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             filterChain.doFilter(request, response);
@@ -59,9 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             username = jwtService.extractUsername(jwt);
         } catch (JwtException | IllegalArgumentException exception) {
             LOGGER.warn("No se pudo extraer el username del JWT para {} {}: {}",
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    exception.getMessage());
+                    request.getMethod(), request.getRequestURI(), exception.getMessage());
             filterChain.doFilter(request, response);
             return;
         }
@@ -73,13 +72,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 LocalDateTime sesionesInvalidadasDesde = usuario != null ? usuario.getSesionesInvalidadasDesde() : null;
 
                 if (jwtService.isTokenValid(jwt, userDetails, sesionesInvalidadasDesde)) {
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
+                    UsernamePasswordAuthenticationToken authenticationToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                     LOGGER.debug("JWT autenticado correctamente para {}", username);
                 } else {
-                    LOGGER.warn("JWT inválido o sesión invalidada para {} en {} {}", username, request.getMethod(), request.getRequestURI());
+                    LOGGER.warn("JWT inválido o sesión invalidada para {} en {} {}",
+                            username, request.getMethod(), request.getRequestURI());
                 }
             } catch (UsernameNotFoundException exception) {
                 LOGGER.warn("El usuario {} del JWT no existe en base de datos para {} {}",
@@ -89,48 +89,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         username, request.getMethod(), request.getRequestURI(), exception.getMessage());
             }
         }
-        filterChain.doFilter(request, response); if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            try {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities());
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    LOGGER.debug("JWT autenticado correctamente para {}", username);
-                } else {
-                    LOGGER.warn("JWT inválido para el usuario {} en {} {}", username, request.getMethod(), request.getRequestURI());
-                }
-            } catch (UsernameNotFoundException exception) {
-                LOGGER.warn("El usuario {} del JWT no existe en base de datos para {} {}",
-                        username,
-                        request.getMethod(),
-                        request.getRequestURI());
-            } catch (JwtException | IllegalArgumentException exception) {
-                LOGGER.warn("No se pudo validar el JWT del usuario {} en {} {}: {}",
-                        username,
-                        request.getMethod(),
-                        request.getRequestURI(),
-                        exception.getMessage());
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-
-                Usuario usuario = usuarioRepositorio.buscarPorEmail(username).orElse(null);
-                LocalDateTime sesionesInvalidadasDesde = usuario != null ? usuario.getSesionesInvalidadasDesde() : null;
-
-                if (jwtService.isTokenValid(jwt, userDetails, sesionesInvalidadasDesde)) {
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities());
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                }
-            }
-
-        }
         filterChain.doFilter(request, response);
     }
 }

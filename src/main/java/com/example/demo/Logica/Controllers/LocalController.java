@@ -12,9 +12,7 @@ import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
 import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,7 +55,7 @@ public class LocalController implements iLocalController {
     @DeleteMapping("/platos/{idPlato}")
     public ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") Long idPlato) {
         localService.gestionarPlatoBaja(idPlato);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('Local')")
@@ -97,14 +95,14 @@ public class LocalController implements iLocalController {
     }
 
     @PreAuthorize("hasRole('Local')")
-    @GetMapping("/estadisticas")
+    @GetMapping("/estadisticas/{idLocal}")
     public ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal) {
         DtEstadisticasLocal dtEstadisticasLocal = localService.obtenerEstadisticasLocal(idLocal);
         return ResponseEntity.ok(dtEstadisticasLocal);
     }
 
     @PreAuthorize("hasRole('Local')")
-    @GetMapping("/{idLocal}/clientes")
+    @PostMapping("/{idLocal}/clientes")
     public ResponseEntity<List<DtClienteLocalResponse>> buscarYListarClientesDelLocal(@PathVariable("idLocal") Long idLocal, @RequestBody DtFiltroClienteLocal  DtFiltroClienteLocal) {
         List<DtClienteLocalResponse> clientes = localService.buscarYListarClientesDelLocal(idLocal, DtFiltroClienteLocal);
         return ResponseEntity.ok(clientes);

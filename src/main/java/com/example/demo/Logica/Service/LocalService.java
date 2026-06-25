@@ -81,12 +81,7 @@ public class LocalService {
     private final PromocionMapper promocionMapper;
     private final ClienteRepositorio clienteRepositorio;
 
-    public LocalService(
-            LocalRepositorio localRepositorio,
-            PlatoRepositorio platoRepositorio,
-            RegistroLocalNotificador registroLocalNotificador,
-            UsuarioRepositorio usuarioRepositorio,
-            PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper, PromocionRepositorio promocionRepositorio, PromocionMapper promocionMapper, ClienteRepositorio clienteRepositorio) {
+    public LocalService(LocalRepositorio localRepositorio, PlatoRepositorio platoRepositorio, RegistroLocalNotificador registroLocalNotificador, UsuarioRepositorio usuarioRepositorio, PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper, PromocionRepositorio promocionRepositorio, PromocionMapper promocionMapper, ClienteRepositorio clienteRepositorio) {
         this.localRepositorio = localRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;
@@ -192,24 +187,6 @@ public class LocalService {
         return promocion;
     }
 
-    private void validarDatosPromocion(DtPromocionRequest request) {
-        if (request == null || request.getIdPlato() == null) {
-            throw new IllegalArgumentException("Debe seleccionar al menos un plato para aplicar la promoción.");
-        }
-
-        if (request.getDescuento() == null || request.getDescuento() < 1 || request.getDescuento() > 100) {
-            throw new IllegalArgumentException("El porcentaje de descuento debe estar entre 1% y 100%.");
-        }
-
-        if (request.getFechaInicio() == null || request.getFechaFin() == null) {
-            throw new IllegalArgumentException("Debe indicar fecha de inicio y fecha de fin de la promoción.");
-        }
-
-        if (request.getFechaFin().isBefore(request.getFechaInicio())) {
-            throw new IllegalArgumentException("La fecha de fin de la promoción debe ser posterior a la fecha de inicio.");
-        }
-    }
-
     @Transactional
     public void solicitarRegistroComoLocalHabilitado(DtLocal dtLocal) {
         dtLocal.setPasswd(passwordEncoder.encode(dtLocal.getPasswd()));
@@ -271,6 +248,45 @@ public class LocalService {
                 .platosMasPedido(platosMasPedido)
                 .gananciasMensuales(gananciasMensuales)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<DtClienteLocalResponse> buscarYListarClientesDelLocal(Long idLocal, DtFiltroClienteLocal filtro) {
+        localRepositorio.buscarPorId(idLocal)
+                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+
+        List<Cliente> clientes = clienteRepositorio.buscarClientesDelLocal(idLocal, filtro);
+
+        if (clientes.isEmpty()) {
+            throw new IllegalArgumentException("Aún no tiene clientes registrados. Aparecerán aquí una vez que realicen su primer pedido.");
+        }
+
+        return clientes.stream()
+                .map(cliente -> DtClienteLocalResponse.builder()
+                        .id(cliente.getId())
+                        .nombre(cliente.getNombre())
+                        .apellido(cliente.getApellido())
+                        .calificacionGlobal(cliente.getCalificacionGlobal())
+                        .build())
+                .toList();
+    }
+
+    private void validarDatosPromocion(DtPromocionRequest request) {
+        if (request == null || request.getIdPlato() == null) {
+            throw new IllegalArgumentException("Debe seleccionar al menos un plato para aplicar la promoción.");
+        }
+
+        if (request.getDescuento() == null || request.getDescuento() < 1 || request.getDescuento() > 100) {
+            throw new IllegalArgumentException("El porcentaje de descuento debe estar entre 1% y 100%.");
+        }
+
+        if (request.getFechaInicio() == null || request.getFechaFin() == null) {
+            throw new IllegalArgumentException("Debe indicar fecha de inicio y fecha de fin de la promoción.");
+        }
+
+        if (request.getFechaFin().isBefore(request.getFechaInicio())) {
+            throw new IllegalArgumentException("La fecha de fin de la promoción debe ser posterior a la fecha de inicio.");
+        }
     }
 
     private void validarDatosPlato(DtPlato dtPlato) {
@@ -414,27 +430,6 @@ public class LocalService {
         if (plato.getLocal() == null || plato.getLocal().getId() == null || !plato.getLocal().getId().equals(idLocal)) {
             throw new BusinessRuleException(MENSAJE_PLATO_DE_OTRO_LOCAL);
         }
-    }
-
-    @Transactional(readOnly = true)
-    public List<DtClienteLocalResponse> buscarYListarClientesDelLocal(Long idLocal, DtFiltroClienteLocal filtro) {
-        localRepositorio.buscarPorId(idLocal)
-                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
-
-        List<Cliente> clientes = clienteRepositorio.buscarClientesDelLocal(idLocal, filtro);
-
-        if (clientes.isEmpty()) {
-            throw new IllegalArgumentException("Aún no tiene clientes registrados. Aparecerán aquí una vez que realicen su primer pedido.");
-        }
-
-        return clientes.stream()
-                .map(cliente -> DtClienteLocalResponse.builder()
-                        .id(cliente.getId())
-                        .nombre(cliente.getNombre())
-                        .apellido(cliente.getApellido())
-                        .calificacionGlobal(cliente.getCalificacionGlobal())
-                        .build())
-                .toList();
     }
 }
 

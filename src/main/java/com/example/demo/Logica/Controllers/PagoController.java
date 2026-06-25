@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/pagos")
+@RequestMapping("/api/v1/pagos")
 public class PagoController {
 
     private final PedidoService pedidoService;

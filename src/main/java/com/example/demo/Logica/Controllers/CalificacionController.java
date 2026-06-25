@@ -26,7 +26,7 @@ public class CalificacionController implements iCalificacionController {
     @PostMapping("/calificar")
     public ResponseEntity<Void> calificar(@RequestBody DtCalificacion dtCalificacion){
         calificacionService.calificar(dtCalificacion);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('Local')")

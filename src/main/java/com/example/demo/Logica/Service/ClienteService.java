@@ -56,12 +56,7 @@ public class ClienteService {
     private final LocalMapper localMapper;
 
 
-    public ClienteService (ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio,
-                           PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio,
-                           EmailService emailService, PasswordEncoder passwordEncode,
-                           ClienteMapper clienteMapper, PlatoMapper platoMapper,
-                           PromocionMapper promocionMapper, LocalRepositorio localRepositorio,
-                           LocalMapper localMapper) {
+    public ClienteService (ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio, PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio, EmailService emailService, PasswordEncoder passwordEncode, ClienteMapper clienteMapper, PlatoMapper platoMapper, PromocionMapper promocionMapper, LocalRepositorio localRepositorio, LocalMapper localMapper) {
         this.clienteRepositorio = clienteRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.promocionRepositorio = promocionRepositorio;
@@ -100,6 +95,7 @@ public class ClienteService {
         emailService.enviarMailDeActivacion(cliente.getEmail());
         return cliente;
     }
+
 
     @Transactional
     public Cliente registrarUsuarioGoogle(DtCliente dtCliente){

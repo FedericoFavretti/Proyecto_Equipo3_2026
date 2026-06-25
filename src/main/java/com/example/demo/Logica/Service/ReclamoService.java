@@ -10,6 +10,8 @@ import com.example.demo.Logica.Mappers.ReclamoMapper;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,6 +31,7 @@ public class ReclamoService {
         this.reclamoMapper = reclamoMapper;
     }
 
+    @Transactional
     public void reclamar(DtReclamo dtReclamo){
         if(dtReclamo.getMotivo().isEmpty()){
             throw new BusinessRuleException(MENSAJE_MOTIVO_REQUERIDO);
@@ -41,6 +44,7 @@ public class ReclamoService {
         reclamoRepositorio.guardar(reclamo);
     }
 
+    @Transactional
     public List<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo){
         if(dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null && dtFiltroReclamo.getIdCliente() == null){
             throw new BusinessRuleException(MENSAJE_FILTRO_REQUERIDO);
@@ -48,6 +52,7 @@ public class ReclamoService {
         return reclamoMapper.mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));
     }
 
+    @Transactional
     public void resolverReclamo(DtReclamo dtReclamo){
         if(reclamoRepositorio.buscarPorId(dtReclamo.getId()).isEmpty()){
             throw new ResourceNotFoundException("Reclamo", dtReclamo.getId());

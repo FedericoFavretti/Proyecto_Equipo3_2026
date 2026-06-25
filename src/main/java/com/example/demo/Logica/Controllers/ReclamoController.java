@@ -28,10 +28,9 @@ public class ReclamoController implements iReclamoController {
     }
 
     @PreAuthorize("hasRole('Local')")
-    @GetMapping("/buscar_reclamo")
+    @PostMapping("/buscar_reclamo")
     public ResponseEntity<List<DtReclamo>> buscarReclamos(@RequestBody DtFiltroReclamo dtFiltroReclamo) {
-        reclamoService.buscarReclamos(dtFiltroReclamo);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(reclamoService.buscarReclamos(dtFiltroReclamo));
     }
 
     @PreAuthorize("hasRole('Local')")

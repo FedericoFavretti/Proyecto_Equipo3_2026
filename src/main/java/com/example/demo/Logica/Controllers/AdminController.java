@@ -7,9 +7,7 @@ import com.example.demo.Logica.Interfaces.iAdminController;
 import com.example.demo.Logica.Service.AdminService;
 import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
 import com.example.demo.Logica.DataTypes.response.DtUsuarioListadoResponse;
-import com.example.demo.Logica.Enums.EstadoCuenta;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -38,20 +36,19 @@ public class AdminController implements iAdminController {
             throw new IllegalArgumentException("Debe indicar el estado objetivo de la solicitud.");
         }
         adminService.resolverSolicitud(request);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('Admin')")
-    @PostMapping("/solicitudes-locales")
+    @PostMapping("/cuentas-usuario/resolver")
     public ResponseEntity<Void> resolverCuentaUsuario(@RequestBody DtResCuentaUsuario dtResCuentaUsuario) {
         adminService.resolverCuentaUsuario(dtResCuentaUsuario);
         return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('Admin')")
-    @GetMapping("/usuarios")
-    public ResponseEntity<List<DtUsuarioListadoResponse>> buscarYListarUsuarios(
-            @RequestBody DtFiltroUsuario  dtFiltroUsuario) {
+    @PostMapping("/usuarios")
+    public ResponseEntity<List<DtUsuarioListadoResponse>> buscarYListarUsuarios(@RequestBody DtFiltroUsuario  dtFiltroUsuario) {
         List<DtUsuarioListadoResponse> usuarios = adminService.buscarYListarUsuarios(dtFiltroUsuario);
         return ResponseEntity.ok(usuarios);
     }
