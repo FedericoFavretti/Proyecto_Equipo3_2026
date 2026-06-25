@@ -12,5 +12,5 @@ import java.util.Map;
 public interface iCalificacionController {
     ResponseEntity<Void> calificar(@RequestBody DtCalificacion dtCalificacion);
     ResponseEntity<Map<String, Object>> consultarCalificacionGlobalDelLocal(Authentication authentication);
-    public ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente);
+    ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente);
 }

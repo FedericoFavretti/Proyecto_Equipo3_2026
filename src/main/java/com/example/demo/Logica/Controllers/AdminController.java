@@ -51,23 +51,9 @@ public class AdminController implements iAdminController {
     @PreAuthorize("hasRole('Admin')")
     @GetMapping("/usuarios")
     public ResponseEntity<List<DtUsuarioListadoResponse>> buscarYListarUsuarios(
-            @RequestParam(required = false) String texto,
-            @RequestParam(required = false) String tipoUsuario,
-            @RequestParam(required = false) EstadoCuenta estado,
-            @RequestParam(required = false, defaultValue = "calificacion") String ordenarPor,
-            @RequestParam(required = false, defaultValue = "desc") String direccion) {
-        DtFiltroUsuario filtro = DtFiltroUsuario.builder()
-                .texto(texto)
-                .tipoUsuario(tipoUsuario)
-                .estado(estado)
-                .ordenarPor(ordenarPor)
-                .direccion(direccion)
-                .build();
-        List<DtUsuarioListadoResponse> usuarios = adminService.buscarYListarUsuarios(filtro);
+            @RequestBody DtFiltroUsuario  dtFiltroUsuario) {
+        List<DtUsuarioListadoResponse> usuarios = adminService.buscarYListarUsuarios(dtFiltroUsuario);
         return ResponseEntity.ok(usuarios);
     }
-
-
-
 }
 

@@ -40,5 +40,4 @@ public class ReclamoController implements iReclamoController {
         reclamoService.resolverReclamo(dtReclamo);
         return  ResponseEntity.ok().build();
     }
-
 }

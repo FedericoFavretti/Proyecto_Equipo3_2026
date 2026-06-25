@@ -54,21 +54,9 @@ public class ClienteController implements iClienteController {
     }
 
     @PreAuthorize("hasRole('Cliente')")
-    @GetMapping
-    public ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(
-            @RequestParam(required = false) String nombre,
-            @RequestParam(required = false) Double calificacionMinima,
-            @RequestParam(required = false) Boolean estaAbierto,
-            @RequestParam(required = false, defaultValue = "nombre") String ordenarPor,
-            @RequestParam(required = false, defaultValue = "desc") String direccion) {
-        DtFiltroLocal filtro = DtFiltroLocal.builder()
-                .nombre(nombre)
-                .calificacionMinima(calificacionMinima)
-                .estaAbierto(estaAbierto)
-                .ordenarPor(ordenarPor)
-                .direccion(direccion)
-                .build();
-        List<DtLocalBusquedaResponse> locales = clienteService.buscarYListarLocales(filtro);
+    @GetMapping("/listar_locales")
+    public ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(@RequestBody DtFiltroLocal dtFiltroLocal) {
+        List<DtLocalBusquedaResponse> locales = clienteService.buscarYListarLocales(dtFiltroLocal);
         return ResponseEntity.ok(locales);
     }
 }

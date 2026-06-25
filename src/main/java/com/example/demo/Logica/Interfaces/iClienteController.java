@@ -3,6 +3,7 @@ package com.example.demo.Logica.Interfaces;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 
+import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
 import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
@@ -19,15 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface iClienteController {
-    public ResponseEntity<Cliente> registrarUsuario(@RequestPart("datos") DtCliente dtCliente, @RequestPart("foto") MultipartFile foto);
+    ResponseEntity<Cliente> registrarUsuario(@RequestPart("datos") DtCliente dtCliente, @RequestPart("foto") MultipartFile foto);
     ResponseEntity<Cliente> registrarUsuarioGoogle(@RequestBody DtCliente dtCliente);
     ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(@RequestBody DtFiltro dtFiltro);
-    ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(
-            @RequestParam(required = false) String nombre,
-            @RequestParam(required = false) Double calificacionMinima,
-            @RequestParam(required = false) Boolean estaAbierto,
-            @RequestParam(required = false, defaultValue = "nombre") String ordenarPor,
-            @RequestParam(required = false, defaultValue = "desc") String direccion
-    );
+    ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(@RequestBody DtFiltroLocal dtFiltroLocal);
 }
 

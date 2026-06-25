@@ -69,6 +69,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                Usuario usuario = usuarioRepositorio.buscarPorEmail(username).orElse(null);
+                LocalDateTime sesionesInvalidadasDesde = usuario != null ? usuario.getSesionesInvalidadasDesde() : null;
+
+                if (jwtService.isTokenValid(jwt, userDetails, sesionesInvalidadasDesde)) {
+                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    LOGGER.debug("JWT autenticado correctamente para {}", username);
+                } else {
+                    LOGGER.warn("JWT inválido o sesión invalidada para {} en {} {}", username, request.getMethod(), request.getRequestURI());
+                }
+            } catch (UsernameNotFoundException exception) {
+                LOGGER.warn("El usuario {} del JWT no existe en base de datos para {} {}",
+                        username, request.getMethod(), request.getRequestURI());
+            } catch (JwtException | IllegalArgumentException exception) {
+                LOGGER.warn("No se pudo validar el JWT del usuario {} en {} {}: {}",
+                        username, request.getMethod(), request.getRequestURI(), exception.getMessage());
+            }
+        }
+        filterChain.doFilter(request, response); if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                             userDetails,

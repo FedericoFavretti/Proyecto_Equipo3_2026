@@ -64,45 +64,16 @@ public class PedidoController implements iPedidoController {
     }
 
     @PreAuthorize("hasRole('Local')")
-    @GetMapping("/locales/{idLocal}")
-    public ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(
-            @PathVariable Long idLocal,
-            @RequestParam(required = false) EstadoPedido estado,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
-            @RequestParam(required = false, defaultValue = "fecha") String ordenarPor,
-            @RequestParam(required = false, defaultValue = "desc") String direccion) {
-        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
-                .estado(estado)
-                .fechaDesde(fechaDesde)
-                .fechaHasta(fechaHasta)
-                .ordenarPor(ordenarPor)
-                .direccion(direccion)
-                .build();
-        List<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(idLocal, filtro);
+    @GetMapping("/listar-pedido-local/{idLocal}")
+    public ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro) {
+        List<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(idLocal, dtPedidoListadoFiltro);
         return ResponseEntity.ok(pedidos);
     }
 
     @PreAuthorize("hasRole('Local')")
-    @GetMapping("/clientes/{idCliente}")
-    public ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(
-            @PathVariable Long idCliente,
-            @RequestParam(required = false) EstadoPedido estado,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
-            @RequestParam(required = false) Long idLocal,
-            @RequestParam(required = false, defaultValue = "fecha") String ordenarPor,
-            @RequestParam(required = false, defaultValue = "desc") String direccion) {
-        DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder()
-                .estado(estado)
-                .fechaDesde(fechaDesde)
-                .fechaHasta(fechaHasta)
-                .idLocal(idLocal)
-                .ordenarPor(ordenarPor)
-                .direccion(direccion)
-                .build();
-        List<DtPedidoListadoResponse> pedidos = pedidoService.buscarYListarHistorialPedidosPropios(idCliente, filtro);
+    @GetMapping("/listar-pedido-cliente/{idCliente}")
+    public ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(@PathVariable Long idCliente, DtPedidoListadoFiltro dtPedidoListadoFiltro) {
+        List<DtPedidoListadoResponse> pedidos = pedidoService.buscarYListarHistorialPedidosPropios(idCliente, dtPedidoListadoFiltro);
         return ResponseEntity.ok(pedidos);
     }
 }
-

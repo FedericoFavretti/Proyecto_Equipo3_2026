@@ -2,6 +2,7 @@ package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.request.DtConfirmarPedidoRequest;
+import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
 import com.example.demo.Logica.DataTypes.request.DtRechazarPedidoRequest;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
@@ -18,32 +19,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface iPedidoController {
-    ResponseEntity<DtPedidoResponse> confirmarPedido(
-            @PathVariable Long idPedido,
-            @RequestBody DtConfirmarPedidoRequest request
-    );
-    ResponseEntity<Void> rechazarPedido(
-            @PathVariable Long idPedido,
-            @RequestBody DtRechazarPedidoRequest request
-    );
+    ResponseEntity<DtPedidoResponse> confirmarPedido(@PathVariable Long idPedido, @RequestBody DtConfirmarPedidoRequest request);
+    ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido, @RequestBody DtRechazarPedidoRequest request);
     ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles);
     ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido);
-    ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(
-            @PathVariable Long idLocal,
-            @RequestParam(required = false) EstadoPedido estado,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
-            @RequestParam(required = false) String ordenarPor,
-            @RequestParam(required = false) String direccion
-    );
-    ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(
-            @PathVariable Long idCliente,
-            @RequestParam(required = false) EstadoPedido estado,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
-            @RequestParam(required = false) Long idLocal,
-            @RequestParam(required = false) String ordenarPor,
-            @RequestParam(required = false) String direccion
-    );
+    ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro);
+    ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(@PathVariable Long idCliente, DtPedidoListadoFiltro dtPedidoListadoFiltro);
 }
 
