@@ -141,6 +141,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
     @Override
     public void eliminar(Long id) {
         Optional<Usuario> usuario = buscarPorId(id);
+        jdbcTemplate.update("DELETE FROM Usuario WHERE id = ?", id);
         if (usuario.isPresent()) {
             if (usuario.get() instanceof Administrador) {
                 administradorRepositorio.eliminar(id);
