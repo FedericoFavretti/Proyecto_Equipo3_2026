@@ -25,6 +25,11 @@ public class ConexionBd {
         dataSource.setUrl(url);
         dataSource.setUsername(usuario);
         dataSource.setPassword(password);
+
+        java.util.Properties props = new java.util.Properties();
+        props.setProperty("options", "-c search_path=public");
+        dataSource.setConnectionProperties(props);
+
         return dataSource;
     }
 }
