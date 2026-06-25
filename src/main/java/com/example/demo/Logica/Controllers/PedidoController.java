@@ -13,8 +13,11 @@ import com.example.demo.Logica.Service.PedidoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+
+import static com.example.demo.Utils.AuthUtils.autenticacionInvalida;
 
 @RestController
 @RequestMapping("/api/v1/pedidos")
@@ -63,13 +66,6 @@ public class PedidoController implements iPedidoController {
     @GetMapping("/listar-pedido-local/{idLocal}")
     public ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro) {
         List<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(idLocal, dtPedidoListadoFiltro);
-        return ResponseEntity.ok(pedidos);
-    }
-
-    @PreAuthorize("hasRole('Cliente')")
-    @GetMapping("/listar-pedido-cliente/{idCliente}")
-    public ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(@PathVariable Long idCliente, DtPedidoListadoFiltro dtPedidoListadoFiltro) {
-        List<DtPedidoListadoResponse> pedidos = pedidoService.buscarYListarHistorialPedidosPropios(idCliente, dtPedidoListadoFiltro);
         return ResponseEntity.ok(pedidos);
     }
 

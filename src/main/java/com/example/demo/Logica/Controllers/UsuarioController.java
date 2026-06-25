@@ -15,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
+import static com.example.demo.Utils.AuthUtils.autenticacionInvalida;
+
 @RestController
 @RequestMapping("/api/v1/usuarios")
 public class UsuarioController implements iUsuarioController {

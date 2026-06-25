@@ -1,11 +1,6 @@
 package com.example.demo.Logica.Service;
 
-import com.example.demo.Logica.Clases.Cliente;
-import com.example.demo.Logica.Clases.DetallePedido;
-import com.example.demo.Logica.Clases.Factura;
-import com.example.demo.Logica.Clases.Local;
-import com.example.demo.Logica.Clases.Pedido;
-import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.Clases.*;
 import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
 import com.example.demo.Logica.DataTypes.shared.DtDetallePedido;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
@@ -19,11 +14,7 @@ import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.DetallePedidoMapper;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
 import com.example.demo.Logica.Mappers.PedidoMapper;
-import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
-import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
-import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
-import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
-import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+import com.example.demo.Persistencia.Repositorios.*;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
@@ -82,6 +73,7 @@ public class PedidoService {
     private final PagoSimuladoService pagoSimuladoService;
     private final NotificacionPedidoService notificacionPedidoService;
     private final PedidoListadoMapper pedidoListadoMapper;
+    private final UsuarioRepositorio usuarioRepositorio;
 
     @Value("${mercadopago.back-url-success}")
     private String backUrlSuccess;
@@ -101,9 +93,7 @@ public class PedidoService {
             FacturaService facturaService,
             PagoSimuladoService pagoSimuladoService,
             NotificacionPedidoService notificacionPedidoService,
-            PedidoListadoMapper pedidoListadoMapper,
-            DetallePedidoMapper detallePedidoMapper,
-            PedidoMapper pedidoMapper) {
+            PedidoListadoMapper pedidoListadoMapper, UsuarioRepositorio usuarioRepositorio) {
         this.pedidoRepositorio = pedidoRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
@@ -113,6 +103,7 @@ public class PedidoService {
         this.pagoSimuladoService = pagoSimuladoService;
         this.notificacionPedidoService = notificacionPedidoService;
         this.pedidoListadoMapper = pedidoListadoMapper;
+        this.usuarioRepositorio = usuarioRepositorio;
     }
 
     @Transactional
@@ -226,7 +217,16 @@ public class PedidoService {
     }
 
     @Transactional(readOnly = true)
-    public List<DtPedidoListadoResponse> buscarYListarHistorialPedidosPropios(Long idCliente, DtPedidoListadoFiltro filtro) {
+    public List<DtPedidoListadoResponse> buscarYListarHistorialPedidosPropios(String emailAutenticado, DtPedidoListadoFiltro filtro) {
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+        if (!(usuario instanceof Cliente cliente)) {
+            throw new IllegalStateException("Solo los clientes pueden consultar su propio historial de pedidos.");
+        }
+
+        Long idCliente = cliente.getId();
+
         clienteRepositorio.buscarPorId(idCliente)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
         validarFiltroListado(filtro);

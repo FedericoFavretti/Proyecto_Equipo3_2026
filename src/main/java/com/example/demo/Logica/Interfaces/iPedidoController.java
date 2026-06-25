@@ -11,6 +11,7 @@ import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +25,6 @@ public interface iPedidoController {
     ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles);
     ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido);
     ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro);
-    ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(@PathVariable Long idCliente, DtPedidoListadoFiltro dtPedidoListadoFiltro);
+    ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(Authentication authentication, DtPedidoListadoFiltro dtPedidoListadoFiltro);
 }
 
