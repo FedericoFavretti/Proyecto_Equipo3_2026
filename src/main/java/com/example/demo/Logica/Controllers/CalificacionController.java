@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import static com.example.demo.Utils.AuthUtils.autenticacionInvalida;
 import java.util.Map;
 
 @RestController
@@ -24,11 +24,13 @@ public class CalificacionController implements iCalificacionController {
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/calificar")
-    public ResponseEntity<Void> calificar(@RequestBody DtCalificacion dtCalificacion){
-        calificacionService.calificar(dtCalificacion);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> calificar(@RequestBody DtCalificacion dtCalificacion, Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        calificacionService.calificar(dtCalificacion, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
-
     @PreAuthorize("hasRole('Local')")
     @GetMapping("/local/mi-calificacion")
     public ResponseEntity<Map<String, Object>> consultarCalificacionGlobalDelLocal(Authentication authentication) {

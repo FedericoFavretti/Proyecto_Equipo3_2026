@@ -111,21 +111,11 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
     @Override
     public void actualizar(Usuario usuario) {
-        jdbcTemplate.update(
-                "UPDATE usuario SET email = ?, passwd = ?, foto = ?, estado = ?, tipo = ? WHERE id = ?",
-                usuario.getEmail(),
-                usuario.getPasswd(),
-                usuario.getFoto(),
-                usuario.getEstado() != null ? usuario.getEstado().name() : null,
-                usuario.getTipo(),
-                usuario.getId()
-        );
         jdbcTemplate.update("UPDATE usuario SET email = ?, passwd = ?, foto = ?, estado = ?, tipo = ?, sesiones_invalidadas_desde = ? WHERE id = ?",
                 usuario.getEmail(),
                 usuario.getPasswd(),
                 usuario.getFoto(),
-                usuario.getEstado(),
-                usuario.getEstado(),
+                usuario.getEstado().name(),
                 usuario.getTipo(),
                 usuario.getSesionesInvalidadasDesde(),
                 usuario.getId()

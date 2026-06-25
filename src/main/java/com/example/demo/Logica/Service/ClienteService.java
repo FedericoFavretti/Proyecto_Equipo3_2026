@@ -127,16 +127,9 @@ public class ClienteService {
     @Transactional
     public List<DtLocalBusquedaResponse> buscarYListarLocales(DtFiltroLocal filtro) {
         validarFiltroLocal(filtro);
-
-        List<DtLocalBusquedaResponse> locales = localRepositorio.buscarHabilitadosConFiltros(filtro).stream()
+        return localRepositorio.buscarHabilitadosConFiltros(filtro).stream()
                 .map(localMapper::mapearDtLocalBusquedaDeClase)
                 .toList();
-
-        if (locales.isEmpty()) {
-            throw new IllegalArgumentException("No se encontraron locales que coincidan con su búsqueda. Intente con otros criterios.");
-        }
-
-        return locales;
     }
 
     private void validarFiltroLocal(DtFiltroLocal filtro) {

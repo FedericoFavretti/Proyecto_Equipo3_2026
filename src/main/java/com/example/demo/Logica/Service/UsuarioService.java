@@ -19,6 +19,7 @@ import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.jwt.JwtService;
 import com.example.demo.Logica.Clases.CodigoVerificacion;
 import com.example.demo.Persistencia.Repositorios.CodigoVerificacionRepositorio;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -39,6 +40,9 @@ import java.time.LocalDateTime;
 
 @Service
 public class UsuarioService {
+    @Value("${RECUPERAR_PASSWD_URL}")
+    private String passwdUrl;
+
     private static final Pattern FORMATO_EMAIL =
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
     private static final long MAX_TAMANIO_FOTO_BYTES = 5L * 1024 * 1024;
@@ -61,6 +65,8 @@ public class UsuarioService {
     private static final String MENSAJE_USUARIO_NO_AUTENTICADO = "Usuario no autenticado.";
     private static final String MENSAJE_TIPO_USUARIO_NO_COMPATIBLE =
             "El tipo de usuario no es compatible con la edición de cuenta.";
+    private static final String MENSAJE_USUARIO_NO_ENCONTRADO  =
+            "El Usuario no fue encontrado.";
     private static final String MENSAJE_NO_SE_PUDO_INVALIDAR_SESION =
             "No se pudo invalidar la sesión actual.";
     private static final DtDireccion DIRECCION_ANONIMIZADA =
@@ -78,6 +84,7 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final CloudinaryService cloudinaryService;
     private final CodigoVerificacionRepositorio codigoVerificacionRepositorio;
+
 
     public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
@@ -132,7 +139,7 @@ public class UsuarioService {
         }
 
         String token = jwtService.generarTokenRecuperacion(correo);
-        String link = "https://localhost:8080/api/v1/usuarios/recuperar?token=" + token;
+        String link = passwdUrl + token;
 
         emailService.recuperarPasswdPorCorreo(correo, link);
     }
@@ -207,14 +214,14 @@ public class UsuarioService {
     @Transactional
     public void iniciarCambioPasswd(DtIniciarCambioPasswdRequest request) {
         if (request == null || request.getIdUsuario() == null || request.getPasswdActual() == null) {
-            throw new IllegalArgumentException("Debe indicar el usuario y la contraseña actual.");
+            throw new BusinessRuleException("Debe indicar el usuario y la contraseña actual.");
         }
 
         Usuario usuario = usuarioRepositorio.buscarPorId(request.getIdUsuario())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_USUARIO_NO_ENCONTRADO));
 
         if (!passwordEncoder.matches(request.getPasswdActual(), usuario.getPasswd())) {
-            throw new IllegalArgumentException("La contraseña actual ingresada es incorrecta.");
+            throw new BusinessRuleException("La contraseña actual ingresada es incorrecta.");
         }
 
         String codigo = generarCodigoNumerico();
@@ -270,31 +277,31 @@ public class UsuarioService {
     public void confirmarCambioPasswd(DtConfirmarCambioPasswdRequest request) {
         if (request == null || request.getIdUsuario() == null
                 || request.getPasswdNueva() == null || request.getPasswdConfirmacion() == null) {
-            throw new IllegalArgumentException("Debe completar la nueva contraseña y su confirmación.");
+            throw new BusinessRuleException("Debe completar la nueva contraseña y su confirmación.");
         }
 
         CodigoVerificacion codigoVerificacion = codigoVerificacionRepositorio
                 .buscarVigentePorUsuario(request.getIdUsuario())
-                .orElseThrow(() -> new IllegalArgumentException("No hay ninguna verificación pendiente. Inicie el proceso nuevamente."));
+                .orElseThrow(() ->  new ResourceNotFoundException("CodigoVerificacion", request.getIdUsuario()));
 
         if (codigoVerificacion.getIntentosFallidos() >= 3) {
-            throw new IllegalArgumentException("No se puede continuar: se superó el número de intentos permitidos.");
+            throw new BusinessRuleException("No se puede continuar: se superó el número de intentos permitidos.");
         }
 
         if (LocalDateTime.now().isAfter(codigoVerificacion.getFechaExpiracion())) {
-            throw new IllegalArgumentException("El código de verificación ha expirado. Solicite uno nuevo.");
+            throw new BusinessRuleException("El código de verificación ha expirado. Solicite uno nuevo.");
         }
 
         if (!request.getPasswdNueva().equals(request.getPasswdConfirmacion())) {
-            throw new IllegalArgumentException("Las contraseñas ingresadas no coinciden.");
+            throw new BusinessRuleException("Las contraseñas ingresadas no coinciden.");
         }
 
         if (!cumpleRequisitosPasswd(request.getPasswdNueva())) {
-            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.");
+            throw new BusinessRuleException("La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.");
         }
 
         Usuario usuario = usuarioRepositorio.buscarPorId(request.getIdUsuario())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_USUARIO_NO_ENCONTRADO));
 
         String passwdCodificada = passwordEncoder.encode(request.getPasswdNueva());
         usuarioRepositorio.actualizarPasswd(usuario.getId(), passwdCodificada);

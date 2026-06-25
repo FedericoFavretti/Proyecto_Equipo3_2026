@@ -63,7 +63,7 @@ public class NotificacionPedidoService {
             );
         }
 
-        logger.info("NotificaciÃ³n web pendiente para rechazo de pedido {}", pedido.getId());
-        logger.info("NotificaciÃ³n push pendiente para rechazo de pedido {}", pedido.getId());
+        logger.info("Notificación web pendiente para rechazo de pedido {}", pedido.getId());
+        logger.info("Notificación push pendiente para rechazo de pedido {}", pedido.getId());
     }
 }

@@ -10,6 +10,8 @@ import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Enums.TipoCalificacion;
 import com.example.demo.Logica.Mappers.CalificacionMapper;
+import com.example.demo.Logica.Mappers.ClienteMapper;
+import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Persistencia.Repositorios.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,8 @@ public class CalificacionService {
             "El puntaje debe estar comprendido entre 1 y 5.";
     private static final String MENSAJE_CLIENTE_O_LOCAL_REQUERIDO =
             "Debe indicarse tanto el cliente como el local asociados a la calificación.";
+    private static final String MENSAJE_CLIENTE_REQUERIDO =
+            "Debe indicarse tanto el cliente asociados a la calificación.";
     private static final String MENSAJE_USUARIO_NO_ES_LOCAL =
             "El usuario autenticado no corresponde a un local.";
 
@@ -37,19 +41,23 @@ public class CalificacionService {
     private final CalificacionMapper calificacionMapper;
     private final ClienteRepositorio clienteRepositorio;
     private final ClienteCalificacionRepositorio clienteCalificacionRepositorio;
+    private final ClienteMapper clienteMapper;
+    private final LocalMapper localMapper;
 
 
     public CalificacionService(
             CalificacionRepositorio calificacionRepositorio,
             LocalRepositorio localRepositorio,
             UsuarioRepositorio usuarioRepositorio,
-            CalificacionMapper calificacionMapper, ClienteRepositorio clienteRepositorio, ClienteCalificacionRepositorio clienteCalificacionRepositorio) {
+            CalificacionMapper calificacionMapper, ClienteRepositorio clienteRepositorio, ClienteCalificacionRepositorio clienteCalificacionRepositorio, ClienteMapper clienteMapper, LocalMapper localMapper) {
         this.calificacionRepositorio = calificacionRepositorio;
         this.localRepositorio = localRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
         this.calificacionMapper = calificacionMapper;
         this.clienteRepositorio = clienteRepositorio;
         this.clienteCalificacionRepositorio = clienteCalificacionRepositorio;
+        this.clienteMapper = clienteMapper;
+        this.localMapper = localMapper;
     }
 
     @Transactional
@@ -57,7 +65,7 @@ public class CalificacionService {
         if (dtCalificacion.getPuntaje() < 1 || dtCalificacion.getPuntaje() > 5) {
             throw new BusinessRuleException(MENSAJE_PUNTAJE_INVALIDO);
         }
-        if (dtCalificacion.getDtCliente() == null || dtCalificacion.getDtLocal() == null) {
+        if (dtCalificacion.getDtCliente() == null && dtCalificacion.getDtLocal() == null) {
             throw new BusinessRuleException(MENSAJE_CLIENTE_O_LOCAL_REQUERIDO);
         }
         if (dtCalificacion.getTipo() == null && dtCalificacion.getDtCliente() != null) {
@@ -69,7 +77,40 @@ public class CalificacionService {
         Calificacion calificacion = calificacionMapper.mapearCalificacionDeDt(dtCalificacion);
         calificacionRepositorio.guardar(calificacion);
         sincronizarCalificacionGlobal(calificacion);
+    }
 
+    @Transactional
+    public void calificar(DtCalificacion dtCalificacion, String emailAutenticado) {
+        Usuario usuarioAutenticado = usuarioRepositorio.buscarPorEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
+
+        if (dtCalificacion.getPuntaje() < 1 || dtCalificacion.getPuntaje() > 5) {
+            throw new BusinessRuleException(MENSAJE_PUNTAJE_INVALIDO);
+        }
+
+        if (usuarioAutenticado instanceof Cliente clienteAutenticado) {
+
+            if (dtCalificacion.getDtLocal() == null || dtCalificacion.getDtLocal().getId() == null) {
+                throw new BusinessRuleException("Debe indicar el local a calificar.");
+            }
+            dtCalificacion.setDtCliente(clienteMapper.mapearDtClienteDeClase(clienteAutenticado));
+            dtCalificacion.setTipo(TipoCalificacion.Cliente_a_local);
+
+        } else if (usuarioAutenticado instanceof Local localAutenticado) {
+            if (dtCalificacion.getDtCliente() == null || dtCalificacion.getDtCliente().getId() == null) {
+                throw new BusinessRuleException("Debe indicar el cliente a calificar.");
+            }
+            dtCalificacion.setDtLocal(localMapper.mapearDtLocalDeClase(localAutenticado));
+            dtCalificacion.setTipo(TipoCalificacion.Local_a_cliente);
+
+        } else {
+            throw new BusinessRuleException("Solo clientes y locales pueden calificar.");
+        }
+
+        dtCalificacion.setFecha(LocalDateTime.now());
+        Calificacion calificacion = calificacionMapper.mapearCalificacionDeDt(dtCalificacion);
+        calificacionRepositorio.guardar(calificacion);
+        sincronizarCalificacionGlobal(calificacion);
     }
 
     @Transactional
@@ -97,7 +138,7 @@ public class CalificacionService {
     @Transactional(readOnly = true)
     public DtCalificacionGlobalResponse consultarCalificacionGlobal(Long idCliente) {
         clienteRepositorio.buscarPorId(idCliente)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_CLIENTE_REQUERIDO));
 
         List<Long> idsCalificaciones = clienteCalificacionRepositorio.obtenerCalificacionesDeCliente(idCliente);
         List<Calificacion> calificaciones = calificacionRepositorio.buscarPorIds(idsCalificaciones);
@@ -151,10 +192,10 @@ public class CalificacionService {
     }
 
     private void sincronizarCalificacionGlobal(Calificacion c) {
-        if (c == null) {
-            return;
+        if (c.getTipo() == null) {
+            throw new BusinessRuleException(MENSAJE_CLIENTE_O_LOCAL_REQUERIDO);
         }
-        if(c.getLocal().getId() != null){
+        if(c.getTipo() == TipoCalificacion.Cliente_a_local){
             Local local = localRepositorio.buscarPorId(c.getLocal().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Local", c.getLocal().getId()));
             List<Calificacion> calificaciones = calificacionRepositorio.listarPorLocal(c.getLocal().getId());
@@ -164,7 +205,7 @@ public class CalificacionService {
                     .orElse(0.0);
             local.setCalificacionGlobal(promedio);
             localRepositorio.actualizar(local);
-        } else if (c.getCliente().getId() != null) {
+        } else {
             Cliente cliente = clienteRepositorio.buscarPorId(c.getCliente().getId()).orElseThrow(() -> new ResourceNotFoundException("Cliente", c.getCliente().getId()));
             List<Calificacion> calificaciones = calificacionRepositorio.listarPorCliente(cliente.getId());
             double promedio = calificaciones.stream()
@@ -174,6 +215,5 @@ public class CalificacionService {
             cliente.setCalificacionGlobal(promedio);
             clienteRepositorio.actualizar(cliente);
         }
-
     }
 }

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.Map;
 
 public interface iCalificacionController {
-    ResponseEntity<Void> calificar(@RequestBody DtCalificacion dtCalificacion);
+    ResponseEntity<Void> calificar(@RequestBody DtCalificacion dtCalificacion, Authentication authentication);
     ResponseEntity<Map<String, Object>> consultarCalificacionGlobalDelLocal(Authentication authentication);
     ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente);
 }

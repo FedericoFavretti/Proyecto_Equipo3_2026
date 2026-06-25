@@ -61,7 +61,7 @@ public class UsuarioUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        return usuario.getEstado() != EstadoCuenta.Pendiente;
     }
 
 

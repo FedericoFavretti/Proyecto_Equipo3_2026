@@ -3,13 +3,15 @@ package com.example.demo.Logica.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
-
+    @Value("${ACTIVAR_CUENTA_URL}")
+    private String activarCuenta;
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
@@ -23,7 +25,7 @@ public class EmailService {
                 email,
                 "Activá tu cuenta en Foodly",
                 "Hacé clic en el siguiente enlace para activar tu cuenta: "
-                        + "https://localhost:8080/api/v1/usuarios/activar?email=" + email
+                        + activarCuenta + email
         );
     }
 

@@ -118,7 +118,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 """
                 SELECT c.*
                 FROM calificacion c
-                JOIN local_calificacion lc ON lc.idcalificacion = c.id
+                JOIN cliente_calificacion lc ON lc.idcalificacion = c.id
                 WHERE lc.idcliente = ? AND c.tipo = ?
                 ORDER BY c.fecha DESC, c.id DESC
                 """,
@@ -126,13 +126,6 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 idCliente,
                 TipoCalificacion.Local_a_cliente.toString()
         );
-    }
-    private void cM (Calificacion calificacion){
-        calificacion.getPuntaje();
-                calificacion.getComentario();
-                calificacion.getFecha();
-                calificacion.getTipo();
-                calificacion.getId();
     }
 
     private Calificacion calificacionMapper(ResultSet rs, int row) throws SQLException {

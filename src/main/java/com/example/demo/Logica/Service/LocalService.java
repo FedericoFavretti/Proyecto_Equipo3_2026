@@ -48,6 +48,8 @@ public class LocalService {
     private static final String TIPO_USUARIO_LOCAL = "local";
     private static final String MENSAJE_LOCAL_YA_ABIERTO =
             "El local ya se encuentra registrado como abierto para el dia de hoy.";
+    private static final String MENSAJE_LOCAL_NO_ENCONTRADO =
+            "El local no fue encontrado.";
     private static final String MENSAJE_LOCAL_YA_CERRADO =
             "El local ya se encuentra registrado como cerrado.";
     private static final String MENSAJE_LOCAL_CON_PEDIDOS_PENDIENTES =
@@ -64,6 +66,8 @@ public class LocalService {
             "El nombre del plato ya existe.";
     private static final String MENSAJE_PLATO_DE_OTRO_LOCAL =
             "El plato no pertenece al local indicado.";
+    private static final String MENSAJE_PLATO_NO_ENCONTRADO =
+            "El plato no existe.";
     private static final String MENSAJE_LOCAL_NO_HABILITADO =
             "El local debe estar habilitado para realizar esta operacion.";
     private static final String MENSAJE_NOMBRE_LOCAL_DUPLICADO =
@@ -106,8 +110,6 @@ public class LocalService {
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
         validarLocalHabilitado(local);
-        local.setId(dtPlato.getDtLocal().getId());
-
         Plato plato = platoMapper.mapearPlatoDeDt(dtPlato);
         plato.setLocal(local);
         return platoRepositorio.guardar(plato);
@@ -150,7 +152,7 @@ public class LocalService {
         validarDatosPromocion(request);
 
         Plato plato = platoRepositorio.buscarPorId(request.getIdPlato())
-                .orElseThrow(() -> new RuntimeException("Plato no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_PLATO_NO_ENCONTRADO, request.getIdPlato()));
 
         Promocion promocion = Promocion.builder()
                 .descuento(request.getDescuento())
@@ -253,13 +255,9 @@ public class LocalService {
     @Transactional(readOnly = true)
     public List<DtClienteLocalResponse> buscarYListarClientesDelLocal(Long idLocal, DtFiltroClienteLocal filtro) {
         localRepositorio.buscarPorId(idLocal)
-                .orElseThrow(() -> new RuntimeException("Local no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_LOCAL_NO_ENCONTRADO));
 
         List<Cliente> clientes = clienteRepositorio.buscarClientesDelLocal(idLocal, filtro);
-
-        if (clientes.isEmpty()) {
-            throw new IllegalArgumentException("Aún no tiene clientes registrados. Aparecerán aquí una vez que realicen su primer pedido.");
-        }
 
         return clientes.stream()
                 .map(cliente -> DtClienteLocalResponse.builder()

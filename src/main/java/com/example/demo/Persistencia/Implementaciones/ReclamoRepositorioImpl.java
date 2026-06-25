@@ -69,12 +69,12 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
     @Override
     public List<Reclamo> buscarReclamosPorFiltro(DtFiltroReclamo filtro) {
         StringBuilder sql = new StringBuilder(
-                "SELECT r.*, p.* FROM reclamo r JOIN pedido p ON r.idpedido = p.idpedido WHERE 1=1"
+                "SELECT r.*, p.* FROM reclamo r JOIN pedido p ON r.idpedido = p.id WHERE 1=1"
         );
         List<Object> params = new ArrayList<>();
 
         if (filtro.getIdCliente() != null) {
-            sql.append(" AND p.id = ?");
+            sql.append(" AND p.idcliente  = ?");
             params.add(filtro.getIdCliente());
         }
 

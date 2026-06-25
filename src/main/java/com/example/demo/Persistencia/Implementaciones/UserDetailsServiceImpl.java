@@ -1,6 +1,7 @@
 package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Logica.Clases.Usuario;
+import com.example.demo.Logica.Service.UsuarioUserDetails;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,10 +25,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Usuario usuario = usuarioRepositorio.buscarPorEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));
 
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(usuario.getEmail())
-                .password(usuario.getPasswd())
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getTipo())))
-                .build();
+        return new UsuarioUserDetails(usuario);
     }
 }

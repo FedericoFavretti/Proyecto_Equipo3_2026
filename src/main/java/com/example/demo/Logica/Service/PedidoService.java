@@ -11,9 +11,9 @@ import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ExternalServiceException;
 import com.example.demo.Logica.Exceptions.PagoRechazadoException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
-import com.example.demo.Logica.Mappers.DetallePedidoMapper;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
-import com.example.demo.Logica.Mappers.PedidoMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.demo.Persistencia.Repositorios.*;
 import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.exceptions.MPApiException;
@@ -22,11 +22,11 @@ import com.mercadopago.resources.payment.Payment;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import static org.eclipse.aether.spi.log.NullLoggerFactory.LOGGER;
 
 @Service
 public class PedidoService {
@@ -63,7 +63,7 @@ public class PedidoService {
     private static final String MENSAJE_ORDEN_INVALIDO = "El campo de orden no es válido.";
     private static final String MENSAJE_DIRECCION_ORDEN_INVALIDA = "La dirección de orden no es válida.";
     private static final String MENSAJE_ERROR_NOTIFICACION_PAGO = "Error procesando notificación de pago.";
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(PedidoService.class);
     private final PedidoRepositorio pedidoRepositorio;
     private final ClienteRepositorio clienteRepositorio;
     private final LocalRepositorio localRepositorio;
@@ -76,7 +76,7 @@ public class PedidoService {
     private final UsuarioRepositorio usuarioRepositorio;
 
     @Value("${mercadopago.back-url-success}")
-    private String backUrlSuccess;
+    private  String backUrlSuccess;
     @Value("${mercadopago.back-url-failure}")
     private String backUrlFailure;
     @Value("${mercadopago.back-url-pending}")
@@ -253,10 +253,13 @@ public class PedidoService {
     public void procesarPagoConfirmado(String paymentId) {
         try {
             Payment payment = new PaymentClient().get(Long.parseLong(paymentId));
-
             if ("approved".equals(payment.getStatus())) {
                 Long pedidoId = Long.parseLong(payment.getExternalReference());
-                pedidoRepositorio.actualizarPago(pedidoId, true, EstadoPedido.Confirmado);
+                pedidoRepositorio.buscarPorId(pedidoId).ifPresentOrElse(pedido -> {
+                    if (pedido.getEstado() != EstadoPedido.Cancelado) {
+                        pedidoRepositorio.actualizarPago(pedidoId, true, EstadoPedido.Confirmado);
+                    }
+                }, () -> LOGGER.warn("Notificación de pago recibida para un pedido inexistente: {}", pedidoId));
             }
         } catch (MPException | MPApiException e) {
             throw new ExternalServiceException(MENSAJE_ERROR_NOTIFICACION_PAGO, e);

@@ -20,6 +20,7 @@ public class ReclamoService {
     private static final String MENSAJE_MOTIVO_REQUERIDO = "Debe ingresar un motivo.";
     private static final String MENSAJE_FILTRO_REQUERIDO =
             "Debe ingresar algun filtro para obtener los reclamos.";
+    private static final String DATOS_INCOMPLETOS = "Debe completar todos los datos.";
 
     private final ReclamoRepositorio reclamoRepositorio;
     private final PedidoRepositorio pedidoRepositorio;
@@ -33,7 +34,10 @@ public class ReclamoService {
 
     @Transactional
     public void reclamar(DtReclamo dtReclamo){
-        if(dtReclamo.getMotivo().isEmpty()){
+        if (dtReclamo == null) {
+            throw new BusinessRuleException(DATOS_INCOMPLETOS);
+        }
+        if (dtReclamo.getMotivo() == null || dtReclamo.getMotivo().isBlank()) {
             throw new BusinessRuleException(MENSAJE_MOTIVO_REQUERIDO);
         }
         Pedido pedido = pedidoRepositorio.buscarPorId(dtReclamo.getDtPedido().getId())

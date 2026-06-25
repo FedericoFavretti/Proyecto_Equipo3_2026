@@ -159,10 +159,6 @@ public class AdminService {
         );
         usuarios.sort(descendente ? comparador.reversed() : comparador);
 
-        if (usuarios.isEmpty()) {
-            throw new IllegalArgumentException("No se encontraron usuarios que coincidan con los criterios de búsqueda seleccionados.");
-        }
-
         return usuarios;
     }
 
