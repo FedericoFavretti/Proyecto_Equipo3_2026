@@ -3,6 +3,7 @@ package com.example.demo.Persistencia.Implementaciones;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
 import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;

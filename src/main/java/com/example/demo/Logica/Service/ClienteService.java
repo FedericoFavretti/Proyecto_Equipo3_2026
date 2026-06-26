@@ -76,7 +76,7 @@ public class ClienteService {
         if (dtCliente == null || dtCliente.getPasswd() == null || dtCliente.getPasswd().isBlank()) {
             throw new BusinessRuleException(MENSAJE_PASSWORD_OBLIGATORIA);
         }
-
+        dtCliente.setActivo(false);
         String passwdCodificada = passwordEncoder.encode(dtCliente.getPasswd());
 
         if (usuarioRepositorio.existeCorreo(dtCliente.getEmail())) {
