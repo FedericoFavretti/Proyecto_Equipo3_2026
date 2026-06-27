@@ -124,8 +124,8 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
             ps.setDouble(3, plato.getPrecio());
             ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
             ps.setBoolean(5, plato.getDisponible());
-            ps.setLong(7, plato.getLocal().getId());
-            ps.setString(6, plato.getCategoria());
+            ps.setLong(6, plato.getLocal().getId());
+            ps.setString(7, plato.getCategoria());
             return ps;
         }, idGenerado);
 
