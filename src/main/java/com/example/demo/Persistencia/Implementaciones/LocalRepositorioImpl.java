@@ -191,6 +191,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
         return Local.builder()
                 .id(rs.getLong("id"))
                 .email(rs.getString("email"))
+                .passwd(rs.getString("passwd"))
                 .foto(rs.getString("foto"))
                 .tipo(rs.getString("tipo"))
                 .estado(estadoCuenta != null && !estadoCuenta.isBlank()
