@@ -246,6 +246,11 @@ public class LocalService {
     }
 
     @Transactional(readOnly = true)
+    public List<DtPlato> buscarPlatosDelocal(Long idLocal) {
+        return platoMapper.mapearDtPlatosClase(platoRepositorio.buscarPlatosDelocal(idLocal));
+    }
+
+    @Transactional(readOnly = true)
     public List<DtClienteLocalResponse> buscarYListarClientesDelLocal(Long idLocal, DtFiltroClienteLocal filtro) {
         localRepositorio.buscarPorId(idLocal)
                 .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_LOCAL_NO_ENCONTRADO));

@@ -131,7 +131,12 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         plato.setId(idGenerado.getKey().longValue());
         return plato;
     }
-
+    @Override
+    public List<Plato> buscarPlatosDelocal(Long idLocal){
+        return jdbcTemplate.query("SELECT * FROM plato WHERE idLocal = ?",
+                (rs, row) -> mapearPlato(rs), idLocal
+        );
+    }
     @Override
     public Plato actualizar(Plato plato) {
         jdbcTemplate.update(connection -> {

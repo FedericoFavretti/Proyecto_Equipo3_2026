@@ -4,6 +4,9 @@ import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Component
 public class PlatoMapper {
 
@@ -36,5 +39,12 @@ public class PlatoMapper {
                 .dtLocal(localMapper.mapearDtLocalDeClase(plato.getLocal()))
                 .build();
     }
+
+    public List<DtPlato> mapearDtPlatosClase(List<Plato> platos) {
+        return platos.stream()
+                .map(this::mapearDtPlatoDeClase)
+                .collect(Collectors.toList());
+    }
+
 }
 

@@ -2,6 +2,7 @@ package com.example.demo.Persistencia.Repositorios;
 
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
+import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,4 +15,5 @@ public interface PlatoRepositorio {
     void eliminar(Long id);
     Optional<Plato> buscarPorNombre(String nombre);
     List<Plato> buscarConFiltros(DtFiltro filtro);
+    List<Plato> buscarPlatosDelocal(Long idLocal);
 }

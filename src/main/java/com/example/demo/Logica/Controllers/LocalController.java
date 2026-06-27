@@ -1,6 +1,8 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.DataTypes.request.DtFiltro;
+import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
@@ -107,5 +109,12 @@ public class LocalController implements iLocalController {
         List<DtClienteLocalResponse> clientes = localService.buscarYListarClientesDelLocal(idLocal, DtFiltroClienteLocal);
         return ResponseEntity.ok(clientes);
     }
+
+    @PreAuthorize("hasRole('Local')")
+    @GetMapping("/busqueda_palto_local/{idLocal}")
+    public ResponseEntity<List<DtPlato>> buscarPlatosDeLocal(@PathVariable("idLocal") Long idLocal) {
+        return ResponseEntity.ok(localService.buscarPlatosDelocal(idLocal));
+    }
+
 }
 
