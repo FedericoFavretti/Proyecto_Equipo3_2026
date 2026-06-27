@@ -16,6 +16,7 @@ public class DtPlato {
     private Long id;
     private String nombre;
     private String descripcion;
+    private String categoria;
     private Double precio;
     private List<String> imagenes;
     private Boolean disponible;

@@ -115,8 +115,8 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO plato (nombre, descripcion, precio, imagenes, disponible, idLocal) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO plato (nombre, descripcion, precio, imagenes, disponible, idLocal, categoria) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     new String[]{"id"}
             );
             ps.setString(1, plato.getNombre());
@@ -124,7 +124,8 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
             ps.setDouble(3, plato.getPrecio());
             ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
             ps.setBoolean(5, plato.getDisponible());
-            ps.setLong(6, plato.getLocal().getId());
+            ps.setString(6, plato.getCategoria());
+            ps.setLong(7, plato.getLocal().getId());
             return ps;
         }, idGenerado);
 
@@ -142,7 +143,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
                     "UPDATE plato SET nombre = ?, descripcion = ?, precio = ?, " +
-                            "imagenes = ?, disponible = ?, idLocal = ? WHERE id = ?"
+                            "imagenes = ?, disponible = ?, idLocal = ?, categoria = ? WHERE id = ?"
             );
             ps.setString(1, plato.getNombre());
             ps.setString(2, plato.getDescripcion());
@@ -150,7 +151,8 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
             ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
-            ps.setLong(7, plato.getId());
+            ps.setString(7, plato.getCategoria());
+            ps.setLong(8, plato.getId());
             return ps;
         });
 
@@ -167,6 +169,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
                 rs.getLong("id"),
                 rs.getString("nombre"),
                 rs.getString("descripcion"),
+                rs.getString("categoria"),
                 rs.getDouble("precio"),
                 mapearImagenes(rs),
                 rs.getBoolean("disponible"),
