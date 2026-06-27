@@ -103,11 +103,15 @@ public class UsuarioService {
 
     @Transactional
     public DtLoginResponse login(DtLoginRequest dtLoginRequest) {
+        UserDetails user = userDetailsService.loadUserByUsername(dtLoginRequest.getEmail());
+        Usuario u = usuarioRepositorio.buscarPorEmail(dtLoginRequest.getEmail()).orElseThrow(() -> new ResourceNotFoundException("Usuario", dtLoginRequest.getEmail()));
+        if(!u.getEstado().equals(EstadoCuenta.Activo)){
+            throw new ResourceNotFoundException("Usuario no activado o bloqueado.");
+        }
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(dtLoginRequest.getEmail(), dtLoginRequest.getPasswd()));
 
-        UserDetails user = userDetailsService.loadUserByUsername(dtLoginRequest.getEmail());
-        Usuario u = usuarioRepositorio.buscarPorEmail(dtLoginRequest.getEmail()).orElseThrow(() -> new ResourceNotFoundException("Usuario", dtLoginRequest.getEmail()));
+
         String token = jwtService.generateToken(user);
         return DtLoginResponse.builder()
                 .id(u.getId())

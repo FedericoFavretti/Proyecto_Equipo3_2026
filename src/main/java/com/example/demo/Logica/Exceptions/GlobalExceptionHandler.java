@@ -3,6 +3,8 @@ package com.example.demo.Logica.Exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -81,6 +83,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest req) {
         log.error("Error no manejado en {}: {}", req.getDescription(false), ex.getMessage(), ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", req);
+    }
+
+    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleBadCredentials(Exception ex, WebRequest req) {
+        return build(HttpStatus.UNAUTHORIZED, "Correo electrónico o contraseña incorrectos", req);
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String mensaje, WebRequest req) {
