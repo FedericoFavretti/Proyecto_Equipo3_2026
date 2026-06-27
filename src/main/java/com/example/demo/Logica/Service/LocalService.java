@@ -192,7 +192,9 @@ public class LocalService {
     @Transactional
     public void solicitarRegistroComoLocalHabilitado(DtLocal dtLocal) {
         dtLocal.setPasswd(passwordEncoder.encode(dtLocal.getPasswd()));
+        dtLocal.setEstadoCuenta(EstadoCuenta.Pendiente);
         dtLocal.setEstadoLocal(EstadoLocal.Pendiente);
+        dtLocal.setTipo(TIPO_USUARIO_LOCAL);
         dtLocal.setEstaAbierto(false);
         dtLocal.setCalificacionGlobal(0.0);
         validarSolicitudRegistroLocal(dtLocal);
@@ -202,15 +204,6 @@ public class LocalService {
         }
 
         Local local = localMapper.mapearLocalDeDt(dtLocal);
-        local.setEmail(dtLocal.getEmail().trim());
-        local.setPasswd(passwordEncoder.encode(dtLocal.getPasswd().trim()));
-        local.setEstado(EstadoCuenta.Pendiente);
-        local.setTipo(TIPO_USUARIO_LOCAL);
-        local.setNombre(dtLocal.getNombre().trim());
-        local.setDescripcion(dtLocal.getDescripcion().trim());
-        local.setEstadoLocal(EstadoLocal.Pendiente);
-        local.setCalificacionGlobal(0.0);
-        local.setEstaAbierto(false);
         usuarioRepositorio.guardar(local);
         localRepositorio.guardar(local);
         registroLocalNotificador.notificarAdministradorSolicitudPendiente(local);

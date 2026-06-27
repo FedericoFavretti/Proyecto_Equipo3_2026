@@ -12,6 +12,8 @@ public class LocalMapper {
         return Local.builder()
                 .id(dtLocal.getId())
                 .email(dtLocal.getEmail())
+                .estado(dtLocal.getEstadoCuenta())
+                .tipo(dtLocal.getTipo())
                 .passwd(dtLocal.getPasswd())
                 .foto(dtLocal.getFoto())
                 .nombre(dtLocal.getNombre())
