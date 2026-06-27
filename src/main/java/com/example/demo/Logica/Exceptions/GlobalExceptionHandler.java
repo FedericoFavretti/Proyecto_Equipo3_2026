@@ -70,7 +70,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest req) {
         log.error("Error no manejado en {}: {}", req.getDescription(false), ex.getMessage(), ex);
+        System.err.println("=== EXCEPCION CAPTURADA EN handleGeneric ===");
+        System.err.println("Tipo: " + ex.getClass().getName());
+        System.err.println("Mensaje: " + ex.getMessage());
+        ex.printStackTrace(System.err);
+        System.err.flush();
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", req);
+    }
+
+    @ExceptionHandler(Throwable.class)
+    public ResponseEntity<ErrorResponse> handleThrowable(Throwable ex, WebRequest req) {
+        System.err.println("=== THROWABLE NO CAPTURADO POR Exception.class ===");
+        System.err.println("Tipo: " + ex.getClass().getName());
+        ex.printStackTrace(System.err);
+        System.err.flush();
+        log.error("Throwable no manejado en {}: {}", req.getDescription(false), ex.getMessage(), ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor (throwable)", req);
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String mensaje, WebRequest req) {
