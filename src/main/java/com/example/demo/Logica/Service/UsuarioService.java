@@ -132,8 +132,11 @@ public class UsuarioService {
 
     @Transactional
     public void cerrarSesion(String token) {
-        LocalDateTime expiracion = jwtService.getExpiracion(token);
-        tokenBlacklistRepositorio.agregar(token, expiracion);
+        String email = jwtService.extractUsername(token);
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", email));
+        invalidarSesiones(usuario);
+        usuarioRepositorio.actualizar(usuario);
     }
 
     @Transactional
@@ -181,11 +184,11 @@ public class UsuarioService {
             usuario.setFoto(cloudinaryService.subirImagen(foto));
         }
 
-        usuarioRepositorio.actualizar(usuario);
-
         if (credencialesActualizadas) {
-            invalidarSesionActual(authHeader);
+            invalidarSesiones(usuario);
         }
+
+        usuarioRepositorio.actualizar(usuario);
     }
 
     @Transactional
@@ -441,11 +444,8 @@ public class UsuarioService {
                 || "image/gif".equalsIgnoreCase(contentType);
     }
 
-    private void invalidarSesionActual(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new BusinessRuleException(MENSAJE_NO_SE_PUDO_INVALIDAR_SESION);
-        }
-        cerrarSesion(authHeader.substring("Bearer ".length()));
+    private void invalidarSesiones(Usuario usuario) {
+        usuario.setSesionesInvalidadasDesde(LocalDateTime.now());
     }
 
     private BusinessRuleException formatoInvalido(String campo) {
