@@ -98,7 +98,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
             ps.setString(1, usuario.getEmail());
             ps.setString(2, usuario.getPasswd());
             ps.setString(3, usuario.getFoto());
-            ps.setString(4, usuario.getEstado() != null ? usuario.getEstado().name() : null);
+            ps.setString(4, usuario.getEstado().name());
             ps.setString(5, usuario.getTipo());
             return ps;
         }, keyHolder);
