@@ -33,6 +33,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, ex.getMessage(), req);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, WebRequest req) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex, WebRequest req) {
+        return build(HttpStatus.CONFLICT, ex.getMessage(), req);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, WebRequest req) {
         String mensaje = ex.getBindingResult().getFieldErrors().stream()
@@ -70,22 +80,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest req) {
         log.error("Error no manejado en {}: {}", req.getDescription(false), ex.getMessage(), ex);
-        System.err.println("=== EXCEPCION CAPTURADA EN handleGeneric ===");
-        System.err.println("Tipo: " + ex.getClass().getName());
-        System.err.println("Mensaje: " + ex.getMessage());
-        ex.printStackTrace(System.err);
-        System.err.flush();
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", req);
-    }
-
-    @ExceptionHandler(Throwable.class)
-    public ResponseEntity<ErrorResponse> handleThrowable(Throwable ex, WebRequest req) {
-        System.err.println("=== THROWABLE NO CAPTURADO POR Exception.class ===");
-        System.err.println("Tipo: " + ex.getClass().getName());
-        ex.printStackTrace(System.err);
-        System.err.flush();
-        log.error("Throwable no manejado en {}: {}", req.getDescription(false), ex.getMessage(), ex);
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor (throwable)", req);
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String mensaje, WebRequest req) {
