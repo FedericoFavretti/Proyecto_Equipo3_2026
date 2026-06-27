@@ -14,5 +14,6 @@ public interface PromocionRepositorio {
     void eliminar(long id);
     List<Promocion> buscarActivasConFiltros(DtFiltro filtro);
     List<Promocion> buscarPorPlato(Long idPlato);
+    List<Promocion> buscarPromocionesDelocal(Long idLocal);
 }
 

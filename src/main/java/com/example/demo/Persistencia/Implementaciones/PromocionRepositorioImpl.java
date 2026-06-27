@@ -120,6 +120,13 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
         );
     }
 
+    @Override
+    public List<Promocion> buscarPromocionesDelocal(Long idLocal){
+        return jdbcTemplate.query("SELECT * FROM promocion pr JOIN plato pl ON pr.idPlato = pl.id WHERE pl.idLocal = ?",
+                (rs, row) -> mapearPromocion(rs), idLocal
+                );
+    }
+
     private Promocion mapearPromocion(ResultSet rs) throws SQLException {
         return new Promocion( rs.getLong("id"),
                 rs.getDouble("descuento"),

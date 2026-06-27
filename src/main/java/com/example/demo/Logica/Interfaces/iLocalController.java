@@ -8,6 +8,7 @@ import com.example.demo.Logica.Clases.Promocion;
 import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
 import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
+import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,5 +29,6 @@ public interface iLocalController {
     ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal);
     ResponseEntity<List<DtClienteLocalResponse>> buscarYListarClientesDelLocal(@PathVariable("idLocal") Long idLocal, @RequestBody DtFiltroClienteLocal  DtFiltroClienteLocal);
     ResponseEntity<List<DtPlato>> buscarPlatosDeLocal(@PathVariable("idLocal") Long idLocal);
+    ResponseEntity<List<DtPromocion>> buscaPromocionesDeLocal(@PathVariable("idLocal") Long idLocal);
 }
 

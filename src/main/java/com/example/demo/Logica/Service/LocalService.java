@@ -10,6 +10,7 @@ import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
@@ -248,6 +249,11 @@ public class LocalService {
     @Transactional(readOnly = true)
     public List<DtPlato> buscarPlatosDelocal(Long idLocal) {
         return platoMapper.mapearDtPlatosClase(platoRepositorio.buscarPlatosDelocal(idLocal));
+    }
+
+    @Transactional(readOnly = true)
+    public List<DtPromocion> buscaPromocionesDeLocal(Long idLocal) {
+        return promocionMapper.mapearDtPromocionesDeClase(promocionRepositorio.buscarPromocionesDelocal(idLocal));
     }
 
     @Transactional(readOnly = true)

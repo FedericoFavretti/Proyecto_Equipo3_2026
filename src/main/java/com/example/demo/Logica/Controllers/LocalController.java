@@ -6,6 +6,7 @@ import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesRes
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Interfaces.iLocalController;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.Service.LocalService;
@@ -116,5 +117,10 @@ public class LocalController implements iLocalController {
         return ResponseEntity.ok(localService.buscarPlatosDelocal(idLocal));
     }
 
+    @PreAuthorize("hasRole('Local')")
+    @GetMapping("/busqueda_promocion_local/{idLocal}")
+    public ResponseEntity<List<DtPromocion>> buscaPromocionesDeLocal(@PathVariable("idLocal") Long idLocal) {
+        return ResponseEntity.ok(localService.buscaPromocionesDeLocal(idLocal));
+    }
 }
 

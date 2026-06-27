@@ -5,6 +5,9 @@ import com.example.demo.Logica.Clases.Promocion;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Component
 public class PromocionMapper {
     private final PlatoMapper platoMapper;
@@ -33,6 +36,12 @@ public class PromocionMapper {
                 .descripcion(promocion.getDescripcion())
                 .dtPlato(platoMapper.mapearDtPlatoDeClase(promocion.getPlato()))
                 .build();
+    }
+
+    public List<DtPromocion> mapearDtPromocionesDeClase(List<Promocion> promociones) {
+        return promociones.stream()
+                .map(this::mapearDtPromocionDeClase)
+                .collect(Collectors.toList());
     }
 }
 
