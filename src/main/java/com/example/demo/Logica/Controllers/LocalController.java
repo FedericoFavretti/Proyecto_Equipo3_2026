@@ -111,7 +111,7 @@ public class LocalController implements iLocalController {
     }
 
     @PreAuthorize("hasRole('Local')")
-    @GetMapping("/busqueda_palto_local/{idLocal}")
+    @GetMapping("/busqueda_plato_local/{idLocal}")
     public ResponseEntity<List<DtPlato>> buscarPlatosDeLocal(@PathVariable("idLocal") Long idLocal) {
         return ResponseEntity.ok(localService.buscarPlatosDelocal(idLocal));
     }
