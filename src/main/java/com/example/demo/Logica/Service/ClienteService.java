@@ -77,6 +77,7 @@ public class ClienteService {
             throw new BusinessRuleException(MENSAJE_PASSWORD_OBLIGATORIA);
         }
         dtCliente.setActivo(false);
+        dtCliente.setEstadoCuenta(EstadoCuenta.Pendiente);
         String passwdCodificada = passwordEncoder.encode(dtCliente.getPasswd());
 
         if (usuarioRepositorio.existeCorreo(dtCliente.getEmail())) {
@@ -85,9 +86,7 @@ public class ClienteService {
         if (clienteRepositorio.existeDocumento(dtCliente.getDocumento())) {
             throw new ResourceConflictException(MENSAJE_DOCUMENTO_DUPLICADO);
         }
-
         Cliente cliente = clienteMapper.mapearClienteDeDt(dtCliente);
-        cliente.setEstado(EstadoCuenta.Pendiente);
         cliente.setTipo(TIPO_USUARIO_CLIENTE);
         cliente.setPasswd(passwdCodificada);
         usuarioRepositorio.guardar(cliente);
