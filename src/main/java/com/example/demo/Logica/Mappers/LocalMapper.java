@@ -19,6 +19,9 @@ public class LocalMapper {
                 .nombre(dtLocal.getNombre())
                 .direccion(dtLocal.getDireccion())
                 .descripcion(dtLocal.getDescripcion())
+                .estadoLocal(dtLocal.getEstadoLocal())
+                .calificacionGlobal(dtLocal.getCalificacionGlobal())
+                .estaAbierto(dtLocal.getEstaAbierto())
                 .imagenes(dtLocal.getImagenes())
                 .build();
     }

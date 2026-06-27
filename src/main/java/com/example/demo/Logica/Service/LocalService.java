@@ -191,7 +191,6 @@ public class LocalService {
 
     @Transactional
     public void solicitarRegistroComoLocalHabilitado(DtLocal dtLocal) {
-        dtLocal.setPasswd(passwordEncoder.encode(dtLocal.getPasswd()));
         dtLocal.setEstadoCuenta(EstadoCuenta.Pendiente);
         dtLocal.setEstadoLocal(EstadoLocal.Pendiente);
         dtLocal.setTipo(TIPO_USUARIO_LOCAL);
@@ -203,6 +202,7 @@ public class LocalService {
             throw new ResourceConflictException(MENSAJE_NOMBRE_LOCAL_DUPLICADO);
         }
 
+        dtLocal.setPasswd(passwordEncoder.encode(dtLocal.getPasswd()));
         Local local = localMapper.mapearLocalDeDt(dtLocal);
         usuarioRepositorio.guardar(local);
         localRepositorio.guardar(local);
