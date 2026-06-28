@@ -1,4 +1,4 @@
-﻿package com.example.demo.Logica.Service;
+package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
