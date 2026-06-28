@@ -8,9 +8,11 @@ import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Mappers.ClienteMapper;
+import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Logica.Mappers.PromocionMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
+import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
@@ -58,6 +60,12 @@ class ClienteServiceTest {
     @Mock
     private PromocionMapper promocionMapper;
 
+    @Mock
+    private LocalRepositorio localRepositorio;
+
+    @Mock
+    private LocalMapper localMapper;
+
     private ClienteService clienteService;
 
     @BeforeEach
@@ -71,7 +79,9 @@ class ClienteServiceTest {
                 passwordEncoder,
                 clienteMapper,
                 platoMapper,
-                promocionMapper
+                promocionMapper,
+                localRepositorio,
+                localMapper
         );
     }
 
@@ -127,7 +137,7 @@ class ClienteServiceTest {
 
         assertThatThrownBy(() -> clienteService.buscarPlatosYPromociones(filtro))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("No se encontraron platos o promociones que coincidan con su búsqueda.");
+                .hasMessage("No se encontraron platos o promociones que coincidan con su bÃºsqueda.");
     }
 }
 

@@ -7,7 +7,11 @@ import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.Enums.TipoCalificacion;
 import com.example.demo.Logica.Mappers.CalificacionMapper;
+import com.example.demo.Logica.Mappers.ClienteMapper;
+import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
+import com.example.demo.Persistencia.Repositorios.ClienteCalificacionRepositorio;
+import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +41,14 @@ class CalificacionServiceTest {
     private UsuarioRepositorio usuarioRepositorio;
     @Mock
     private CalificacionMapper calificacionMapper;
+    @Mock
+    private ClienteRepositorio clienteRepositorio;
+    @Mock
+    private ClienteCalificacionRepositorio clienteCalificacionRepositorio;
+    @Mock
+    private ClienteMapper clienteMapper;
+    @Mock
+    private LocalMapper localMapper;
 
     private CalificacionService calificacionService;
 
@@ -46,7 +58,11 @@ class CalificacionServiceTest {
                 calificacionRepositorio,
                 localRepositorio,
                 usuarioRepositorio,
-                calificacionMapper
+                calificacionMapper,
+                clienteRepositorio,
+                clienteCalificacionRepositorio,
+                clienteMapper,
+                localMapper
         );
     }
 
@@ -94,7 +110,7 @@ class CalificacionServiceTest {
 
         assertThatThrownBy(() -> calificacionService.consultarCalificacionGlobalDelLocal("local@test.com"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Su local todavía no ha recibido calificaciones de los clientes.");
+                .hasMessage("Su local todavÃ­a no ha recibido calificaciones de los clientes.");
     }
 
     @Test
@@ -136,7 +152,7 @@ class CalificacionServiceTest {
 
         assertThatThrownBy(() -> calificacionService.calificar(dtCalificacion))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Debe indicarse tanto el cliente como el local asociados a la calificación.");
+                .hasMessage("Debe indicarse tanto el cliente como el local asociados a la calificaciÃ³n.");
     }
 
     private Local local() {

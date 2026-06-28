@@ -26,6 +26,7 @@ import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -74,6 +75,8 @@ class PedidoServiceTest {
     private DetallePedidoMapper detallePedidoMapper;
     @Mock
     private PedidoMapper pedidoMapper;
+    @Mock
+    private UsuarioRepositorio usuarioRepositorio;
 
     private PedidoService pedidoService;
 
@@ -89,8 +92,7 @@ class PedidoServiceTest {
                 pagoSimuladoService,
                 notificacionPedidoService,
                 pedidoListadoMapper,
-                detallePedidoMapper,
-                pedidoMapper
+                usuarioRepositorio
         );
     }
 
@@ -115,7 +117,7 @@ class PedidoServiceTest {
 
         assertThatThrownBy(() -> pedidoService.confirmarPedido(44L, 25L))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("No se pudo procesar el pago. El pedido no ha sido confirmado. Por favor, inténtelo nuevamente.");
+                .hasMessage("No se pudo procesar el pago. El pedido no ha sido confirmado. Por favor, intÃ©ntelo nuevamente.");
 
         assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.Pendiente);
         assertThat(pedido.getTiempoEstEntrega()).isEqualTo(Duration.ofMinutes(25));
@@ -206,7 +208,7 @@ class PedidoServiceTest {
 
         assertThatThrownBy(() -> pedidoService.realizarPedido(solicitud))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("La cantidad debe ser un número entero mayor a cero.");
+                .hasMessage("La cantidad debe ser un nÃºmero entero mayor a cero.");
 
         verify(pedidoRepositorio, never()).guardar(any(Pedido.class));
         verify(detallePedidoRepositorio, never()).guardar(any(DetallePedido.class));
@@ -316,7 +318,7 @@ class PedidoServiceTest {
 
         assertThatThrownBy(() -> pedidoService.listarPedidos(10L, filtro))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("El campo de orden no es válido.");
+                .hasMessage("El campo de orden no es vÃ¡lido.");
     }
 
     @Test
@@ -358,11 +360,12 @@ class PedidoServiceTest {
                 .cantidadItems(3)
                 .build();
 
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente()));
         when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(cliente()));
         when(pedidoRepositorio.listarHistorialPorCliente(20L, filtro)).thenReturn(List.of(view));
         when(pedidoListadoMapper.toResponse(view)).thenReturn(response);
 
-        List<DtPedidoListadoResponse> pedidos = pedidoService.buscarYListarHistorialPedidosPropios(20L, filtro);
+        List<DtPedidoListadoResponse> pedidos = pedidoService.buscarYListarHistorialPedidosPropios("cliente@foodly.com", filtro);
 
         assertThat(pedidos).containsExactly(response);
     }
@@ -371,13 +374,15 @@ class PedidoServiceTest {
     void buscarYListarHistorialPedidosPropiosInformaCuandoNoTienePedidos() {
         DtPedidoListadoFiltro filtro = DtPedidoListadoFiltro.builder().build();
 
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente()));
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente()));
         when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(cliente()));
         when(pedidoRepositorio.listarHistorialPorCliente(20L, filtro)).thenReturn(List.of());
         when(pedidoRepositorio.existePedidoPorCliente(20L)).thenReturn(false);
 
-        assertThatThrownBy(() -> pedidoService.buscarYListarHistorialPedidosPropios(20L, filtro))
+        assertThatThrownBy(() -> pedidoService.buscarYListarHistorialPedidosPropios("cliente@foodly.com", filtro))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Aún no ha realizado ningún pedido. ¡Explore los locales disponibles y realice su primer pedido!");
+                .hasMessage("AÃºn no ha realizado ningÃºn pedido. Â¡Explore los locales disponibles y realice su primer pedido!");
     }
 
     @Test
@@ -386,10 +391,11 @@ class PedidoServiceTest {
                 .estado(EstadoPedido.Rechazado)
                 .build();
 
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente()));
         when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(cliente()));
         when(pedidoRepositorio.listarHistorialPorCliente(20L, filtro)).thenReturn(List.of());
 
-        assertThatThrownBy(() -> pedidoService.buscarYListarHistorialPedidosPropios(20L, filtro))
+        assertThatThrownBy(() -> pedidoService.buscarYListarHistorialPedidosPropios("cliente@foodly.com", filtro))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("No se encontraron pedidos que coincidan con los criterios seleccionados.");
     }
@@ -450,7 +456,7 @@ class PedidoServiceTest {
         return Cliente.builder()
                 .id(20L)
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃ©rez")
                 .activo(true)
                 .build();
     }
@@ -489,7 +495,7 @@ class PedidoServiceTest {
                         .id(20L)
                         .email("ana@test.com")
                         .nombre("Ana")
-                        .apellido("Pérez")
+                        .apellido("PÃ©rez")
                         .activo(true)
                         .build())
                 .build();

@@ -1,13 +1,18 @@
-package com.example.demo.Logica.Interfaces;
+﻿package com.example.demo.Logica.Interfaces;
 
-import com.example.demo.Logica.DataTypes.response.DtPerfilResponse;
 import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
+import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswdPorCorreoRequest;
+import com.example.demo.Logica.DataTypes.response.DtPerfilResponse;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
@@ -22,7 +27,6 @@ public interface iUsuarioController {
             @RequestHeader("Authorization") String authHeader,
             Authentication authentication);
     ResponseEntity<Void> eliminarCuentaDeUsuarioPropiaDev(@PathVariable Long idCliente);
-    public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo);
-    public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd);
+    ResponseEntity<String> recuperarPasswdPorCorreo(@RequestBody DtRecuperarPasswdPorCorreoRequest request);
+    ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd);
 }
-

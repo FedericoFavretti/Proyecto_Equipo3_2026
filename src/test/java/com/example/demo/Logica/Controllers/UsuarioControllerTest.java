@@ -1,5 +1,7 @@
-package com.example.demo.Logica.Controllers;
+﻿package com.example.demo.Logica.Controllers;
 
+import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
+import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswdPorCorreoRequest;
 import com.example.demo.Logica.DataTypes.response.DtPerfilClienteResponse;
 import com.example.demo.Logica.DataTypes.response.DtPerfilResponse;
 import com.example.demo.Logica.DataTypes.response.DtUsuarioInfo;
@@ -133,5 +135,30 @@ class UsuarioControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(usuarioService).eliminarCuentaDeUsuarioPropia(10L);
+    }
+
+    @Test
+    void recuperarPasswdPorCorreoDevuelveMensajeGenerico() {
+        UsuarioService usuarioService = Mockito.mock(UsuarioService.class);
+        UsuarioController controller = new UsuarioController(usuarioService);
+        DtRecuperarPasswdPorCorreoRequest request = new DtRecuperarPasswdPorCorreoRequest(" Cliente@Foodly.com ");
+
+        var response = controller.recuperarPasswdPorCorreo(request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("Si el correo ingresado está asociado a una cuenta, recibirá un enlace de recuperación en breve.");
+        verify(usuarioService).recuperarPasswdPorCorreo(" Cliente@Foodly.com ");
+    }
+
+    @Test
+    void recuperarPasswdDevuelveNoContent() {
+        UsuarioService usuarioService = Mockito.mock(UsuarioService.class);
+        UsuarioController controller = new UsuarioController(usuarioService);
+        DtRecuperarPasswd request = new DtRecuperarPasswd("token", "NuevaClave123", "NuevaClave123");
+
+        var response = controller.recuperarPasswd(request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(usuarioService).recuperarPasswd(request);
     }
 }

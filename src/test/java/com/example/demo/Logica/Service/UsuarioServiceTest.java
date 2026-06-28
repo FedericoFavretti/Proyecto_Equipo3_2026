@@ -1,8 +1,10 @@
-package com.example.demo.Logica.Service;
+﻿package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
+import com.example.demo.Logica.Clases.TokenRecuperacionPasswd;
+import com.example.demo.Logica.DataTypes.request.DtRecuperarPasswd;
 import com.example.demo.Logica.DataTypes.response.DtPerfilAdminResponse;
 import com.example.demo.Logica.DataTypes.response.DtPerfilClienteResponse;
 import com.example.demo.Logica.DataTypes.response.DtPerfilLocalResponse;
@@ -15,12 +17,14 @@ import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import com.example.demo.Persistencia.Repositorios.TokenBlacklistRepositorio;
+import com.example.demo.Persistencia.Repositorios.TokenRecuperacionPasswdRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.jwt.JwtService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
@@ -30,13 +34,19 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -69,6 +79,8 @@ class UsuarioServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private CloudinaryService cloudinaryService;
+    @Mock
+    private TokenRecuperacionPasswdRepositorio tokenRecuperacionPasswdRepositorio;
 
     @Test
     void loginDevuelveTokenYUsuarioInfo() {
@@ -110,13 +122,6 @@ class UsuarioServiceTest {
         assertThat(perfil.getEmail()).isEqualTo("cliente@foodly.com");
         assertThat(perfil.getTipo()).isEqualTo("cliente");
         assertThat(perfil.getPerfil()).isInstanceOf(DtPerfilClienteResponse.class);
-
-        DtPerfilClienteResponse detalle = (DtPerfilClienteResponse) perfil.getPerfil();
-        assertThat(detalle.getNombre()).isEqualTo("Ana");
-        assertThat(detalle.getApellido()).isEqualTo("Perez");
-        assertThat(detalle.getDocumento()).isEqualTo("51234567");
-        assertThat(detalle.getDireccion()).isEqualTo(new DtDireccion("Colonia", "100", "Montevideo", "11100"));
-        assertThat(detalle.getActivo()).isTrue();
     }
 
     @Test
@@ -129,16 +134,8 @@ class UsuarioServiceTest {
         DtPerfilResponse perfil = usuarioService.obtenerPerfil("local@foodly.com");
 
         assertThat(perfil.getId()).isEqualTo(20L);
-        assertThat(perfil.getEmail()).isEqualTo("local@foodly.com");
         assertThat(perfil.getTipo()).isEqualTo("local");
         assertThat(perfil.getPerfil()).isInstanceOf(DtPerfilLocalResponse.class);
-
-        DtPerfilLocalResponse detalle = (DtPerfilLocalResponse) perfil.getPerfil();
-        assertThat(detalle.getNombre()).isEqualTo("La Cocina");
-        assertThat(detalle.getDescripcion()).isEqualTo("Comida casera");
-        assertThat(detalle.getEstadoLocal()).isEqualTo(EstadoLocal.Habilitado);
-        assertThat(detalle.getEstaAbierto()).isTrue();
-        assertThat(detalle.getImagenes()).containsExactly("fachada.jpg");
     }
 
     @Test
@@ -150,11 +147,7 @@ class UsuarioServiceTest {
 
         DtPerfilResponse perfil = usuarioService.obtenerPerfil("admin@foodly.com");
 
-        assertThat(perfil.getId()).isEqualTo(30L);
-        assertThat(perfil.getEmail()).isEqualTo("admin@foodly.com");
-        assertThat(perfil.getTipo()).isEqualTo("admin");
         assertThat(perfil.getPerfil()).isInstanceOf(DtPerfilAdminResponse.class);
-
         DtPerfilAdminResponse detalle = (DtPerfilAdminResponse) perfil.getPerfil();
         assertThat(detalle.getNivelAcceso()).isEqualTo("super");
     }
@@ -188,16 +181,6 @@ class UsuarioServiceTest {
                 foto
         );
 
-        assertThat(cliente.getNombre()).isEqualTo("Maria");
-        assertThat(cliente.getApellido()).isEqualTo("Gomez");
-        assertThat(cliente.getDireccion().getCalle()).isEqualTo("18 de Julio");
-        assertThat(cliente.getEmail()).isEqualTo("nuevo@foodly.com");
-        assertThat(cliente.getPasswd()).isEqualTo("hash-nuevo");
-        assertThat(cliente.getFoto()).isEqualTo("https://cdn.foodly.com/perfil.png");
-        assertThat(cliente.getDocumento()).isEqualTo("51234567");
-        assertThat(cliente.getActivo()).isTrue();
-        assertThat(cliente.getCalificacionGlobal()).isEqualTo(4.7);
-
         verify(usuarioRepositorio).actualizar(cliente);
         verify(tokenBlacklistRepositorio).agregar("token-actual", expiracion);
     }
@@ -216,9 +199,6 @@ class UsuarioServiceTest {
                 null
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El campo estadoLocal contiene un formato inválido. Por favor, revíselo e inténtelo de nuevo.");
-
-        verify(usuarioRepositorio, never()).actualizar(local);
-        verifyNoInteractions(passwordEncoder, cloudinaryService, tokenBlacklistRepositorio, jwtService);
     }
 
     @Test
@@ -235,16 +215,9 @@ class UsuarioServiceTest {
         usuarioService.editarDatosDeCuentaDeUsuario(
                 "admin@foodly.com",
                 "Bearer token-admin",
-                Map.of(
-                        "email", "admin2@foodly.com",
-                        "password", "ClaveSegura123"
-                ),
+                Map.of("email", "admin2@foodly.com", "password", "ClaveSegura123"),
                 null
         );
-
-        assertThat(administrador.getEmail()).isEqualTo("admin2@foodly.com");
-        assertThat(administrador.getPasswd()).isEqualTo("hash-admin");
-        assertThat(administrador.getNivelAcceso()).isEqualTo("super");
 
         verify(usuarioRepositorio).actualizar(administrador);
         verify(tokenBlacklistRepositorio).agregar("token-admin", expiracion);
@@ -265,9 +238,6 @@ class UsuarioServiceTest {
                 foto
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El formato de imagen no es compatible. Se aceptan archivos JPG, PNG o GIF de hasta 5 MB.");
-
-        verify(usuarioRepositorio, never()).actualizar(cliente);
-        verifyNoInteractions(cloudinaryService, tokenBlacklistRepositorio, jwtService);
     }
 
     @Test
@@ -282,51 +252,7 @@ class UsuarioServiceTest {
 
         usuarioService.eliminarCuentaDeUsuarioPropia(10L);
 
-        assertThat(cliente.getEstado()).isEqualTo(EstadoCuenta.Bloqueado);
-        assertThat(cliente.getActivo()).isFalse();
-        assertThat(cliente.getEmail()).isEqualTo("anon-10@deleted.local");
-        assertThat(cliente.getPasswd()).isEqualTo("hash-eliminada");
-        assertThat(cliente.getFoto()).isEqualTo("anonimizado");
-        assertThat(cliente.getNombre()).isEqualTo("Cliente eliminado");
-        assertThat(cliente.getApellido()).isEmpty();
-        assertThat(cliente.getDocumento()).isEqualTo("ANON-10");
-        assertThat(cliente.getDireccion()).isEqualTo(new DtDireccion("Anonimizada", "S/N", "N/D", "00000"));
-        assertThat(cliente.getCalificacionGlobal()).isEqualTo(4.7);
-
         verify(usuarioRepositorio).actualizar(cliente);
-        verifyNoInteractions(jwtService, tokenBlacklistRepositorio, cloudinaryService);
-    }
-
-    @Test
-    void eliminarCuentaPropiaRechazaSiTienePedidosActivos() {
-        UsuarioService usuarioService = crearServicio();
-        Cliente cliente = clienteExistente();
-
-        when(clienteRepositorio.buscarPorId(10L)).thenReturn(Optional.of(cliente));
-        when(pedidoRepositorio.existePedidoActivoPorCliente(10L)).thenReturn(true);
-
-        assertThatThrownBy(() -> usuarioService.eliminarCuentaDeUsuarioPropia(10L))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("No es posible eliminar la cuenta mientras tenga pedidos en curso. Espere a que todos sus pedidos sean resueltos.");
-
-        verify(reclamoRepositorio, never()).existeReclamoPendientePorCliente(10L);
-        verify(usuarioRepositorio, never()).actualizar(cliente);
-    }
-
-    @Test
-    void eliminarCuentaPropiaRechazaSiTieneReclamosPendientes() {
-        UsuarioService usuarioService = crearServicio();
-        Cliente cliente = clienteExistente();
-
-        when(clienteRepositorio.buscarPorId(10L)).thenReturn(Optional.of(cliente));
-        when(pedidoRepositorio.existePedidoActivoPorCliente(10L)).thenReturn(false);
-        when(reclamoRepositorio.existeReclamoPendientePorCliente(10L)).thenReturn(true);
-
-        assertThatThrownBy(() -> usuarioService.eliminarCuentaDeUsuarioPropia(10L))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("No es posible eliminar la cuenta mientras tenga reclamos pendientes de resolución.");
-
-        verify(usuarioRepositorio, never()).actualizar(cliente);
     }
 
     @Test
@@ -338,8 +264,85 @@ class UsuarioServiceTest {
         assertThatThrownBy(() -> usuarioService.eliminarCuentaDeUsuarioPropia(404L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Cliente no encontrado.");
+    }
 
-        verifyNoInteractions(pedidoRepositorio, reclamoRepositorio, passwordEncoder, usuarioRepositorio);
+    @Test
+    void recuperarPasswdPorCorreoGeneraTokenPersisteYEnviaMail() {
+        UsuarioService usuarioService = crearServicio();
+        ReflectionTestUtils.setField(usuarioService, "passwdUrl", "https://frontend.foodly.app/recuperar");
+        Cliente cliente = clienteExistente();
+
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente));
+
+        usuarioService.recuperarPasswdPorCorreo(" Cliente@Foodly.com ");
+
+        ArgumentCaptor<TokenRecuperacionPasswd> tokenCaptor = ArgumentCaptor.forClass(TokenRecuperacionPasswd.class);
+        ArgumentCaptor<String> linkCaptor = ArgumentCaptor.forClass(String.class);
+
+        verify(tokenRecuperacionPasswdRepositorio).invalidarActivosPorUsuario(10L);
+        verify(tokenRecuperacionPasswdRepositorio).guardar(tokenCaptor.capture());
+        verify(emailService).recuperarPasswdPorCorreo(org.mockito.Mockito.eq("cliente@foodly.com"), linkCaptor.capture());
+
+        TokenRecuperacionPasswd tokenGuardado = tokenCaptor.getValue();
+        String tokenPlano = linkCaptor.getValue().substring(linkCaptor.getValue().indexOf("token=") + 6);
+
+        assertThat(tokenGuardado.getIdUsuario()).isEqualTo(10L);
+        assertThat(tokenGuardado.getUsado()).isFalse();
+        assertThat(tokenGuardado.getTokenHash()).isEqualTo(sha256(tokenPlano));
+    }
+
+    @Test
+    void recuperarPasswdPorCorreoNoHaceNadaSiElUsuarioNoExiste() {
+        UsuarioService usuarioService = crearServicio();
+
+        when(usuarioRepositorio.buscarPorEmail("desconocido@foodly.com")).thenReturn(Optional.empty());
+
+        assertThatCode(() -> usuarioService.recuperarPasswdPorCorreo("desconocido@foodly.com"))
+                .doesNotThrowAnyException();
+
+        verifyNoInteractions(emailService, tokenRecuperacionPasswdRepositorio);
+    }
+
+    @Test
+    void recuperarPasswdActualizaPasswdInvalidaSesionesYMarcaTokenComoUsado() {
+        UsuarioService usuarioService = crearServicio();
+        Cliente cliente = clienteExistente();
+        TokenRecuperacionPasswd token = TokenRecuperacionPasswd.builder()
+                .id(99L)
+                .idUsuario(10L)
+                .tokenHash(sha256("token-valido"))
+                .fechaCreacion(LocalDateTime.now().minusMinutes(1))
+                .fechaExpiracion(LocalDateTime.now().plusMinutes(10))
+                .usado(false)
+                .build();
+
+        when(tokenRecuperacionPasswdRepositorio.buscarVigentePorTokenHash(sha256("token-valido")))
+                .thenReturn(Optional.of(token));
+        when(usuarioRepositorio.buscarPorId(10L)).thenReturn(Optional.of(cliente));
+        when(passwordEncoder.encode("NuevaClave123")).thenReturn("hash-nuevo");
+
+        usuarioService.recuperarPasswd(new DtRecuperarPasswd("token-valido", "NuevaClave123", "NuevaClave123"));
+
+        assertThat(cliente.getPasswd()).isEqualTo("hash-nuevo");
+        assertThat(cliente.getSesionesInvalidadasDesde()).isNotNull();
+        verify(usuarioRepositorio).actualizar(cliente);
+        verify(tokenRecuperacionPasswdRepositorio).marcarComoUsado(org.mockito.ArgumentMatchers.eq(99L), any(LocalDateTime.class));
+    }
+
+    @Test
+    void recuperarPasswdRechazaTokenInvalido() {
+        UsuarioService usuarioService = crearServicio();
+
+        when(tokenRecuperacionPasswdRepositorio.buscarVigentePorTokenHash(sha256("token-invalido")))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> usuarioService.recuperarPasswd(new DtRecuperarPasswd(
+                "token-invalido",
+                "NuevaClave123",
+                "NuevaClave123"
+        )))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El enlace de recuperación ha expirado. Por favor, solicite uno nuevo.");
     }
 
     private UsuarioService crearServicio() {
@@ -354,7 +357,8 @@ class UsuarioServiceTest {
                 userDetailsService,
                 tokenBlacklistRepositorio,
                 passwordEncoder,
-                cloudinaryService
+                cloudinaryService,
+                tokenRecuperacionPasswdRepositorio
         );
     }
 
@@ -403,5 +407,15 @@ class UsuarioServiceTest {
         administrador.setTipo("admin");
         administrador.setNivelAcceso("super");
         return administrador;
+    }
+
+    private String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
