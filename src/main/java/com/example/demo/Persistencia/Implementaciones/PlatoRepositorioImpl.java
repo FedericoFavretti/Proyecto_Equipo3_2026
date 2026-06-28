@@ -60,7 +60,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     public List<Plato> buscarConFiltros(DtFiltro filtro) {
         StringBuilder sql = new StringBuilder(
                 "SELECT p.id, p.nombre, p.descripcion, p.precio, " +
-                        "p.imagenes, p.disponible, p.idLocal FROM plato p WHERE 1=1"
+                        "p.imagenes, p.disponible, p.idLocal, p.catrgoria FROM plato p WHERE 1=1"
         );
         List<Object> params = new ArrayList<>();
 
