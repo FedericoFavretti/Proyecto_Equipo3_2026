@@ -45,8 +45,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public void guardar(Cliente cliente) {
         jdbcTemplate.update(
-                "INSERT INTO Cliente (id, documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                cliente.getId(),
+                "INSERT INTO Cliente (documento, nombre, apellido, calle, numero, ciudad, codigoPostal, calificacionGlobal, activo) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 cliente.getDocumento(),
                 cliente.getNombre(),
                 cliente.getApellido(),

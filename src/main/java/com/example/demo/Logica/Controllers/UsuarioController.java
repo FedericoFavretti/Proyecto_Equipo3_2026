@@ -30,6 +30,7 @@ public class UsuarioController implements iUsuarioController {
     public ResponseEntity<DtLoginResponse> login(@Valid @RequestBody DtLoginRequest dtLoginRequest) {
         return ResponseEntity.ok(usuarioService.login(dtLoginRequest));
     }
+
     @PostMapping("/activar")
     public ResponseEntity<String> activarCuenta(@RequestParam String email) {
         usuarioService.activarCuenta(email);

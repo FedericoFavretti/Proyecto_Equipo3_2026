@@ -123,11 +123,9 @@ public class UsuarioService {
 
     @Transactional
     public void activarCuenta(String email) {
-        Optional<Usuario> usuarioOpt = usuarioRepositorio.buscarPorEmail(email);
-        if (usuarioOpt.isEmpty()) {
-            throw new ResourceNotFoundException("Usuario", email);
-        }
-        usuarioRepositorio.activarCuenta(usuarioOpt.get().getId());
+        Usuario usuario= usuarioRepositorio.buscarPorEmail(email).orElseThrow(()-> new ResourceNotFoundException("Usuario", email));
+        usuarioRepositorio.activarCuenta(usuario.getId());
+        clienteRepositorio.actualizar(clienteRepositorio.buscarPorId(usuario.getId()).orElseThrow(() -> new ResourceNotFoundException("Cliente", email)));
     }
 
     @Transactional
