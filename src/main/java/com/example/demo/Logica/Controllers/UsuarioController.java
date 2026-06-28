@@ -21,6 +21,9 @@ import static com.example.demo.Utils.AuthUtils.autenticacionInvalida;
 @RestController
 @RequestMapping("/api/v1/usuarios")
 public class UsuarioController implements iUsuarioController {
+    private static final String MENSAJE_RECUPERACION_GENERICO =
+            "Si el correo ingresado está asociado a una cuenta, recibirá un enlace de recuperación en breve.";
+
     private final UsuarioService usuarioService;
 
     public UsuarioController(UsuarioService usuarioService) {
@@ -74,15 +77,15 @@ public class UsuarioController implements iUsuarioController {
 
 
     @PostMapping("/recuperar_contra_correo")
-    public ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo) {
-        usuarioService.recuperarPasswdPorCorreo(correo);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<String> recuperarPasswdPorCorreo(@RequestBody DtRecuperarPasswdPorCorreoRequest request) {
+        usuarioService.recuperarPasswdPorCorreo(request.getCorreo());
+        return ResponseEntity.ok(MENSAJE_RECUPERACION_GENERICO);
     }
 
     @PostMapping("/recuperar")
     public ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd) {
         usuarioService.recuperarPasswd(dtRecuperarPasswd);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("isAuthenticated()")
