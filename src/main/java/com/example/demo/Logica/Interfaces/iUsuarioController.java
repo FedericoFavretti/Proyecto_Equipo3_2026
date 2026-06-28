@@ -2,6 +2,7 @@ package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;

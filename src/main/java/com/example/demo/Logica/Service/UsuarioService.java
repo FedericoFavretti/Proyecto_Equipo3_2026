@@ -6,19 +6,16 @@ import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponseLocal;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
-import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
-import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
-import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
-import com.example.demo.Persistencia.Repositorios.TokenBlacklistRepositorio;
-import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Persistencia.Repositorios.*;
 import com.example.demo.jwt.JwtService;
 import com.example.demo.Logica.Clases.CodigoVerificacion;
-import com.example.demo.Persistencia.Repositorios.CodigoVerificacionRepositorio;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.security.SecureRandom;
@@ -84,9 +80,10 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final CloudinaryService cloudinaryService;
     private final CodigoVerificacionRepositorio codigoVerificacionRepositorio;
+    private final LocalRepositorio localRepositorio;
 
 
-    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio) {
+    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
@@ -99,26 +96,54 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
         this.cloudinaryService = cloudinaryService;
         this.codigoVerificacionRepositorio = codigoVerificacionRepositorio;
+        this.localRepositorio = localRepositorio;
     }
 
     @Transactional
     public DtLoginResponse login(DtLoginRequest dtLoginRequest) {
         UserDetails user = userDetailsService.loadUserByUsername(dtLoginRequest.getEmail());
-        Usuario u = usuarioRepositorio.buscarPorEmail(dtLoginRequest.getEmail()).orElseThrow(() -> new ResourceNotFoundException("Usuario", dtLoginRequest.getEmail()));
-        if(!u.getEstado().equals(EstadoCuenta.Activo)){
+        Usuario u = usuarioRepositorio.buscarPorEmail(dtLoginRequest.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", dtLoginRequest.getEmail()));
+
+        if (!u.getEstado().equals(EstadoCuenta.Activo)) {
             throw new ResourceNotFoundException("Usuario no activado o bloqueado.");
         }
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(dtLoginRequest.getEmail(), dtLoginRequest.getPasswd()));
 
-
         String token = jwtService.generateToken(user);
-        return DtLoginResponse.builder()
-                .id(u.getId())
-                .email(user.getUsername())
-                .token(token)
-                .tipo(u.getTipo())
-                .build();
+
+        if (u instanceof Cliente) {
+            Cliente cliente = clienteRepositorio.buscarPorId(u.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente", u.getId()));
+            return DtLoginResponseCliente.builder()
+                    .id(cliente.getId())
+                    .token(token)
+                    .tipo(cliente.getTipo())
+                    .email(cliente.getEmail())
+                    .direccion(cliente.getDireccion())
+                    .calificacionGlobal(cliente.getCalificacionGlobal())
+                    .apellido(cliente.getApellido())
+                    .foto(cliente.getFoto())
+                    .build();
+        } else if (u instanceof Local) {
+            Local local = localRepositorio.buscarPorId(u.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Local", u.getId()));
+            return DtLoginResponseLocal.builder()
+                    .id(local.getId())
+                    .token(token)
+                    .tipo(local.getTipo())
+                    .email(local.getEmail())
+                    .direccion(local.getDireccion())
+                    .calificacionGlobal(local.getCalificacionGlobal())
+                    .descripcion(local.getDescripcion())
+                    .estaAbierto(local.getEstaAbierto())
+                    .imagenes(local.getImagenes())
+                    .build();
+        } else {
+            throw new ResourceNotFoundException("Tipo de usuario no soportado para login.");
+        }
     }
 
     @Transactional

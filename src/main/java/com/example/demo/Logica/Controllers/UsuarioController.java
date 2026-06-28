@@ -2,6 +2,7 @@ package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
 import jakarta.validation.Valid;
