@@ -117,6 +117,26 @@ public class ClienteService {
                 .map(promocionMapper::mapearDtPromocionDeClase)
                 .collect(Collectors.toList());
 
+
+        Map<Long, DtPromocion> promoPorPlato = promociones.stream()
+                .collect(Collectors.toMap(
+                        p -> p.getDtPlato().getId(),
+                        p -> p,
+                        (a, b) -> a
+                ));
+
+        platos.forEach(plato -> {
+            DtPromocion promo = promoPorPlato.get(plato.getId());
+            if (promo != null) {
+                double precioFinal = plato.getPrecio() * (1 - promo.getDescuento() / 100);
+                plato.setPrecioFinal(precioFinal);
+                plato.setTienePromocion(true);
+            } else {
+                plato.setPrecioFinal(plato.getPrecio());
+                plato.setTienePromocion(false);
+            }
+        });
+
         return DtBusquedaPlatosPromocionesResponse.builder()
                 .platos(platos)
                 .promociones(promociones)

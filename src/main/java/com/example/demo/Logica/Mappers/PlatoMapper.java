@@ -36,6 +36,8 @@ public class PlatoMapper {
                 .descripcion(plato.getDescripcion())
                 .categoria(plato.getCategoria())
                 .precio(plato.getPrecio())
+                .precioFinal(plato.getPrecio())
+                .tienePromocion(false)
                 .imagenes(plato.getImagenes())
                 .disponible(plato.getDisponible())
                 .dtLocal(localMapper.mapearDtLocalDeClase(plato.getLocal()))

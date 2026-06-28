@@ -18,6 +18,8 @@ public class DtPlato {
     private String descripcion;
     private String categoria;
     private Double precio;
+    private Double precioFinal;
+    private Boolean tienePromocion;
     private List<String> imagenes;
     private Boolean disponible;
     private DtLocal dtLocal;
