@@ -307,8 +307,9 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
 
     @Override
     public void actualizarDatosMp(Long pedidoId, String mpPreferenciaId, String mpInitPoint) {
-        throw new UnsupportedOperationException(
-                "La tabla pedido no tiene columnas de Mercado Pago en el esquema actual."
+        jdbcTemplate.update(
+                "UPDATE pedido SET mp_preferencia_id = ?, mp_init_point = ? WHERE id = ?",
+                mpPreferenciaId, mpInitPoint, pedidoId
         );
     }
 
@@ -317,6 +318,14 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         jdbcTemplate.update(
                 "UPDATE pedido SET pagosimulado = ?, estado = ? WHERE id = ?",
                 pagoSimulado, estado.name(), pedidoId
+        );
+    }
+
+    @Override
+    public void marcarPagoAprobado(Long pedidoId) {
+        jdbcTemplate.update(
+                "UPDATE pedido SET pagado = ?, pagosimulado = ? WHERE id = ?",
+                true, false, pedidoId
         );
     }
 
@@ -338,6 +347,9 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 ))
                 .medioDePago(rs.getString("mediopago"))
                 .pagoSimulado(rs.getBoolean("pagosimulado"))
+                .pagado(rs.getBoolean("pagado"))
+                .mpPreferenciaId(rs.getString("mp_preferencia_id"))
+                .mpInitPoint(rs.getString("mp_init_point"))
                 .estado(EstadoPedido.valueOf(rs.getString("estado")))
                 .local(localRepositorio.buscarPorId(rs.getLong("idlocal"))
                         .orElseThrow(() -> new RuntimeException("Local no encontrado")))

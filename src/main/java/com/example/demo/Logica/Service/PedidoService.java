@@ -26,7 +26,12 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import static org.eclipse.aether.spi.log.NullLoggerFactory.LOGGER;
+import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
+import com.mercadopago.client.preference.PreferenceClient;
+import com.mercadopago.client.preference.PreferenceItemRequest;
+import com.mercadopago.client.preference.PreferenceRequest;
+import com.mercadopago.resources.preference.Preference;
+import java.math.BigDecimal;
 
 @Service
 public class PedidoService {
@@ -121,11 +126,13 @@ public class PedidoService {
 
         pedido.setTiempoEstEntrega(Duration.ofMinutes(tiempoEstimadoEntregaMinutos));
 
-        if (!pagoSimuladoService.procesarPago(pedido)) {
-            throw new PagoRechazadoException(MENSAJE_PAGO_FALLIDO);
+        if (!Boolean.TRUE.equals(pedido.getPagado())) {
+            if (!pagoSimuladoService.procesarPago(pedido)) {
+                throw new PagoRechazadoException(MENSAJE_PAGO_FALLIDO);
+            }
+            pedido.setPagoSimulado(true);
         }
 
-        pedido.setPagoSimulado(true);
         pedido.setEstado(EstadoPedido.Confirmado);
         pedidoRepositorio.actualizar(pedido);
 
@@ -179,6 +186,7 @@ public class PedidoService {
                 .domicilioEntrega(dtPedido.getDomicilioEntrega())
                 .medioDePago(dtPedido.getMedioDePago())
                 .pagoSimulado(Boolean.TRUE.equals(dtPedido.getPagoSimulado()))
+                .pagado(false)
                 .estado(EstadoPedido.Pendiente)
                 .local(local)
                 .cliente(cliente)
@@ -191,8 +199,47 @@ public class PedidoService {
             detallePedidoRepositorio.guardar(detalle);
         });
 
+        crearPreferenciaPago(pedido, detalles);
+
         return pedido;
     }
+
+    private void crearPreferenciaPago(Pedido pedido, List<DetallePedido> detalles) {
+        try {
+            List<PreferenceItemRequest> items = detalles.stream()
+                    .map(detalle -> PreferenceItemRequest.builder()
+                            .title(detalle.getPlato().getNombre())
+                            .quantity(detalle.getCantidad())
+                            .unitPrice(BigDecimal.valueOf(detalle.getPrecioUnitario()))
+                            .currencyId("UYU")
+                            .build())
+                    .toList();
+
+            PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
+                    .success(backUrlSuccess)
+                    .failure(backUrlFailure)
+                    .pending(backUrlPending)
+                    .build();
+
+            PreferenceRequest request = PreferenceRequest.builder()
+                    .items(items)
+                    .backUrls(backUrls)
+                    .autoReturn("approved")
+                    .externalReference(pedido.getId().toString())
+                    .notificationUrl(webhookUrl)
+                    .build();
+
+            Preference preference = new PreferenceClient().create(request);
+
+            pedido.setMpPreferenciaId(preference.getId());
+            pedido.setMpInitPoint(preference.getInitPoint());
+
+            pedidoRepositorio.actualizarDatosMp(pedido.getId(), preference.getId(), preference.getInitPoint());
+        } catch (MPException | MPApiException e) {
+            throw new ExternalServiceException("No se pudo generar la preferencia de pago en Mercado Pago.", e);
+        }
+    }
+
 
     @Transactional
     public void cancelarPedido(Long idPedido) {
@@ -267,7 +314,7 @@ public class PedidoService {
                 Long pedidoId = Long.parseLong(payment.getExternalReference());
                 pedidoRepositorio.buscarPorId(pedidoId).ifPresentOrElse(pedido -> {
                     if (pedido.getEstado() != EstadoPedido.Cancelado) {
-                        pedidoRepositorio.actualizarPago(pedidoId, true, EstadoPedido.Confirmado);
+                        pedidoRepositorio.marcarPagoAprobado(pedidoId);
                     }
                 }, () -> LOGGER.warn("Notificación de pago recibida para un pedido inexistente: {}", pedidoId));
             }

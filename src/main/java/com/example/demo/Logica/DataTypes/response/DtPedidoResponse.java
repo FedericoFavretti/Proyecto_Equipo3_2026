@@ -29,5 +29,6 @@ public class DtPedidoResponse {
     private DtLocalResumenResponse local;
     private DtClienteResumenResponse cliente;
     private List<DtDetallePedidoResponse> detalles;
+    private String mpInitPoint;
 }
 

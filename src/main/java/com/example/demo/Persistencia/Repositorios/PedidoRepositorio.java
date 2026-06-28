@@ -27,5 +27,6 @@ public interface PedidoRepositorio {
     List<PlatoMasPedidoProjection> obtenerPlatosMasPedidos(Long idLocal, int limite);
     Double obtenerGananciasMesActual(Long idLocal);
     List<Pedido> buscarEnCaminoVencidos(LocalDateTime ahora);
+    void marcarPagoAprobado(Long pedidoId);
 }
 

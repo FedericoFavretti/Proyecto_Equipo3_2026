@@ -21,6 +21,7 @@ public class Pedido {
     private DtDireccion domicilioEntrega;
     private String medioDePago;
     private Boolean pagoSimulado;
+    private Boolean pagado;
     private EstadoPedido estado;
     private Local local;
     private Cliente cliente;

@@ -23,6 +23,7 @@ public class PedidoResponseMapper {
                 .medioDePago(pedido.getMedioDePago())
                 .pagoSimulado(pedido.getPagoSimulado())
                 .estado(pedido.getEstado())
+                .mpInitPoint(pedido.getMpInitPoint()) // 👈 nuevo
                 .local(pedido.getLocal() != null
                         ? DtLocalResumenResponse.builder()
                         .id(pedido.getLocal().getId())
