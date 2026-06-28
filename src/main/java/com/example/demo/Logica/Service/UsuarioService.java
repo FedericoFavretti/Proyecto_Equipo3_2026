@@ -125,8 +125,8 @@ public class UsuarioService {
                     .nombre(cliente.getNombre())
                     .direccion(cliente.getDireccion())
                     .calificacionGlobal(cliente.getCalificacionGlobal())
-                    .apellido(cliente.getApellido())
                     .foto(cliente.getFoto())
+                    .apellido(cliente.getApellido())
                     .build();
         } else if (u instanceof Local) {
             Local local = localRepositorio.buscarPorId(u.getId())
@@ -138,6 +138,7 @@ public class UsuarioService {
                     .email(local.getEmail())
                     .nombre(local.getNombre())
                     .direccion(local.getDireccion())
+                    .foto(local.getFoto())
                     .calificacionGlobal(local.getCalificacionGlobal())
                     .descripcion(local.getDescripcion())
                     .estaAbierto(local.getEstaAbierto())

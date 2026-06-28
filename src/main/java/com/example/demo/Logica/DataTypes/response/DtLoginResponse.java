@@ -17,5 +17,6 @@ public abstract class DtLoginResponse {
     private String email;
     private String nombre;
     private DtDireccion direccion;
+    private String foto;
     private Double calificacionGlobal;
 }

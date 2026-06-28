@@ -16,6 +16,5 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DtLoginResponseCliente  extends DtLoginResponse {
     private String apellido;
-    private String foto;
 }
 
