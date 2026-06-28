@@ -16,7 +16,7 @@ public interface iUsuarioController {
     ResponseEntity<Void> cerrarSesion(@RequestHeader("Authorization") String authHeader);
     ResponseEntity<Void> editarDatosDeCuentaDeUsuario(@RequestParam Map<String, String> datos, @RequestPart(value = "foto", required = false) MultipartFile foto, @RequestHeader("Authorization") String authHeader, Authentication authentication);
     ResponseEntity<Void> eliminarMiCuenta(Authentication authentication);
-    ResponseEntity<Void> recuperarPasswdPorCorreo(@RequestBody String correo);
+    ResponseEntity<String> recuperarPasswdPorCorreo(@RequestBody DtRecuperarPasswdPorCorreoRequest request);
     ResponseEntity<Void> recuperarPasswd(@RequestBody DtRecuperarPasswd dtRecuperarPasswd);
     ResponseEntity<Void> iniciarCambioPasswd(@RequestBody DtIniciarCambioPasswdRequest request);
     ResponseEntity<Void> verificarCodigoCambioPasswd(@RequestBody DtVerificarCodigoRequest request);

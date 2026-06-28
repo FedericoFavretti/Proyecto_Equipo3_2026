@@ -5,10 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class DtRecuperarPasswd {
-    private String token;
-    private String nuevaPasswd;
-    private String confirmacionPasswd;
+@AllArgsConstructor
+public class DtRecuperarPasswdPorCorreoRequest {
+    private String correo;
 }

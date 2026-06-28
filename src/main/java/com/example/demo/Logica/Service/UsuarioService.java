@@ -1,8 +1,10 @@
-package com.example.demo.Logica.Service;
+﻿package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
+import com.example.demo.Logica.Clases.CodigoVerificacion;
 import com.example.demo.Logica.Clases.Local;
+import com.example.demo.Logica.Clases.TokenRecuperacionPasswd;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
@@ -14,10 +16,11 @@ import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
-import com.example.demo.Persistencia.Implementaciones.AdministradorRepositorioImpl;
 import com.example.demo.Persistencia.Repositorios.*;
 import com.example.demo.jwt.JwtService;
-import com.example.demo.Logica.Clases.CodigoVerificacion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,17 +31,26 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.security.SecureRandom;
-
-
 
 @Service
 public class UsuarioService {
-    @Value("${RECUPERAR_PASSWD_URL}")
+    private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
+
+    @Value("${RECUPERAR_PASSWD_URL:http://localhost:5173/recuperar-password}")
     private String passwdUrl;
 
     private static final Pattern FORMATO_EMAIL =
@@ -63,10 +75,16 @@ public class UsuarioService {
     private static final String MENSAJE_USUARIO_NO_AUTENTICADO = "Usuario no autenticado.";
     private static final String MENSAJE_TIPO_USUARIO_NO_COMPATIBLE =
             "El tipo de usuario no es compatible con la edición de cuenta.";
-    private static final String MENSAJE_USUARIO_NO_ENCONTRADO  =
+    private static final String MENSAJE_USUARIO_NO_ENCONTRADO =
             "El Usuario no fue encontrado.";
     private static final String MENSAJE_NO_SE_PUDO_INVALIDAR_SESION =
             "No se pudo invalidar la sesión actual.";
+    private static final String MENSAJE_LINK_RECUPERACION_INVALIDO =
+            "El enlace de recuperación ha expirado. Por favor, solicite uno nuevo.";
+    private static final String MENSAJE_PASSWD_INVALIDA =
+            "La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.";
+    private static final String MENSAJE_PASSWD_NO_COINCIDE =
+            "Las contraseñas ingresadas no coinciden. Por favor, verifique e inténtelo de nuevo.";
     private static final DtDireccion DIRECCION_ANONIMIZADA =
             new DtDireccion("Anonimizada", "S/N", "N/D", "00000");
 
@@ -84,6 +102,9 @@ public class UsuarioService {
     private final CodigoVerificacionRepositorio codigoVerificacionRepositorio;
     private final LocalRepositorio localRepositorio;
     private final AdministradorRepositorio administradorRepositorio;
+
+    @Autowired
+    private TokenRecuperacionPasswdRepositorio tokenRecuperacionPasswdRepositorio;
 
     public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
@@ -147,8 +168,9 @@ public class UsuarioService {
                     .estaAbierto(local.getEstaAbierto())
                     .imagenes(local.getImagenes())
                     .build();
-        } else if (u instanceof  Administrador) {
-            Administrador administrador = administradorRepositorio.buscarPorId(u.getId()).orElseThrow(() -> new ResourceNotFoundException("Admin", u.getId()));
+        } else if (u instanceof Administrador) {
+            Administrador administrador = administradorRepositorio.buscarPorId(u.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Admin", u.getId()));
             return DtLoginResponseAdmin.builder()
                     .id(administrador.getId())
                     .token(token)
@@ -157,16 +179,20 @@ public class UsuarioService {
                     .foto(administrador.getFoto())
                     .nivelAcceso(administrador.getNivelAcceso())
                     .build();
-        }else{
+        } else {
             throw new ResourceNotFoundException("Tipo de usuario no soportado para login.");
         }
     }
 
     @Transactional
     public void activarCuenta(String email) {
-        Usuario usuario= usuarioRepositorio.buscarPorEmail(email).orElseThrow(()-> new ResourceNotFoundException("Usuario", email));
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", email));
         usuarioRepositorio.activarCuenta(usuario.getId());
-        clienteRepositorio.actualizar(clienteRepositorio.buscarPorId(usuario.getId()).orElseThrow(() -> new ResourceNotFoundException("Cliente", email)));
+        clienteRepositorio.actualizar(
+                clienteRepositorio.buscarPorId(usuario.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Cliente", email))
+        );
     }
 
     @Transactional
@@ -180,23 +206,63 @@ public class UsuarioService {
 
     @Transactional
     public void recuperarPasswdPorCorreo(String correo) {
-        if (usuarioRepositorio.buscarPorEmail(correo).isEmpty()) {
-            throw new ResourceNotFoundException("Usuario", correo);
+        String correoNormalizado = normalizarCorreo(correo);
+        Optional<Usuario> usuarioOpt = usuarioRepositorio.buscarPorEmail(correoNormalizado);
+        if (usuarioOpt.isEmpty()) {
+            return;
         }
 
-        String token = jwtService.generarTokenRecuperacion(correo);
-        String link = passwdUrl + token;
+        Usuario usuario = usuarioOpt.get();
+        tokenRecuperacionPasswdRepositorio.invalidarActivosPorUsuario(usuario.getId());
 
-        emailService.recuperarPasswdPorCorreo(correo, link);
+        String tokenPlano = generarTokenRecuperacion();
+        TokenRecuperacionPasswd tokenRecuperacion = TokenRecuperacionPasswd.builder()
+                .idUsuario(usuario.getId())
+                .tokenHash(hashToken(tokenPlano))
+                .fechaCreacion(LocalDateTime.now())
+                .fechaExpiracion(LocalDateTime.now().plusMinutes(30))
+                .fechaConsumo(null)
+                .usado(false)
+                .build();
+
+        tokenRecuperacionPasswdRepositorio.guardar(tokenRecuperacion);
+
+        try {
+            emailService.recuperarPasswdPorCorreo(correoNormalizado, construirLinkRecuperacion(tokenPlano));
+        } catch (Exception ex) {
+            logger.error("No se pudo enviar el correo de recuperación para el usuario {}", usuario.getId(), ex);
+        }
     }
 
     @Transactional
-    public void recuperarPasswd(DtRecuperarPasswd dtRecuperarPasswd){
-        String correo = jwtService.validarYObtenerCorreoRecuperacion(dtRecuperarPasswd.getToken());
-        Usuario usuario = usuarioRepositorio.buscarPorEmail(correo)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", correo));
+    public void recuperarPasswd(DtRecuperarPasswd dtRecuperarPasswd) {
+        if (dtRecuperarPasswd == null) {
+            throw new BusinessRuleException(MENSAJE_LINK_RECUPERACION_INVALIDO);
+        }
+
+        TokenRecuperacionPasswd tokenRecuperacion = tokenRecuperacionPasswdRepositorio
+                .buscarVigentePorTokenHash(hashToken(dtRecuperarPasswd.getToken()))
+                .orElseThrow(() -> new BusinessRuleException(MENSAJE_LINK_RECUPERACION_INVALIDO));
+
+        if (Boolean.TRUE.equals(tokenRecuperacion.getUsado())
+                || LocalDateTime.now().isAfter(tokenRecuperacion.getFechaExpiracion())) {
+            throw new BusinessRuleException(MENSAJE_LINK_RECUPERACION_INVALIDO);
+        }
+
+        if (!cumpleRequisitosPasswd(dtRecuperarPasswd.getNuevaPasswd())) {
+            throw new BusinessRuleException(MENSAJE_PASSWD_INVALIDA);
+        }
+
+        if (!dtRecuperarPasswd.getNuevaPasswd().equals(dtRecuperarPasswd.getConfirmacionPasswd())) {
+            throw new BusinessRuleException(MENSAJE_PASSWD_NO_COINCIDE);
+        }
+
+        Usuario usuario = usuarioRepositorio.buscarPorId(tokenRecuperacion.getIdUsuario())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", tokenRecuperacion.getIdUsuario()));
         usuario.setPasswd(passwordEncoder.encode(dtRecuperarPasswd.getNuevaPasswd()));
+        invalidarSesiones(usuario);
         usuarioRepositorio.actualizar(usuario);
+        tokenRecuperacionPasswdRepositorio.marcarComoUsado(tokenRecuperacion.getId(), LocalDateTime.now());
     }
 
     @Transactional
@@ -328,7 +394,7 @@ public class UsuarioService {
 
         CodigoVerificacion codigoVerificacion = codigoVerificacionRepositorio
                 .buscarVigentePorUsuario(request.getIdUsuario())
-                .orElseThrow(() ->  new ResourceNotFoundException("CodigoVerificacion", request.getIdUsuario()));
+                .orElseThrow(() -> new ResourceNotFoundException("CodigoVerificacion", request.getIdUsuario()));
 
         if (codigoVerificacion.getIntentosFallidos() >= 3) {
             throw new BusinessRuleException("No se puede continuar: se superó el número de intentos permitidos.");
@@ -504,6 +570,40 @@ public class UsuarioService {
         cliente.setDocumento("ANON-" + idCliente);
         cliente.setDireccion(DIRECCION_ANONIMIZADA);
     }
+
+    private String normalizarCorreo(String correo) {
+        if (correo == null) {
+            return "";
+        }
+        return correo.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String generarTokenRecuperacion() {
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String construirLinkRecuperacion(String tokenPlano) {
+        return UriComponentsBuilder.fromUriString(passwdUrl)
+                .queryParam("token", tokenPlano)
+                .build()
+                .toUriString();
+    }
+
+    private String hashToken(String tokenPlano) {
+        if (tokenPlano == null || tokenPlano.isBlank()) {
+            throw new BusinessRuleException(MENSAJE_LINK_RECUPERACION_INVALIDO);
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(tokenPlano.trim().getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("No se pudo generar el hash del token de recuperación.", e);
+        }
+    }
+
     private String generarCodigoNumerico() {
         SecureRandom random = new SecureRandom();
         int numero = 100000 + random.nextInt(900000);
@@ -511,6 +611,9 @@ public class UsuarioService {
     }
 
     private boolean cumpleRequisitosPasswd(String passwd) {
+        if (passwd == null) {
+            return false;
+        }
         if (passwd.length() < 8) {
             return false;
         }
