@@ -13,13 +13,10 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Types;
+import java.sql.*;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -260,7 +257,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     """,
                     new String[]{"id"}
             );
-            ps.setDate(1, java.sql.Date.valueOf(pedido.getFecha().toLocalDate()));
+            ps.setTimestamp(1, java.sql.Timestamp.valueOf(pedido.getFecha()));
             if (pedido.getTiempoEstEntrega() != null) {
                 ps.setTime(2, Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds())));
             } else {
@@ -286,7 +283,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     public void actualizar(Pedido pedido) {
         jdbcTemplate.update(
                 "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?, ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?, estado = ? WHERE id = ?",
-                java.sql.Date.valueOf(pedido.getFecha().toLocalDate()),
+                java.sql.Timestamp.valueOf(pedido.getFecha()),
                 pedido.getTiempoEstEntrega() != null
                         ? Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds()))
                         : null,
@@ -347,6 +344,16 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 .cliente(clienteRepositorio.buscarPorId(rs.getLong("idcliente"))
                         .orElseThrow(() -> new RuntimeException("Cliente no encontrado")))
                 .build();
+    }
+
+    @Override
+    public List<Pedido> buscarEnCaminoVencidos(LocalDateTime ahora) {
+        String sql = """
+        SELECT * FROM pedido
+        WHERE estado = 'Confirmado'
+          AND (fecha + (tiempoestentrega)::interval) <= ?
+        """;
+        return jdbcTemplate.query(sql, new Object[]{Timestamp.valueOf(ahora)}, this::mapearPedido);
     }
 
     private PedidoListadoView mapearPedidoListadoView(ResultSet rs, int row) throws SQLException {

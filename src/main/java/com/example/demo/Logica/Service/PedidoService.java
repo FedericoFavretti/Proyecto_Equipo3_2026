@@ -250,6 +250,16 @@ public class PedidoService {
         throw new BusinessRuleException(MENSAJE_FILTROS_SIN_RESULTADOS);
     }
 
+    @Transactional
+    public void marcarPedidosComoEntregados() {
+        List<Pedido> pedidos = pedidoRepositorio.buscarEnCaminoVencidos(LocalDateTime.now());
+        for (Pedido pedido : pedidos) {
+            pedido.setEstado(EstadoPedido.Entregado);
+            pedidoRepositorio.actualizar(pedido);
+        }
+    }
+
+    @Transactional
     public void procesarPagoConfirmado(String paymentId) {
         try {
             Payment payment = new PaymentClient().get(Long.parseLong(paymentId));

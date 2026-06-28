@@ -6,6 +6,7 @@ import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Record.PlatoMasPedidoProjection;
 import com.example.demo.Persistencia.Implementaciones.PedidoListadoView;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,5 +26,6 @@ public interface PedidoRepositorio {
     boolean existePedidoPendientePorLocal(Long idLocal);
     List<PlatoMasPedidoProjection> obtenerPlatosMasPedidos(Long idLocal, int limite);
     Double obtenerGananciasMesActual(Long idLocal);
+    List<Pedido> buscarEnCaminoVencidos(LocalDateTime ahora);
 }
 
