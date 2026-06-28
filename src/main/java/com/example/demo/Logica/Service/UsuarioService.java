@@ -6,6 +6,7 @@ import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponseAdmin;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseLocal;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
@@ -13,6 +14,7 @@ import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
+import com.example.demo.Persistencia.Implementaciones.AdministradorRepositorioImpl;
 import com.example.demo.Persistencia.Repositorios.*;
 import com.example.demo.jwt.JwtService;
 import com.example.demo.Logica.Clases.CodigoVerificacion;
@@ -81,9 +83,9 @@ public class UsuarioService {
     private final CloudinaryService cloudinaryService;
     private final CodigoVerificacionRepositorio codigoVerificacionRepositorio;
     private final LocalRepositorio localRepositorio;
+    private final AdministradorRepositorio administradorRepositorio;
 
-
-    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio) {
+    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
@@ -97,6 +99,7 @@ public class UsuarioService {
         this.cloudinaryService = cloudinaryService;
         this.codigoVerificacionRepositorio = codigoVerificacionRepositorio;
         this.localRepositorio = localRepositorio;
+        this.administradorRepositorio = administradorRepositorio;
     }
 
     @Transactional
@@ -144,7 +147,17 @@ public class UsuarioService {
                     .estaAbierto(local.getEstaAbierto())
                     .imagenes(local.getImagenes())
                     .build();
-        } else {
+        } else if (u instanceof  Administrador) {
+            Administrador administrador = administradorRepositorio.buscarPorId(u.getId()).orElseThrow(() -> new ResourceNotFoundException("Admin", u.getId()));
+            return DtLoginResponseAdmin.builder()
+                    .id(administrador.getId())
+                    .token(token)
+                    .tipo(administrador.getTipo())
+                    .email(administrador.getEmail())
+                    .foto(administrador.getFoto())
+                    .nivelAcceso(administrador.getNivelAcceso())
+                    .build();
+        }else{
             throw new ResourceNotFoundException("Tipo de usuario no soportado para login.");
         }
     }
