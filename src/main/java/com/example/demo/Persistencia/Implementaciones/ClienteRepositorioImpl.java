@@ -188,5 +188,13 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                 .activo(rs.getBoolean("activo")
                 ).build();
     }
+
+    @Override
+    public Optional<Cliente> buscarPorEmail(String email) {
+        return jdbcTemplate.query(
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE u.email = ?",
+                (rs, row) -> mapearCliente(rs), email
+        ).stream().findFirst();
+    }
 }
 
