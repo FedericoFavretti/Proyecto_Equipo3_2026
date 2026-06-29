@@ -19,18 +19,25 @@ import com.mercadopago.client.payment.PaymentClient;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.payment.Payment;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
 import com.mercadopago.resources.preference.Preference;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
+import java.util.Map;
 import java.math.BigDecimal;
 
 @Service
@@ -88,6 +95,11 @@ public class PedidoService {
     private String backUrlPending;
     @Value("${mercadopago.webhook-url}")
     private String webhookUrl;
+    @Value("${mercadopago.access-token}")
+    private String mpAccessToken;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     public PedidoService(
             PedidoRepositorio pedidoRepositorio,
@@ -206,49 +218,60 @@ public class PedidoService {
 
     private void crearPreferenciaPago(Pedido pedido, List<DetallePedido> detalles) {
         try {
-            List<PreferenceItemRequest> items = detalles.stream()
-                    .map(detalle -> PreferenceItemRequest.builder()
-                            .title(detalle.getPlato().getNombre())
-                            .quantity(detalle.getCantidad())
-                            .unitPrice(BigDecimal.valueOf(detalle.getPrecioUnitario()))
-                            .currencyId("UYU")
-                            .build())
-                    .toList();
+            List<Map<String, Object>> items = detalles.stream()
+                    .map(detalle -> {
+                        Map<String, Object> item = new HashMap<>();
+                        item.put("title", detalle.getPlato().getNombre());
+                        item.put("quantity", detalle.getCantidad());
+                        item.put("unit_price", detalle.getPrecioUnitario());
+                        item.put("currency_id", "UYU");
+                        return item;
+                    }).toList();
 
-            PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success(backUrlSuccess)
-                    .failure(backUrlFailure)
-                    .pending(backUrlPending)
-                    .build();
+            Map<String, Object> backUrls = new HashMap<>();
+            backUrls.put("success", backUrlSuccess);
+            backUrls.put("failure", backUrlFailure);
+            backUrls.put("pending", backUrlPending);
 
-            PreferenceRequest request = PreferenceRequest.builder()
-                    .items(items)
-                    .backUrls(backUrls)
-                    .autoReturn("approved")
-                    .externalReference(pedido.getId().toString())
-                    .notificationUrl(webhookUrl)
-                    .build();
+            Map<String, Object> body = new HashMap<>();
+            body.put("items", items);
+            body.put("back_urls", backUrls);
+            body.put("auto_return", "approved");
+            body.put("external_reference", pedido.getId().toString());
+            body.put("notification_url", webhookUrl);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + mpAccessToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
 
             LOGGER.info("Creando preferencia MP. backUrlSuccess={}, backUrlFailure={}, backUrlPending={}, webhookUrl={}",
                     backUrlSuccess, backUrlFailure, backUrlPending, webhookUrl);
 
-            Preference preference = new PreferenceClient().create(request);
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    "https://api.mercadopago.com/checkout/preferences",
+                    httpEntity,
+                    Map.class
+            );
 
-            pedido.setMpPreferenciaId(preference.getId());
-            pedido.setMpInitPoint(preference.getInitPoint());
+            Map<String, Object> responseBody = response.getBody();
+            String prefId = (String) responseBody.get("id");
+            String initPoint = (String) responseBody.get("init_point");
 
-            pedidoRepositorio.actualizarDatosMp(pedido.getId(), preference.getId(), preference.getInitPoint());
-        } catch (MPApiException e) {
-            LOGGER.error("MPApiException al crear preferencia. Status: {} | Respuesta: {}",
-                    e.getApiResponse() != null ? e.getApiResponse().getStatusCode() : "desconocido",
-                    e.getApiResponse() != null ? e.getApiResponse().getContent() : e.getMessage());
+            pedido.setMpPreferenciaId(prefId);
+            pedido.setMpInitPoint(initPoint);
+            pedidoRepositorio.actualizarDatosMp(pedido.getId(), prefId, initPoint);
+
+        } catch (HttpClientErrorException e) {
+            LOGGER.error("Error HTTP al crear preferencia MP. Status: {} | Body: {}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
             throw new ExternalServiceException("No se pudo generar la preferencia de pago en Mercado Pago.", e);
-        } catch (MPException e) {
-            LOGGER.error("MPException al crear preferencia: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            LOGGER.error("Error inesperado al crear preferencia MP: {}", e.getMessage(), e);
             throw new ExternalServiceException("No se pudo generar la preferencia de pago en Mercado Pago.", e);
         }
     }
-
     @Transactional
     public void cancelarPedido(Long idPedido) {
         Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
