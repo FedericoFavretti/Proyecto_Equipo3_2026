@@ -88,6 +88,11 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
             params.add(filtro.getFechaReclamo());
         }
 
+        if (filtro.getIdLocal() != null) {
+            sql.append(" AND p.idLocal = ?");
+            params.add(filtro.getIdLocal());
+        }
+
         return jdbcTemplate.query(sql.toString(), (rs, row) -> mapearRecalamo(rs), params.toArray());
     }
 

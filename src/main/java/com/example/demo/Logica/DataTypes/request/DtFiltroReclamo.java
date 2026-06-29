@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DtFiltroReclamo {
+    private Long idLocal;
     private Long idCliente;
     private EstadoPedido estadoPedido;
     private LocalDate fechaReclamo;
