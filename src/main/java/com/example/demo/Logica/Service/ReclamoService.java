@@ -58,7 +58,9 @@ public class ReclamoService {
 
     @Transactional
     public List<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo){
-        if(dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null && dtFiltroReclamo.getIdCliente() == null && dtFiltroReclamo.getEstadoReclamo() == null){
+        if (dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null
+                && dtFiltroReclamo.getIdCliente() == null && dtFiltroReclamo.getEstadoReclamo() == null
+                && dtFiltroReclamo.getIdLocal() == null) {
             throw new BusinessRuleException(MENSAJE_FILTRO_REQUERIDO);
         }
         return reclamoMapper.mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));
