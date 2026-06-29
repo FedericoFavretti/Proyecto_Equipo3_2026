@@ -229,17 +229,25 @@ public class PedidoService {
                     .notificationUrl(webhookUrl)
                     .build();
 
+            LOGGER.info("Creando preferencia MP. backUrlSuccess={}, backUrlFailure={}, backUrlPending={}, webhookUrl={}",
+                    backUrlSuccess, backUrlFailure, backUrlPending, webhookUrl);
+
             Preference preference = new PreferenceClient().create(request);
 
             pedido.setMpPreferenciaId(preference.getId());
             pedido.setMpInitPoint(preference.getInitPoint());
 
             pedidoRepositorio.actualizarDatosMp(pedido.getId(), preference.getId(), preference.getInitPoint());
-        } catch (MPException | MPApiException e) {
+        } catch (MPApiException e) {
+            LOGGER.error("MPApiException al crear preferencia. Status: {} | Respuesta: {}",
+                    e.getApiResponse() != null ? e.getApiResponse().getStatusCode() : "desconocido",
+                    e.getApiResponse() != null ? e.getApiResponse().getContent() : e.getMessage());
+            throw new ExternalServiceException("No se pudo generar la preferencia de pago en Mercado Pago.", e);
+        } catch (MPException e) {
+            LOGGER.error("MPException al crear preferencia: {}", e.getMessage(), e);
             throw new ExternalServiceException("No se pudo generar la preferencia de pago en Mercado Pago.", e);
         }
     }
-
 
     @Transactional
     public void cancelarPedido(Long idPedido) {
