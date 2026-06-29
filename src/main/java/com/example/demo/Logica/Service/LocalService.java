@@ -26,6 +26,7 @@ import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
 import com.example.demo.Logica.Mappers.PromocionMapper;
 import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
+import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
 import com.example.demo.Logica.Clases.Cliente;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -254,6 +255,14 @@ public class LocalService {
     @Transactional(readOnly = true)
     public List<DtPromocion> buscaPromocionesDeLocal(Long idLocal) {
         return promocionMapper.mapearDtPromocionesDeClase(promocionRepositorio.buscarPromocionesDelocal(idLocal));
+    }
+
+    @Transactional(readOnly = true)
+    public DtLocalPerfilResponse obtenerPerfilPublico(Long idLocal) {
+        Local local = localRepositorio.buscarPorId(idLocal)
+                .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
+        validarLocalHabilitado(local);
+        return localMapper.mapearDtLocalPerfilDeClase(local);
     }
 
     @Transactional(readOnly = true)

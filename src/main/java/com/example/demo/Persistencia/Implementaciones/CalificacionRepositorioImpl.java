@@ -128,36 +128,58 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
         );
     }
 
+    @Override
+    public Optional<Calificacion> buscarCalificacionClienteALocal(Long idCliente, Long idLocal) {
+        return jdbcTemplate.query(
+                """
+                SELECT c.*
+                FROM calificacion c
+                JOIN cliente_calificacion cc ON cc.idcalificacion = c.id
+                JOIN local_calificacion lc ON lc.idcalificacion = c.id
+                WHERE cc.idcliente = ? AND lc.idlocal = ? AND c.tipo = ?
+                ORDER BY c.fecha DESC, c.id DESC
+                """,
+                (rs, row) -> calificacionMapper(rs, row),
+                idCliente,
+                idLocal,
+                TipoCalificacion.Cliente_a_local.toString()
+        ).stream().findFirst();
+    }
+
     private Calificacion calificacionMapper(ResultSet rs, int row) throws SQLException {
         TipoCalificacion tipo = TipoCalificacion.valueOf(rs.getString("tipo"));
+        Long idCalificacion = rs.getLong("id");
+        Cliente cliente = obtenerClienteAsociado(idCalificacion)
+                .flatMap(clienteRepositorio::buscarPorId)
+                .orElse(null);
+        Local local = obtenerLocalAsociado(idCalificacion)
+                .flatMap(localRepositorio::buscarPorId)
+                .orElse(null);
 
-        if (tipo.equals(TipoCalificacion.Cliente_a_local)) {
-            Long idCliente = clienteCalificacionRepositorio.obtenerCliente(rs.getLong("id"));
-            Cliente cliente = clienteRepositorio.buscarPorId(idCliente)
-                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        return Calificacion.builder()
+                .id(idCalificacion)
+                .puntaje(rs.getInt("puntaje"))
+                .comentario(rs.getString("comentario"))
+                .fecha(rs.getTimestamp("fecha").toLocalDateTime())
+                .tipo(tipo)
+                .cliente(cliente)
+                .local(local)
+                .build();
+    }
 
-            return Calificacion.builder()
-                    .id(rs.getLong("id"))
-                    .puntaje(rs.getInt("puntaje"))
-                    .comentario(rs.getString("comentario"))
-                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
-                    .tipo(tipo)
-                    .cliente(cliente)
-                    .local(null)
-                    .build();
-        } else if (tipo.equals(TipoCalificacion.Local_a_cliente)) {
-            Long idLocal = localCalificacionRepositorio.obtenerLocal(rs.getLong("id"));
-            Local local = localRepositorio.buscarPorId(idLocal).orElseThrow(() -> new RuntimeException("Local no encontrado"));
-            return Calificacion.builder()
-                    .id(rs.getLong("id"))
-                    .puntaje(rs.getInt("puntaje"))
-                    .comentario(rs.getString("comentario"))
-                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
-                    .tipo(tipo)
-                    .cliente(null)
-                    .local(local)
-                    .build();
-        }
-        return null;
+    private Optional<Long> obtenerClienteAsociado(Long idCalificacion) {
+        return jdbcTemplate.query(
+                "SELECT idcliente FROM cliente_calificacion WHERE idcalificacion = ?",
+                (rs, row) -> rs.getLong("idcliente"),
+                idCalificacion
+        ).stream().findFirst();
+    }
+
+    private Optional<Long> obtenerLocalAsociado(Long idCalificacion) {
+        return jdbcTemplate.query(
+                "SELECT idlocal FROM local_calificacion WHERE idcalificacion = ?",
+                (rs, row) -> rs.getLong("idlocal"),
+                idCalificacion
+        ).stream().findFirst();
     }
 }

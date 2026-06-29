@@ -1,5 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
+import com.example.demo.Logica.DataTypes.response.DtMiCalificacionLocalResponse;
+import com.example.demo.Logica.Exceptions.GlobalExceptionHandler;
 import com.example.demo.Logica.Service.CalificacionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.mockito.Mockito.when;
@@ -24,7 +27,7 @@ class CalificacionControllerTest {
     void setUp() {
         calificacionService = Mockito.mock(CalificacionService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new CalificacionController(calificacionService))
-                .setControllerAdvice(new RestExceptionHandler())
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
@@ -53,18 +56,30 @@ class CalificacionControllerTest {
     }
 
     @Test
-    void consultarCalificacionGlobalDelLocalDevPermiteProbarSinAutenticacion() throws Exception {
-        when(calificacionService.consultarCalificacionGlobalDelLocalPorId(10L))
-                .thenReturn(Map.of(
-                        "calificacionGlobal", 4.0,
-                        "totalValoraciones", 3,
-                        "detallePorPuntuacion", Map.of("1", 0, "2", 1, "3", 0, "4", 1, "5", 1)
-                ));
+    void consultarMiCalificacionDeLocalDevuelveNoContentCuandoNoExiste() throws Exception {
+        when(calificacionService.consultarMiCalificacionDeLocal(10L, "cliente@test.com"))
+                .thenReturn(null);
 
-        mockMvc.perform(get("/api/v1/calificaciones/local/10/mi-calificacion-dev"))
+        mockMvc.perform(get("/api/v1/calificaciones/locales/10/mi-calificacion")
+                        .principal(new UsernamePasswordAuthenticationToken("cliente@test.com", "token")))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void consultarMiCalificacionDeLocalDevuelveCalificacionExistente() throws Exception {
+        when(calificacionService.consultarMiCalificacionDeLocal(10L, "cliente@test.com"))
+                .thenReturn(DtMiCalificacionLocalResponse.builder()
+                        .id(8L)
+                        .puntaje(5)
+                        .comentario("Excelente")
+                        .fecha(LocalDateTime.of(2026, 6, 28, 12, 0))
+                        .build());
+
+        mockMvc.perform(get("/api/v1/calificaciones/locales/10/mi-calificacion")
+                        .principal(new UsernamePasswordAuthenticationToken("cliente@test.com", "token")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.calificacionGlobal").value(4.0))
-                .andExpect(jsonPath("$.totalValoraciones").value(3))
-                .andExpect(jsonPath("$.detallePorPuntuacion.2").value(1));
+                .andExpect(jsonPath("$.id").value(8))
+                .andExpect(jsonPath("$.puntaje").value(5))
+                .andExpect(jsonPath("$.comentario").value("Excelente"));
     }
 }

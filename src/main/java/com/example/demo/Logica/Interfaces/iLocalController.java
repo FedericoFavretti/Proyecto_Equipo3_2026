@@ -2,6 +2,7 @@ package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
+import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Clases.Promocion;
@@ -30,5 +31,6 @@ public interface iLocalController {
     ResponseEntity<List<DtClienteLocalResponse>> buscarYListarClientesDelLocal(@PathVariable("idLocal") Long idLocal, @RequestBody DtFiltroClienteLocal  DtFiltroClienteLocal);
     ResponseEntity<List<DtPlato>> buscarPlatosDeLocal(@PathVariable("idLocal") Long idLocal);
     ResponseEntity<List<DtPromocion>> buscaPromocionesDeLocal(@PathVariable("idLocal") Long idLocal);
+    ResponseEntity<DtLocalPerfilResponse> obtenerPerfilPublico(@PathVariable("idLocal") Long idLocal);
 }
 
