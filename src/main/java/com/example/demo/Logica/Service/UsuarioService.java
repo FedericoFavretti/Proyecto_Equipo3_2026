@@ -50,8 +50,10 @@ import java.util.regex.Pattern;
 public class UsuarioService {
     private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
 
-    @Value("${RECUPERAR_PASSWD_URL:http://localhost:5173/recuperar-password}")
-    private String passwdUrl;
+    private static final String RUTA_RESTABLECER_PASSWD = "/restablecer-contrasena";
+
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+    private String frontendUrl;
 
     private static final Pattern FORMATO_EMAIL =
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
@@ -585,9 +587,12 @@ public class UsuarioService {
     }
 
     private String construirLinkRecuperacion(String tokenPlano) {
-        return UriComponentsBuilder.fromUriString(passwdUrl)
+        return UriComponentsBuilder.fromUriString(frontendUrl)
+                .replacePath(RUTA_RESTABLECER_PASSWD)
+                .replaceQuery(null)
                 .queryParam("token", tokenPlano)
                 .build()
+                .encode()
                 .toUriString();
     }
 
