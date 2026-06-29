@@ -52,7 +52,7 @@ public class UsuarioService {
 
     private static final String RUTA_RESTABLECER_PASSWD = "/restablecer-contrasena";
 
-    @Value("${FRONTEND_URL:http://localhost:5173}")
+    @Value("${app.frontend.url}")
     private String frontendUrl;
 
     private static final Pattern FORMATO_EMAIL =
