@@ -1,6 +1,7 @@
 package com.example.demo.Logica.DataTypes.request;
 
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Enums.EstadoReclamo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +17,6 @@ public class DtFiltroReclamo {
     private Long idLocal;
     private Long idCliente;
     private EstadoPedido estadoPedido;
+    private EstadoReclamo estadoReclamo;
     private LocalDate fechaReclamo;
 }

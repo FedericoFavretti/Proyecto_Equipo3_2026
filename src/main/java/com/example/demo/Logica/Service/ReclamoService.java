@@ -5,6 +5,7 @@ import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.shared.DtReclamo;
+import com.example.demo.Logica.Enums.EstadoReclamo;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.PedidoMapper;
@@ -44,6 +45,7 @@ public class ReclamoService {
         if (dtReclamo.getMotivo() == null || dtReclamo.getMotivo().isBlank()) {
             throw new BusinessRuleException(MENSAJE_MOTIVO_REQUERIDO);
         }
+        dtReclamo.setEstado(EstadoReclamo.Pendiente);
         Pedido pedido = pedidoRepositorio.buscarPorId(dtReclamo.getDtPedido().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", dtReclamo.getDtPedido().getId()));
         DtPedido dtPedido = pedidoMapper.mapearDtPedidoDeClase(pedido);
@@ -56,7 +58,7 @@ public class ReclamoService {
 
     @Transactional
     public List<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo){
-        if(dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null && dtFiltroReclamo.getIdCliente() == null){
+        if(dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null && dtFiltroReclamo.getIdCliente() == null && dtFiltroReclamo.getEstadoReclamo() == null){
             throw new BusinessRuleException(MENSAJE_FILTRO_REQUERIDO);
         }
         return reclamoMapper.mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));

@@ -1,7 +1,9 @@
 package com.example.demo.Persistencia.Implementaciones;
 
+import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
+import com.example.demo.Logica.Enums.EstadoReclamo;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,23 +42,25 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
 
     @Override
     public void guardar(Reclamo reclamo) {
-        jdbcTemplate.update("INSERT INTO Reclamo (motivo, tipoCompensacion, montoReintegro, fecha, idPedido) VALUES (?, ?, ?, ?, ?)",
-                reclamo.getMotivo(),
-                reclamo.getTipoCompensacion(),
-                reclamo.getMontoReintegro(),
-                reclamo.getFecha(),
-                reclamo.getPedido().getId()
-        );
-    }
-
-    @Override
-    public void actualizar(Reclamo reclamo) {
-        jdbcTemplate.update("UPDATE Reclamo SET motivo = ?, tipoCompensacion = ?, montoReintegro = ?, fecha = ?, idPedido = ? WHERE id = ?",
+        jdbcTemplate.update("INSERT INTO Reclamo (motivo, tipoCompensacion, montoReintegro, fecha, idPedido, estado) VALUES (?, ?, ?, ?, ?, ?)",
                 reclamo.getMotivo(),
                 reclamo.getTipoCompensacion(),
                 reclamo.getMontoReintegro(),
                 reclamo.getFecha(),
                 reclamo.getPedido().getId(),
+                reclamo.getEstado().name()
+        );
+    }
+
+    @Override
+    public void actualizar(Reclamo reclamo) {
+        jdbcTemplate.update("UPDATE Reclamo SET motivo = ?, tipoCompensacion = ?, montoReintegro = ?, fecha = ?, idPedido = ?, estado = ? WHERE id = ?",
+                reclamo.getMotivo(),
+                reclamo.getTipoCompensacion(),
+                reclamo.getMontoReintegro(),
+                reclamo.getFecha(),
+                reclamo.getPedido().getId(),
+                reclamo.getEstado().name(),
                 reclamo.getId()
         );
     }
@@ -80,6 +84,11 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
 
         if (filtro.getEstadoPedido() != null) {
             sql.append(" AND p.estado = ?");
+            params.add(filtro.getEstadoPedido().name());
+        }
+
+        if (filtro.getEstadoReclamo() != null) {
+            sql.append(" AND r.estado = ?");
             params.add(filtro.getEstadoPedido().name());
         }
 
@@ -112,9 +121,11 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
     }
 
     private Reclamo mapearRecalamo(ResultSet rs) throws SQLException {
+        EstadoReclamo estadoReclamo = EstadoReclamo.valueOf(rs.getString("estado"));
         return new Reclamo(
                 rs.getLong("id"),
                 rs.getString("motivo"),
+                estadoReclamo,
                 rs.getString("tipoCompensacion"),
                 rs.getDouble("montoReintegro"),
                 rs.getTimestamp("fecha").toLocalDateTime(),
