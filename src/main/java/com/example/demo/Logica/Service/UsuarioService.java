@@ -52,8 +52,8 @@ public class UsuarioService {
 
     private static final String RUTA_RESTABLECER_PASSWD = "/restablecer-contrasena";
 
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
+    @Value("${app.password-reset.frontend-base-url}")
+    private String passwordResetFrontendBaseUrl;
 
     private static final Pattern FORMATO_EMAIL =
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
@@ -587,7 +587,7 @@ public class UsuarioService {
     }
 
     private String construirLinkRecuperacion(String tokenPlano) {
-        return UriComponentsBuilder.fromUriString(frontendUrl)
+        return UriComponentsBuilder.fromUriString(passwordResetFrontendBaseUrl)
                 .replacePath(RUTA_RESTABLECER_PASSWD)
                 .replaceQuery(null)
                 .queryParam("token", tokenPlano)

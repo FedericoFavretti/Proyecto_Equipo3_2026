@@ -67,7 +67,7 @@ Backend debe tener una variable configurable para la base pública del frontend.
 Ejemplo:
 
 ```txt
-FRONTEND_URL=https://frontend-proyecto-foodly-test.up.railway.app
+PASSWORD_RESET_FRONTEND_BASE_URL=https://frontend-proyecto-foodly-test.up.railway.app
 ```
 
 **NO** debe reutilizar la base URL del API para construir el link del correo.
@@ -85,7 +85,7 @@ La ruta objetivo debe ser exactamente:
 Entonces el link final debe construirse así:
 
 ```txt
-{FRONTEND_URL}/restablecer-contrasena?token={TOKEN}
+{PASSWORD_RESET_FRONTEND_BASE_URL}/restablecer-contrasena?token={TOKEN}
 ```
 
 ---
@@ -155,15 +155,15 @@ Ese **NO** es el flujo actual de este proyecto.
 ## Fórmula exacta a implementar
 
 ```txt
-recoveryLink = FRONTEND_URL + "/restablecer-contrasena?token=" + urlEncode(token)
+recoveryLink = PASSWORD_RESET_FRONTEND_BASE_URL + "/restablecer-contrasena?token=" + urlEncode(token)
 ```
 
 ---
 
 ## Checklist de validación para backend
 
-- [ ] existe una variable `FRONTEND_URL`
-- [ ] `FRONTEND_URL` apunta al dominio público del frontend
+- [ ] existe una variable `PASSWORD_RESET_FRONTEND_BASE_URL`
+- [ ] `PASSWORD_RESET_FRONTEND_BASE_URL` apunta al dominio público del frontend
 - [ ] el mail usa `/restablecer-contrasena`
 - [ ] el mail no usa `/api/v1/usuarios/recuperar`
 - [ ] el query param `token` aparece una sola vez
@@ -186,4 +186,3 @@ Y desde ahí:
 2. confirma nueva contraseña
 3. envía el formulario
 4. vuelve a login
-
