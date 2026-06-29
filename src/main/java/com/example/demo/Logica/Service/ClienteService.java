@@ -263,6 +263,7 @@ public class ClienteService {
         cliente.setEstado(EstadoCuenta.Activo);
         cliente.setActivo(true);
         cliente.setTipo(TIPO_USUARIO_CLIENTE);
+        cliente.setPasswd(passwordEncoder.encode("GOOGLEAUTH" + System.currentTimeMillis()));
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);
 
