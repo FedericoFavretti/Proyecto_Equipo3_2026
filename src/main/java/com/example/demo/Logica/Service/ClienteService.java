@@ -24,10 +24,23 @@ import com.example.demo.Logica.Clases.Calificacion;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
 import com.example.demo.Persistencia.Repositorios.ClienteCalificacionRepositorio;
 import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
+import com.example.demo.Logica.DataTypes.request.DtGoogleAuthRequest;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
+import com.example.demo.jwt.JwtService;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.HashMap;
@@ -43,6 +56,11 @@ public class ClienteService {
             "El documento ya está asociado a una cuenta.";
     private static final String MENSAJE_FILTRO_NULO = "El filtro no puede ser nulo.";
 
+    @Value("${google.client.id}")
+    private String googleClientId;
+
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
     private final ClienteRepositorio clienteRepositorio;
     private final PlatoRepositorio platoRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
@@ -56,18 +74,24 @@ public class ClienteService {
     private final LocalMapper localMapper;
 
 
-    public ClienteService (ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio, PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio, EmailService emailService, PasswordEncoder passwordEncode, ClienteMapper clienteMapper, PlatoMapper platoMapper, PromocionMapper promocionMapper, LocalRepositorio localRepositorio, LocalMapper localMapper) {
+    public ClienteService(ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio,
+                          PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio,
+                          EmailService emailService, PasswordEncoder passwordEncoder, ClienteMapper clienteMapper,
+                          PlatoMapper platoMapper, PromocionMapper promocionMapper, LocalRepositorio localRepositorio,
+                          LocalMapper localMapper, JwtService jwtService, UserDetailsService userDetailsService) {
         this.clienteRepositorio = clienteRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.promocionRepositorio = promocionRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
         this.emailService = emailService;
-        this.passwordEncoder = passwordEncode;
+        this.passwordEncoder = passwordEncoder;
         this.clienteMapper = clienteMapper;
         this.platoMapper = platoMapper;
         this.promocionMapper = promocionMapper;
         this.localRepositorio = localRepositorio;
         this.localMapper = localMapper;
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
     }
 
 
@@ -174,5 +198,76 @@ public class ClienteService {
                 throw new IllegalArgumentException("La dirección de orden no es válida.");
             }
         }
+    }
+
+    @Transactional
+    public DtLoginResponse registrarOLoguearConGoogle(DtGoogleAuthRequest request) {
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                new NetHttpTransport(), new GsonFactory())
+                .setAudience(Collections.singletonList(googleClientId))
+                .build();
+
+        GoogleIdToken idToken;
+        try {
+            idToken = verifier.verify(request.getIdToken());
+        } catch (Exception e) {
+            throw new BusinessRuleException("Error al verificar el token de Google.");
+        }
+
+        if (idToken == null) {
+            throw new BusinessRuleException("Token de Google inválido.");
+        }
+
+        GoogleIdToken.Payload payload = idToken.getPayload();
+        String email = payload.getEmail();
+        String nombre = (String) payload.get("given_name");
+        String apellido = (String) payload.get("family_name");
+        String foto = (String) payload.get("picture");
+
+        if (usuarioRepositorio.existeCorreo(email)) {
+            Cliente clienteExistente = clienteRepositorio.buscarPorEmail(email)
+                    .orElseThrow(() -> new BusinessRuleException("La cuenta existe pero no es de tipo cliente."));
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            String token = jwtService.generateToken(userDetails);
+            return DtLoginResponseCliente.builder()
+                    .id(clienteExistente.getId())
+                    .token(token)
+                    .tipo(clienteExistente.getTipo())
+                    .email(clienteExistente.getEmail())
+                    .nombre(clienteExistente.getNombre())
+                    .apellido(clienteExistente.getApellido())
+                    .direccion(clienteExistente.getDireccion())
+                    .foto(clienteExistente.getFoto())
+                    .calificacionGlobal(clienteExistente.getCalificacionGlobal())
+                    .build();
+        }
+
+        Cliente cliente = new Cliente();
+        cliente.setEmail(email);
+        cliente.setNombre(nombre != null ? nombre : "Usuario");
+        cliente.setApellido(apellido != null ? apellido : "");
+        cliente.setFoto(foto);
+        cliente.setDocumento(request.getDocumento() != null ?
+                request.getDocumento() : "GOOG" + System.currentTimeMillis());
+        cliente.setDireccion(request.getDireccion());
+        cliente.setEstado(EstadoCuenta.Activo);
+        cliente.setActivo(true);
+        cliente.setTipo(TIPO_USUARIO_CLIENTE);
+        usuarioRepositorio.guardar(cliente);
+        clienteRepositorio.guardar(cliente);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        String token = jwtService.generateToken(userDetails);
+        return DtLoginResponseCliente.builder()
+                .id(cliente.getId())
+                .token(token)
+                .tipo(cliente.getTipo())
+                .email(cliente.getEmail())
+                .nombre(cliente.getNombre())
+                .apellido(cliente.getApellido())
+                .direccion(cliente.getDireccion())
+                .foto(cliente.getFoto())
+                .calificacionGlobal(cliente.getCalificacionGlobal())
+                .build();
     }
 }

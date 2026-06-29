@@ -16,4 +16,5 @@ public interface ClienteRepositorio {
     boolean existeDocumento(String documento);
     List<Cliente> buscarConFiltros(DtFiltroUsuario filtro);
     List<Cliente> buscarClientesDelLocal(Long idLocal, DtFiltroClienteLocal filtro);
+    Optional<Cliente> buscarPorEmail(String email);
 }
