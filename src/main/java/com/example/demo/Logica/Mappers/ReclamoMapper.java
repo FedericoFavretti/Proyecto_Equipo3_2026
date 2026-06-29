@@ -22,19 +22,16 @@ public class ReclamoMapper {
                 .tipoCompensacion(dtReclamo.getTipoCompensacion())
                 .montoReintegro(dtReclamo.getMontoReintegro())
                 .fecha(dtReclamo.getFecha())
-                .fecha(dtReclamo.getFecha())
                 .pedido(pedidoMapper.mapearPedidoDeDt(dtReclamo.getDtPedido()))
                 .build();
     }
 
     public DtReclamo mapearDtReclamoDeClase(Reclamo reclamo) {
-
         return DtReclamo.builder()
                 .id(reclamo.getId())
                 .motivo(reclamo.getMotivo())
                 .tipoCompensacion(reclamo.getTipoCompensacion())
                 .montoReintegro(reclamo.getMontoReintegro())
-                .fecha(reclamo.getFecha())
                 .fecha(reclamo.getFecha())
                 .dtPedido(pedidoMapper.mapearDtPedidoDeClase(reclamo.getPedido()))
                 .build();
