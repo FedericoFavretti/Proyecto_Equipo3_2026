@@ -3,6 +3,7 @@ package com.example.demo.Logica.Mappers;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.response.DtLocalBusquedaResponse;
+import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -46,6 +47,19 @@ public class LocalMapper {
         return DtLocalBusquedaResponse.builder()
                 .id(local.getId())
                 .nombre(local.getNombre())
+                .direccion(local.getDireccion())
+                .descripcion(local.getDescripcion())
+                .calificacionGlobal(local.getCalificacionGlobal())
+                .estaAbierto(local.getEstaAbierto())
+                .imagenes(local.getImagenes())
+                .build();
+    }
+
+    public DtLocalPerfilResponse mapearDtLocalPerfilDeClase(Local local) {
+        return DtLocalPerfilResponse.builder()
+                .id(local.getId())
+                .nombre(local.getNombre())
+                .foto(local.getFoto())
                 .direccion(local.getDireccion())
                 .descripcion(local.getDescripcion())
                 .calificacionGlobal(local.getCalificacionGlobal())

@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
+import com.example.demo.Logica.DataTypes.response.DtMiCalificacionLocalResponse;
 import com.example.demo.Logica.DataTypes.shared.DtCalificacion;
 import com.example.demo.Logica.Interfaces.iCalificacionController;
 import com.example.demo.Logica.Service.CalificacionService;
@@ -44,6 +45,22 @@ public class CalificacionController implements iCalificacionController {
     @GetMapping("/{idCliente}/calificacion")
     public ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente) {
         DtCalificacionGlobalResponse response = calificacionService.consultarCalificacionGlobal(idCliente);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('Cliente')")
+    @GetMapping("/locales/{idLocal}/mi-calificacion")
+    public ResponseEntity<DtMiCalificacionLocalResponse> consultarMiCalificacionDeLocal(
+            @PathVariable("idLocal") Long idLocal,
+            Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        DtMiCalificacionLocalResponse response =
+                calificacionService.consultarMiCalificacionDeLocal(idLocal, authentication.getName());
+        if (response == null) {
+            return ResponseEntity.noContent().build();
+        }
         return ResponseEntity.ok(response);
     }
 }

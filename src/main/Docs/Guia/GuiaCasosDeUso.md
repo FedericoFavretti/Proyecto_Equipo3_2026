@@ -605,17 +605,18 @@ Reglas generales para TODOS los casos de uso:
 
 
 - **Actor**: Cliente.
-- **Precondición**: cliente realizó al menos un pedido al local y no lo calificó ya.
+- **Precondición**: cliente realizó al menos un pedido al local.
 - **Implementar**:
   1. Acceso desde historial o perfil del local.
   2. Acción `Calificar Local`.
   3. Mostrar formulario con escala y comentario.
   4. Registrar puntaje 1 a 5 y comentario opcional.
-  5. Actualizar calificación global del local.
+  5. Si el cliente ya calificó al local previamente, permitir editar su calificación existente.
+  6. Actualizar calificación global del local.
 - **Alternativos obligatorios**:
   - Sin pedidos en local: `Solo puede calificar locales en los que haya realizado al menos un pedido.`
-  - Ya calificó: `Ya ha calificado a este local. Solo se permite una calificación por local.`
-- **Postcondición**: calificación registrada y global del local actualizada.
+  - Ya calificó: `Ya ha calificado a este local. Puede actualizar su calificación existente.`
+- **Postcondición**: calificación registrada o actualizada y global del local actualizada.
 
 
 #### CU-CL11 — Consultar Calificación Global del Cliente
