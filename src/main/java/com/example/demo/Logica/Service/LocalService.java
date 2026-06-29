@@ -3,16 +3,19 @@ package com.example.demo.Logica.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
+import com.example.demo.Logica.Enums.PeriodoEstadisticasPreset;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
@@ -74,6 +77,15 @@ public class LocalService {
             "El local debe estar habilitado para realizar esta operacion.";
     private static final String MENSAJE_NOMBRE_LOCAL_DUPLICADO =
             "El nombre del local ya se encuentra registrado.";
+    private static final String MENSAJE_PERIODO_SIN_DATOS =
+            "No hay informacion disponible para el periodo seleccionado. Intente con un rango de fechas diferente.";
+    private static final String MENSAJE_PERIODO_AMBIGUO =
+            "Debe enviar un preset o un rango libre, pero no ambos.";
+    private static final String MENSAJE_PERIODO_INCOMPLETO =
+            "Para usar rango libre debe indicar fechaDesde y fechaHasta.";
+    private static final String MENSAJE_PERIODO_INVALIDO =
+            "La fechaDesde no puede ser posterior a fechaHasta.";
+    private static final int LIMITE_PLATOS_MAS_PEDIDOS = 5;
 
     private final LocalRepositorio localRepositorio;
     private final PlatoRepositorio platoRepositorio;
@@ -238,18 +250,39 @@ public class LocalService {
         localRepositorio.actualizar(local);
     }
 
-    @Transactional
-    public DtEstadisticasLocal obtenerEstadisticasLocal(Long idLocal) {
-        List<PlatoMasPedidoProjection> proyecciones = pedidoRepositorio.obtenerPlatosMasPedidos(idLocal, 5);
+    @Transactional(readOnly = true)
+    public DtEstadisticasLocal obtenerEstadisticasLocal(Long idLocal, DtEstadisticasLocalFiltro filtro) {
+        Local local = localRepositorio.buscarPorId(idLocal)
+                .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
+        validarLocalHabilitado(local);
+
+        RangoPeriodo rangoPeriodo = resolverRangoPeriodo(filtro);
+        if (!pedidoRepositorio.existePedidoConfirmadoEnPeriodo(
+                idLocal,
+                rangoPeriodo.fechaDesdeInclusive(),
+                rangoPeriodo.fechaHastaExclusiva())) {
+            throw new BusinessRuleException(MENSAJE_PERIODO_SIN_DATOS);
+        }
+
+        List<PlatoMasPedidoProjection> proyecciones = pedidoRepositorio.obtenerPlatosMasPedidosConfirmadosEnPeriodo(
+                idLocal,
+                rangoPeriodo.fechaDesdeInclusive(),
+                rangoPeriodo.fechaHastaExclusiva(),
+                LIMITE_PLATOS_MAS_PEDIDOS);
         List<DtPlato> platosMasPedido = proyecciones.stream()
                 .map(p -> platoRepositorio.buscarPorId(p.idPlato())
                         .orElseThrow(() -> new ResourceNotFoundException("Plato", p.idPlato())))
                 .map(platoMapper::mapearDtPlatoDeClase)
                 .toList();
-        Double gananciasMensuales = pedidoRepositorio.obtenerGananciasMesActual(idLocal);
+        Double ventasConfirmadas = pedidoRepositorio.obtenerVentasConfirmadasEnPeriodo(
+                idLocal,
+                rangoPeriodo.fechaDesdeInclusive(),
+                rangoPeriodo.fechaHastaExclusiva());
         return DtEstadisticasLocal.builder()
+                .fechaDesde(rangoPeriodo.fechaDesde())
+                .fechaHasta(rangoPeriodo.fechaHasta())
                 .platosMasPedido(platosMasPedido)
-                .gananciasMensuales(gananciasMensuales)
+                .ventasConfirmadas(ventasConfirmadas)
                 .build();
     }
 
@@ -447,6 +480,62 @@ public class LocalService {
         if (plato.getLocal() == null || plato.getLocal().getId() == null || !plato.getLocal().getId().equals(idLocal)) {
             throw new BusinessRuleException(MENSAJE_PLATO_DE_OTRO_LOCAL);
         }
+    }
+
+    private RangoPeriodo resolverRangoPeriodo(DtEstadisticasLocalFiltro filtro) {
+        if (filtro == null || (filtro.getPreset() == null && filtro.getFechaDesde() == null && filtro.getFechaHasta() == null)) {
+            return resolverRangoPreset(PeriodoEstadisticasPreset.MES_ACTUAL);
+        }
+
+        boolean tienePreset = filtro.getPreset() != null;
+        boolean tieneAlgunaFecha = filtro.getFechaDesde() != null || filtro.getFechaHasta() != null;
+
+        if (tienePreset && tieneAlgunaFecha) {
+            throw new BusinessRuleException(MENSAJE_PERIODO_AMBIGUO);
+        }
+
+        if (tieneAlgunaFecha) {
+            if (filtro.getFechaDesde() == null || filtro.getFechaHasta() == null) {
+                throw new BusinessRuleException(MENSAJE_PERIODO_INCOMPLETO);
+            }
+            if (filtro.getFechaDesde().isAfter(filtro.getFechaHasta())) {
+                throw new BusinessRuleException(MENSAJE_PERIODO_INVALIDO);
+            }
+            return construirRango(filtro.getFechaDesde(), filtro.getFechaHasta());
+        }
+
+        return resolverRangoPreset(filtro.getPreset());
+    }
+
+    private RangoPeriodo resolverRangoPreset(PeriodoEstadisticasPreset preset) {
+        LocalDate hoy = LocalDate.now();
+        return switch (preset) {
+            case HOY -> construirRango(hoy, hoy);
+            case ULTIMOS_7_DIAS -> construirRango(hoy.minusDays(6), hoy);
+            case ULTIMOS_30_DIAS -> construirRango(hoy.minusDays(29), hoy);
+            case MES_ANTERIOR -> {
+                LocalDate primerDiaMesAnterior = hoy.minusMonths(1).withDayOfMonth(1);
+                yield construirRango(primerDiaMesAnterior, primerDiaMesAnterior.withDayOfMonth(primerDiaMesAnterior.lengthOfMonth()));
+            }
+            case MES_ACTUAL -> construirRango(hoy.withDayOfMonth(1), hoy);
+        };
+    }
+
+    private RangoPeriodo construirRango(LocalDate fechaDesde, LocalDate fechaHasta) {
+        return new RangoPeriodo(
+                fechaDesde,
+                fechaHasta,
+                fechaDesde.atStartOfDay(),
+                fechaHasta.plusDays(1).atStartOfDay()
+        );
+    }
+
+    private record RangoPeriodo(
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            LocalDateTime fechaDesdeInclusive,
+            LocalDateTime fechaHastaExclusiva
+    ) {
     }
 }
 

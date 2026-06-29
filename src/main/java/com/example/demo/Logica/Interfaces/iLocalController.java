@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Interfaces;
 
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
@@ -28,7 +29,7 @@ public interface iLocalController {
     ResponseEntity<Void> solicitarHabilitacion(@RequestPart("datos") DtLocal dtLocal,@RequestPart("logo") MultipartFile logo , @RequestPart("imagenes") List<MultipartFile> imagenes);
     ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") Long idLocal);
     ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") Long idLocal);
-    ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal);
+    ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal, DtEstadisticasLocalFiltro filtro);
     ResponseEntity<List<DtClienteLocalResponse>> buscarYListarClientesDelLocal(@PathVariable("idLocal") Long idLocal, @RequestBody DtFiltroClienteLocal  DtFiltroClienteLocal);
     ResponseEntity<List<DtPlato>> buscarPlatosDeLocal(@PathVariable("idLocal") Long idLocal);
     ResponseEntity<List<DtPromocion>> buscaPromocionesDeLocal(@PathVariable("idLocal") Long idLocal);

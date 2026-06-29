@@ -347,8 +347,8 @@ Reglas generales para TODOS los casos de uso:
 - **Precondición**: local autenticado con al menos un pedido registrado.
 - **Implementar**:
   1. Acceso a `Estadísticas`.
-  2. Seleccionar período.
-  3. Calcular total de ventas, platos más pedidos y cantidad de pedidos por estado.
+  2. Seleccionar período mediante presets o rango libre.
+  3. Calcular ventas y platos más pedidos usando únicamente pedidos en estado `Confirmado`.
   4. Actualizar métricas al cambiar período.
 - **Alternativo obligatorio**: sin datos: `No hay información disponible para el período seleccionado. Intente con un rango de fechas diferente.`
 - **Postcondición**: estadísticas visibles para el período indicado.
