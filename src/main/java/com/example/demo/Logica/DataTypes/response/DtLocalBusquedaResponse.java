@@ -15,6 +15,7 @@ import java.util.List;
 public class DtLocalBusquedaResponse {
     private Long id;
     private String nombre;
+    private String foto;
     private DtDireccion direccion;
     private String descripcion;
     private Double calificacionGlobal;
