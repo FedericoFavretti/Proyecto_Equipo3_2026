@@ -13,6 +13,7 @@ import java.util.Optional;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
+import com.example.demo.Logica.Mappers.PromocionMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,9 +28,11 @@ import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
+import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.mockito.Mockito;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -54,6 +57,12 @@ class LocalServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private PromocionRepositorio promocionRepositorio;
+    @Mock
+    private PromocionMapper promocionMapper;
+    @Mock
+    private ClienteRepositorio clienteRepositorio;
 
     private LocalService localService;
 
@@ -73,7 +82,10 @@ class LocalServiceTest {
                 pedidoRepositorio,
                 passwordEncoder,
                 localMapper,
-                platoMapper
+                platoMapper,
+                promocionRepositorio,
+                promocionMapper,
+                clienteRepositorio
                 );
     }
 

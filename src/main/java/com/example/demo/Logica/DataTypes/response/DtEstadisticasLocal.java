@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 import java.util.List;
 
 @Builder
@@ -12,6 +13,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DtEstadisticasLocal {
+    private LocalDate fechaDesde;
+    private LocalDate fechaHasta;
     private List<DtPlato> platosMasPedido;
-    private Double gananciasMensuales;
+    private Double ventasConfirmadas;
 }

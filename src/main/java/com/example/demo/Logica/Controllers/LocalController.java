@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
@@ -109,8 +110,8 @@ public class LocalController implements iLocalController {
 
     @PreAuthorize("hasRole('Local')")
     @GetMapping("/estadisticas/{idLocal}")
-    public ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal) {
-        DtEstadisticasLocal dtEstadisticasLocal = localService.obtenerEstadisticasLocal(idLocal);
+    public ResponseEntity<DtEstadisticasLocal> obtenerEstadisticas(@PathVariable Long idLocal, DtEstadisticasLocalFiltro filtro) {
+        DtEstadisticasLocal dtEstadisticasLocal = localService.obtenerEstadisticasLocal(idLocal, filtro);
         return ResponseEntity.ok(dtEstadisticasLocal);
     }
 

@@ -225,12 +225,37 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     }
 
     @Override
-    public List<PlatoMasPedidoProjection> obtenerPlatosMasPedidos(Long idLocal, int limite) {
+    public boolean existePedidoConfirmadoEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
+        String sql = """
+        SELECT COUNT(*)
+        FROM pedido p
+        WHERE p.idlocal = ?
+          AND p.estado = ?
+          AND p.fecha >= ?
+          AND p.fecha < ?
+        """;
+
+        Integer cantidad = jdbcTemplate.queryForObject(
+                sql,
+                Integer.class,
+                idLocal,
+                EstadoPedido.Confirmado.name(),
+                Timestamp.valueOf(fechaDesdeInclusive),
+                Timestamp.valueOf(fechaHastaExclusiva)
+        );
+        return cantidad != null && cantidad > 0;
+    }
+
+    @Override
+    public List<PlatoMasPedidoProjection> obtenerPlatosMasPedidosConfirmadosEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva, int limite) {
         String sql = """
         SELECT dp.idplato AS id_plato, SUM(dp.cantidad) AS cantidad_total
         FROM pedido p
         JOIN detallepedido dp ON p.id = dp.idpedido
         WHERE p.idlocal = ?
+          AND p.estado = ?
+          AND p.fecha >= ?
+          AND p.fecha < ?
         GROUP BY dp.idplato
         ORDER BY cantidad_total DESC
         LIMIT ?
@@ -239,20 +264,32 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         return jdbcTemplate.query(sql, (rs, rowNum) -> new PlatoMasPedidoProjection(
                 rs.getLong("id_plato"),
                 rs.getInt("cantidad_total")
-        ), idLocal, limite);
+        ), idLocal,
+                EstadoPedido.Confirmado.name(),
+                Timestamp.valueOf(fechaDesdeInclusive),
+                Timestamp.valueOf(fechaHastaExclusiva),
+                limite);
     }
 
     @Override
-    public Double obtenerGananciasMesActual(Long idLocal) {
+    public Double obtenerVentasConfirmadasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
         String sql = """
-        SELECT COALESCE(SUM(p.total), 0) AS ganancia
+        SELECT COALESCE(SUM(p.total), 0) AS ventas
         FROM pedido p
         WHERE p.idlocal = ?
-          AND DATE_TRUNC('month', p.fecha) = DATE_TRUNC('month', CURRENT_DATE)
           AND p.estado = ?
+          AND p.fecha >= ?
+          AND p.fecha < ?
         """;
 
-        return jdbcTemplate.queryForObject(sql, Double.class, idLocal, EstadoPedido.Confirmado.name());
+        return jdbcTemplate.queryForObject(
+                sql,
+                Double.class,
+                idLocal,
+                EstadoPedido.Confirmado.name(),
+                Timestamp.valueOf(fechaDesdeInclusive),
+                Timestamp.valueOf(fechaHastaExclusiva)
+        );
     }
 
     @Override
