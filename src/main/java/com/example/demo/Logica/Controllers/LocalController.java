@@ -76,6 +76,13 @@ public class LocalController implements iLocalController {
         return ResponseEntity.ok(promocion);
     }
 
+    @PreAuthorize("hasRole('Local')")
+    @DeleteMapping("/promociones_baja/{idPromocion}")
+    public ResponseEntity<Void> gestionarPromocionBaja(@PathVariable("idPromocion") Long idPromocion) {
+        localService.gestionarPromocionBaja(idPromocion);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping(value = "/solicitudes-habilitacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> solicitarHabilitacion(@RequestPart("datos") DtLocal dtLocal,@RequestPart("logo") MultipartFile logo , @RequestPart("imagenes") List<MultipartFile> imagenes){
         List<String> urls = cloudinaryService.subirImagenes(imagenes);

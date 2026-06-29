@@ -24,6 +24,7 @@ public interface iLocalController {
     ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") Long idPlato);
     ResponseEntity<Promocion> gestionarPromocionAlta(@RequestBody DtPromocionRequest request);
     ResponseEntity<Promocion> gestionarPromocionModificacion(@PathVariable("idPromocion") Long idPromocion, @RequestBody DtPromocionRequest request);
+    ResponseEntity<Void> gestionarPromocionBaja(@PathVariable("idPromocion") Long idPromocion);
     ResponseEntity<Void> solicitarHabilitacion(@RequestPart("datos") DtLocal dtLocal,@RequestPart("logo") MultipartFile logo , @RequestPart("imagenes") List<MultipartFile> imagenes);
     ResponseEntity<Void> registrarApertura(@PathVariable("idLocal") Long idLocal);
     ResponseEntity<Void> regitrarCierre(@PathVariable("idLocal") Long idLocal);

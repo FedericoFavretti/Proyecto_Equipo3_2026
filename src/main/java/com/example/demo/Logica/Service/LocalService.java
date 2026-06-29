@@ -173,10 +173,10 @@ public class LocalService {
         validarDatosPromocion(request);
 
         promocionRepositorio.buscarPorId(idPromocion)
-                .orElseThrow(() -> new RuntimeException("Promoción no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Promocion", idPromocion));
 
         Plato plato = platoRepositorio.buscarPorId(request.getIdPlato())
-                .orElseThrow(() -> new RuntimeException("Plato no encontrado"));
+                .orElseThrow(() ->new ResourceNotFoundException("Plato", request.getIdPlato()));
 
         Promocion promocion = Promocion.builder()
                 .id(idPromocion)
@@ -189,6 +189,12 @@ public class LocalService {
 
         promocionRepositorio.actualizar(promocion);
         return promocion;
+    }
+
+    @Transactional
+    public void gestionarPromocionBaja(Long idPromocion){
+        promocionRepositorio.buscarPorId(idPromocion).orElseThrow(() -> new ResourceNotFoundException("Promocion", idPromocion));
+        promocionRepositorio.eliminar(idPromocion);
     }
 
     @Transactional
