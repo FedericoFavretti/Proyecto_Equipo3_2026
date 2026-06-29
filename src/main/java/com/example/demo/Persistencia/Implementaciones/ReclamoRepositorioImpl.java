@@ -89,7 +89,7 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
 
         if (filtro.getEstadoReclamo() != null) {
             sql.append(" AND r.estado = ?");
-            params.add(filtro.getEstadoPedido().name());
+            params.add(filtro.getEstadoReclamo().name());
         }
 
         if (filtro.getFechaReclamo() != null) {
