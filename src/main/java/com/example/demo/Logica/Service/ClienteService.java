@@ -39,6 +39,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.List;
@@ -202,27 +209,30 @@ public class ClienteService {
 
     @Transactional
     public DtLoginResponse registrarOLoguearConGoogle(DtGoogleAuthRequest request) {
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                new NetHttpTransport(), new GsonFactory())
-                .setAudience(Collections.singletonList(googleClientId))
-                .build();
-
-        GoogleIdToken idToken;
+        String email, nombre, apellido, foto;
         try {
-            idToken = verifier.verify(request.getIdToken());
+            String url = "https://www.googleapis.com/oauth2/v3/userinfo";
+            HttpClient httpClient = HttpClient.newHttpClient();
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Authorization", "Bearer " + request.getIdToken())
+                    .GET()
+                    .build();
+            HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            if (httpResponse.statusCode() != 200) {
+                throw new BusinessRuleException("Token de Google inválido.");
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode json = mapper.readTree(httpResponse.body());
+            email = json.get("email").asText();
+            nombre = json.has("given_name") ? json.get("given_name").asText() : "Usuario";
+            apellido = json.has("family_name") ? json.get("family_name").asText() : "";
+            foto = json.has("picture") ? json.get("picture").asText() : null;
+        } catch (BusinessRuleException e) {
+            throw e;
         } catch (Exception e) {
             throw new BusinessRuleException("Error al verificar el token de Google.");
         }
-
-        if (idToken == null) {
-            throw new BusinessRuleException("Token de Google inválido.");
-        }
-
-        GoogleIdToken.Payload payload = idToken.getPayload();
-        String email = payload.getEmail();
-        String nombre = (String) payload.get("given_name");
-        String apellido = (String) payload.get("family_name");
-        String foto = (String) payload.get("picture");
 
         if (usuarioRepositorio.existeCorreo(email)) {
             Cliente clienteExistente = clienteRepositorio.buscarPorEmail(email)
@@ -244,8 +254,8 @@ public class ClienteService {
 
         Cliente cliente = new Cliente();
         cliente.setEmail(email);
-        cliente.setNombre(nombre != null ? nombre : "Usuario");
-        cliente.setApellido(apellido != null ? apellido : "");
+        cliente.setNombre(nombre);
+        cliente.setApellido(apellido);
         cliente.setFoto(foto);
         cliente.setDocumento(request.getDocumento() != null ?
                 request.getDocumento() : "GOOG" + System.currentTimeMillis());
