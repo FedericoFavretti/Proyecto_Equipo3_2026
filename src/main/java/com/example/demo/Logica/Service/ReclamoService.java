@@ -67,11 +67,14 @@ public class ReclamoService {
     }
 
     @Transactional
-    public void resolverReclamo(DtReclamo dtReclamo){
-        if(reclamoRepositorio.buscarPorId(dtReclamo.getId()).isEmpty()){
-            throw new ResourceNotFoundException("Reclamo", dtReclamo.getId());
+    public void resolverReclamo(DtReclamo dtReclamo) {
+        Reclamo reclamoExistente = reclamoRepositorio.buscarPorId(dtReclamo.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Reclamo", dtReclamo.getId()));
+        reclamoExistente.setEstado(EstadoReclamo.Atendido);
+        reclamoExistente.setTipoCompensacion(dtReclamo.getTipoCompensacion());
+        if (dtReclamo.getMotivo() != null && !dtReclamo.getMotivo().isBlank()) {
+            reclamoExistente.setMotivo(dtReclamo.getMotivo());
         }
-        Reclamo reclamo = reclamoMapper.mapearReclamoDeDt(dtReclamo);
-        reclamoRepositorio.actualizar(reclamo);
+        reclamoRepositorio.actualizar(reclamoExistente);
     }
 }
