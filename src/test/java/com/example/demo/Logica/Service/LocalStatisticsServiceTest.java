@@ -93,12 +93,12 @@ class LocalStatisticsServiceTest {
                 .build();
 
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
-        when(pedidoRepositorio.existePedidoConfirmadoEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(pedidoRepositorio.existePedidoValidoParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(true);
-        when(pedidoRepositorio.obtenerPlatosMasPedidosConfirmadosEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class), eq(5)))
+        when(pedidoRepositorio.obtenerPlatosMasPedidosEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class), eq(5)))
                 .thenReturn(List.of(new PlatoMasPedidoProjection(20L, 7)));
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(plato));
-        when(pedidoRepositorio.obtenerVentasConfirmadasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(pedidoRepositorio.obtenerVentasParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(2450.0);
 
         DtEstadisticasLocal resultado = localService.obtenerEstadisticasLocal(10L, filtro);
@@ -112,7 +112,7 @@ class LocalStatisticsServiceTest {
 
         ArgumentCaptor<LocalDateTime> desdeCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
         ArgumentCaptor<LocalDateTime> hastaCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(pedidoRepositorio).obtenerVentasConfirmadasEnPeriodo(eq(10L), desdeCaptor.capture(), hastaCaptor.capture());
+        verify(pedidoRepositorio).obtenerVentasParaEstadisticasEnPeriodo(eq(10L), desdeCaptor.capture(), hastaCaptor.capture());
         assertThat(desdeCaptor.getValue()).isEqualTo(LocalDateTime.of(2026, 6, 1, 0, 0));
         assertThat(hastaCaptor.getValue()).isEqualTo(LocalDateTime.of(2026, 6, 16, 0, 0));
     }
@@ -123,12 +123,12 @@ class LocalStatisticsServiceTest {
         Plato plato = plato(local);
 
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
-        when(pedidoRepositorio.existePedidoConfirmadoEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(pedidoRepositorio.existePedidoValidoParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(true);
-        when(pedidoRepositorio.obtenerPlatosMasPedidosConfirmadosEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class), eq(5)))
+        when(pedidoRepositorio.obtenerPlatosMasPedidosEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class), eq(5)))
                 .thenReturn(List.of(new PlatoMasPedidoProjection(20L, 3)));
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(plato));
-        when(pedidoRepositorio.obtenerVentasConfirmadasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(pedidoRepositorio.obtenerVentasParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(600.0);
 
         DtEstadisticasLocal resultado = localService.obtenerEstadisticasLocal(10L, null);
@@ -152,13 +152,13 @@ class LocalStatisticsServiceTest {
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Debe enviar un preset o un rango libre, pero no ambos.");
 
-        verify(pedidoRepositorio, never()).existePedidoConfirmadoEnPeriodo(any(), any(), any());
+        verify(pedidoRepositorio, never()).existePedidoValidoParaEstadisticasEnPeriodo(any(), any(), any());
     }
 
     @Test
-    void obtenerEstadisticasLocalInformaCuandoNoHayPedidosConfirmadosEnPeriodo() {
+    void obtenerEstadisticasLocalInformaCuandoNoHayPedidosValidosEnPeriodo() {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(localHabilitado()));
-        when(pedidoRepositorio.existePedidoConfirmadoEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(pedidoRepositorio.existePedidoValidoParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(false);
 
         DtEstadisticasLocalFiltro filtro = DtEstadisticasLocalFiltro.builder()

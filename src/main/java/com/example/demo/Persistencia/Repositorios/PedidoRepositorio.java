@@ -25,9 +25,9 @@ public interface PedidoRepositorio {
     boolean existePedidoDeClienteEnLocal(Long idCliente, Long idLocal);
     boolean existePedidoActivoPorCliente(Long idCliente);
     boolean existePedidoPendientePorLocal(Long idLocal);
-    boolean existePedidoConfirmadoEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva);
-    List<PlatoMasPedidoProjection> obtenerPlatosMasPedidosConfirmadosEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva, int limite);
-    Double obtenerVentasConfirmadasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva);
+    boolean existePedidoValidoParaEstadisticasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva);
+    List<PlatoMasPedidoProjection> obtenerPlatosMasPedidosEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva, int limite);
+    Double obtenerVentasParaEstadisticasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva);
     List<Pedido> buscarEnCaminoVencidos(LocalDateTime ahora);
     void marcarPagoAprobado(Long pedidoId);
 }

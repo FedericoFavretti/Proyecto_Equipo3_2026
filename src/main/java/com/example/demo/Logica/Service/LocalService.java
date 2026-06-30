@@ -257,14 +257,14 @@ public class LocalService {
         validarLocalHabilitado(local);
 
         RangoPeriodo rangoPeriodo = resolverRangoPeriodo(filtro);
-        if (!pedidoRepositorio.existePedidoConfirmadoEnPeriodo(
+        if (!pedidoRepositorio.existePedidoValidoParaEstadisticasEnPeriodo(
                 idLocal,
                 rangoPeriodo.fechaDesdeInclusive(),
                 rangoPeriodo.fechaHastaExclusiva())) {
             throw new BusinessRuleException(MENSAJE_PERIODO_SIN_DATOS);
         }
 
-        List<PlatoMasPedidoProjection> proyecciones = pedidoRepositorio.obtenerPlatosMasPedidosConfirmadosEnPeriodo(
+        List<PlatoMasPedidoProjection> proyecciones = pedidoRepositorio.obtenerPlatosMasPedidosEnPeriodo(
                 idLocal,
                 rangoPeriodo.fechaDesdeInclusive(),
                 rangoPeriodo.fechaHastaExclusiva(),
@@ -274,7 +274,7 @@ public class LocalService {
                         .orElseThrow(() -> new ResourceNotFoundException("Plato", p.idPlato())))
                 .map(platoMapper::mapearDtPlatoDeClase)
                 .toList();
-        Double ventasConfirmadas = pedidoRepositorio.obtenerVentasConfirmadasEnPeriodo(
+        Double ventasConfirmadas = pedidoRepositorio.obtenerVentasParaEstadisticasEnPeriodo(
                 idLocal,
                 rangoPeriodo.fechaDesdeInclusive(),
                 rangoPeriodo.fechaHastaExclusiva());
