@@ -348,7 +348,7 @@ Reglas generales para TODOS los casos de uso:
 - **Implementar**:
   1. Acceso a `Estadísticas`.
   2. Seleccionar período mediante presets o rango libre.
-  3. Calcular ventas y platos más pedidos usando únicamente pedidos en estado `Confirmado`.
+  3. Calcular ventas y platos más pedidos usando pedidos en estado `Confirmado` o `Entregado`.
   4. Actualizar métricas al cambiar período.
 - **Alternativo obligatorio**: sin datos: `No hay información disponible para el período seleccionado. Intente con un rango de fechas diferente.`
 - **Postcondición**: estadísticas visibles para el período indicado.

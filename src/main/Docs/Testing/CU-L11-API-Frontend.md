@@ -8,7 +8,7 @@ El objetivo del cambio fue soportar:
 
 - selección de período por **preset**
 - selección de período por **rango libre**
-- métricas calculadas **solo con pedidos en estado `Confirmado`**
+- métricas calculadas con pedidos en estado `Confirmado` o `Entregado`
 
 > Base path general: `/api/v1`
 
@@ -57,12 +57,11 @@ Las métricas actuales son:
 
 ## Importante
 
-Las estadísticas se calculan **únicamente con pedidos en estado `Confirmado`**.
+Las estadísticas se calculan con pedidos en estado `Confirmado` o `Entregado`.
 
 No cuentan:
 
 - `Pendiente`
-- `Entregado`
 - `Rechazado`
 - `Cancelado`
 
@@ -186,7 +185,7 @@ Fecha final realmente aplicada por backend.
 Top de platos más pedidos dentro del período solicitado.
 
 ### `ventasConfirmadas`
-Suma de `total` de pedidos `Confirmado` dentro del período solicitado.
+Suma de `total` de pedidos `Confirmado` o `Entregado` dentro del período solicitado.
 
 ---
 
@@ -399,4 +398,3 @@ Por si frontend quiere rastrear origen del contrato:
 - `src/main/java/com/example/demo/Logica/Enums/PeriodoEstadisticasPreset.java`
 - `src/main/java/com/example/demo/Persistencia/Repositorios/PedidoRepositorio.java`
 - `src/main/java/com/example/demo/Persistencia/Implementaciones/PedidoRepositorioImpl.java`
-

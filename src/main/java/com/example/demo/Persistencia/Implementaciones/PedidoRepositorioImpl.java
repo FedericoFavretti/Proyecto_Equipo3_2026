@@ -225,12 +225,12 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     }
 
     @Override
-    public boolean existePedidoConfirmadoEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
+    public boolean existePedidoValidoParaEstadisticasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
         String sql = """
         SELECT COUNT(*)
         FROM pedido p
         WHERE p.idlocal = ?
-          AND p.estado = ?
+          AND p.estado IN (?, ?)
           AND p.fecha >= ?
           AND p.fecha < ?
         """;
@@ -240,6 +240,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 Integer.class,
                 idLocal,
                 EstadoPedido.Confirmado.name(),
+                EstadoPedido.Entregado.name(),
                 Timestamp.valueOf(fechaDesdeInclusive),
                 Timestamp.valueOf(fechaHastaExclusiva)
         );
@@ -247,13 +248,13 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     }
 
     @Override
-    public List<PlatoMasPedidoProjection> obtenerPlatosMasPedidosConfirmadosEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva, int limite) {
+    public List<PlatoMasPedidoProjection> obtenerPlatosMasPedidosEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva, int limite) {
         String sql = """
         SELECT dp.idplato AS id_plato, SUM(dp.cantidad) AS cantidad_total
         FROM pedido p
         JOIN detallepedido dp ON p.id = dp.idpedido
         WHERE p.idlocal = ?
-          AND p.estado = ?
+          AND p.estado IN (?, ?)
           AND p.fecha >= ?
           AND p.fecha < ?
         GROUP BY dp.idplato
@@ -266,18 +267,19 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 rs.getInt("cantidad_total")
         ), idLocal,
                 EstadoPedido.Confirmado.name(),
+                EstadoPedido.Entregado.name(),
                 Timestamp.valueOf(fechaDesdeInclusive),
                 Timestamp.valueOf(fechaHastaExclusiva),
                 limite);
     }
 
     @Override
-    public Double obtenerVentasConfirmadasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
+    public Double obtenerVentasParaEstadisticasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
         String sql = """
         SELECT COALESCE(SUM(p.total), 0) AS ventas
         FROM pedido p
         WHERE p.idlocal = ?
-          AND p.estado = ?
+          AND p.estado IN (?, ?)
           AND p.fecha >= ?
           AND p.fecha < ?
         """;
@@ -287,6 +289,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 Double.class,
                 idLocal,
                 EstadoPedido.Confirmado.name(),
+                EstadoPedido.Entregado.name(),
                 Timestamp.valueOf(fechaDesdeInclusive),
                 Timestamp.valueOf(fechaHastaExclusiva)
         );
