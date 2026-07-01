@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
+import com.example.demo.Logica.DataTypes.response.DtPlatoEstadistica;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
@@ -22,7 +23,7 @@ import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
-import com.example.demo.Logica.Record.PlatoMasPedidoProjection;
+import com.example.demo.Logica.Record.PlatoVendidoEstadisticaProjection;
 import com.example.demo.Persistencia.Repositorios.*;
 import com.example.demo.Logica.Clases.Promocion;
 import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
@@ -264,15 +265,20 @@ public class LocalService {
             throw new BusinessRuleException(MENSAJE_PERIODO_SIN_DATOS);
         }
 
-        List<PlatoMasPedidoProjection> proyecciones = pedidoRepositorio.obtenerPlatosMasPedidosEnPeriodo(
+        List<PlatoVendidoEstadisticaProjection> proyeccionesTop = pedidoRepositorio.obtenerPlatosMasPedidosEnPeriodo(
                 idLocal,
                 rangoPeriodo.fechaDesdeInclusive(),
                 rangoPeriodo.fechaHastaExclusiva(),
                 LIMITE_PLATOS_MAS_PEDIDOS);
-        List<DtPlato> platosMasPedido = proyecciones.stream()
-                .map(p -> platoRepositorio.buscarPorId(p.idPlato())
-                        .orElseThrow(() -> new ResourceNotFoundException("Plato", p.idPlato())))
-                .map(platoMapper::mapearDtPlatoDeClase)
+        List<DtPlatoEstadistica> platosMasPedido = proyeccionesTop.stream()
+                .map(this::mapearPlatoEstadistica)
+                .toList();
+        List<DtPlatoEstadistica> ventasPorPlato = pedidoRepositorio.obtenerVentasPorPlatoEnPeriodo(
+                        idLocal,
+                        rangoPeriodo.fechaDesdeInclusive(),
+                        rangoPeriodo.fechaHastaExclusiva())
+                .stream()
+                .map(this::mapearPlatoEstadistica)
                 .toList();
         Double ventasConfirmadas = pedidoRepositorio.obtenerVentasParaEstadisticasEnPeriodo(
                 idLocal,
@@ -282,6 +288,7 @@ public class LocalService {
                 .fechaDesde(rangoPeriodo.fechaDesde())
                 .fechaHasta(rangoPeriodo.fechaHasta())
                 .platosMasPedido(platosMasPedido)
+                .ventasPorPlato(ventasPorPlato)
                 .ventasConfirmadas(ventasConfirmadas)
                 .build();
     }
@@ -480,6 +487,19 @@ public class LocalService {
         if (plato.getLocal() == null || plato.getLocal().getId() == null || !plato.getLocal().getId().equals(idLocal)) {
             throw new BusinessRuleException(MENSAJE_PLATO_DE_OTRO_LOCAL);
         }
+    }
+
+    private DtPlatoEstadistica mapearPlatoEstadistica(PlatoVendidoEstadisticaProjection projection) {
+        Plato plato = platoRepositorio.buscarPorId(projection.idPlato())
+                .orElseThrow(() -> new ResourceNotFoundException("Plato", projection.idPlato()));
+
+        return DtPlatoEstadistica.builder()
+                .id(plato.getId())
+                .nombre(plato.getNombre())
+                .imagenes(plato.getImagenes())
+                .cantidadVendida(projection.cantidadTotal())
+                .montoVendido(projection.montoTotal())
+                .build();
     }
 
     private RangoPeriodo resolverRangoPeriodo(DtEstadisticasLocalFiltro filtro) {

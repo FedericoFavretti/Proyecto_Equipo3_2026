@@ -4,7 +4,7 @@ import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoPedido;
-import com.example.demo.Logica.Record.PlatoMasPedidoProjection;
+import com.example.demo.Logica.Record.PlatoVendidoEstadisticaProjection;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
@@ -248,9 +248,11 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     }
 
     @Override
-    public List<PlatoMasPedidoProjection> obtenerPlatosMasPedidosEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva, int limite) {
+    public List<PlatoVendidoEstadisticaProjection> obtenerPlatosMasPedidosEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva, int limite) {
         String sql = """
-        SELECT dp.idplato AS id_plato, SUM(dp.cantidad) AS cantidad_total
+        SELECT dp.idplato AS id_plato,
+               SUM(dp.cantidad) AS cantidad_total,
+               COALESCE(SUM(dp.subtotal), 0) AS monto_total
         FROM pedido p
         JOIN detallepedido dp ON p.id = dp.idpedido
         WHERE p.idlocal = ?
@@ -258,19 +260,47 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
           AND p.fecha >= ?
           AND p.fecha < ?
         GROUP BY dp.idplato
-        ORDER BY cantidad_total DESC
+        ORDER BY cantidad_total DESC, monto_total DESC, dp.idplato ASC
         LIMIT ?
         """;
 
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new PlatoMasPedidoProjection(
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new PlatoVendidoEstadisticaProjection(
                 rs.getLong("id_plato"),
-                rs.getInt("cantidad_total")
+                rs.getInt("cantidad_total"),
+                rs.getDouble("monto_total")
         ), idLocal,
                 EstadoPedido.Confirmado.name(),
                 EstadoPedido.Entregado.name(),
                 Timestamp.valueOf(fechaDesdeInclusive),
                 Timestamp.valueOf(fechaHastaExclusiva),
                 limite);
+    }
+
+    @Override
+    public List<PlatoVendidoEstadisticaProjection> obtenerVentasPorPlatoEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
+        String sql = """
+        SELECT dp.idplato AS id_plato,
+               SUM(dp.cantidad) AS cantidad_total,
+               COALESCE(SUM(dp.subtotal), 0) AS monto_total
+        FROM pedido p
+        JOIN detallepedido dp ON p.id = dp.idpedido
+        WHERE p.idlocal = ?
+          AND p.estado IN (?, ?)
+          AND p.fecha >= ?
+          AND p.fecha < ?
+        GROUP BY dp.idplato
+        ORDER BY cantidad_total DESC, monto_total DESC, dp.idplato ASC
+        """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new PlatoVendidoEstadisticaProjection(
+                rs.getLong("id_plato"),
+                rs.getInt("cantidad_total"),
+                rs.getDouble("monto_total")
+        ), idLocal,
+                EstadoPedido.Confirmado.name(),
+                EstadoPedido.Entregado.name(),
+                Timestamp.valueOf(fechaDesdeInclusive),
+                Timestamp.valueOf(fechaHastaExclusiva));
     }
 
     @Override

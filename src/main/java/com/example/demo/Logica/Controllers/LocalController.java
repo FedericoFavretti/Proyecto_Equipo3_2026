@@ -2,8 +2,6 @@ package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
-import com.example.demo.Logica.DataTypes.request.DtFiltro;
-import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
