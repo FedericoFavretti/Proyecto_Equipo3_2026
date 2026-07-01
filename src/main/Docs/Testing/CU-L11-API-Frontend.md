@@ -28,6 +28,7 @@ El objetivo del cambio fue soportar:
   - `fechaDesde`
   - `fechaHasta`
   - `platosMasPedido`
+  - `ventasPorPlato`
   - `ventasConfirmadas`
 
 ### Impacto para frontend
@@ -54,6 +55,7 @@ Las métricas actuales son:
 
 - ventas confirmadas
 - platos más pedidos
+- detalle de ventas por plato
 
 ## Importante
 
@@ -155,18 +157,22 @@ Ese caso devuelve error `400`.
     {
       "id": 20,
       "nombre": "Milanesa al pan",
-      "descripcion": "Milanesa con lechuga y tomate",
-      "categoria": "Sandwiches",
-      "precio": 350.0,
-      "precioFinal": 350.0,
-      "tienePromocion": false,
       "imagenes": [
         "https://.../milanesa.jpg"
       ],
-      "disponible": true,
-      "dtLocal": {
-        "id": 10
-      }
+      "cantidadVendida": 7,
+      "montoVendido": 2450.0
+    }
+  ],
+  "ventasPorPlato": [
+    {
+      "id": 20,
+      "nombre": "Milanesa al pan",
+      "imagenes": [
+        "https://.../milanesa.jpg"
+      ],
+      "cantidadVendida": 7,
+      "montoVendido": 2450.0
     }
   ],
   "ventasConfirmadas": 2450.0
@@ -183,6 +189,31 @@ Fecha final realmente aplicada por backend.
 
 ### `platosMasPedido`
 Top de platos más pedidos dentro del período solicitado.
+
+Cada elemento ahora incluye:
+
+- `cantidadVendida`
+- `montoVendido`
+
+Reglas:
+
+- viene ordenado por `cantidadVendida` descendente
+- desempata por `montoVendido` descendente
+- luego por `id` ascendente
+- devuelve un top fijo de 5 platos
+
+`montoVendido` se calcula a partir de los importes históricos guardados en `detallepedido.subtotal`.
+Por eso este DTO analítico ya no expone `precio` ni `precioFinal`, para no mezclar precios actuales de catálogo con ventas históricas.
+
+### `ventasPorPlato`
+Desglose completo de platos vendidos en el período, ordenado por cantidad vendida descendentemente.
+
+Reglas:
+
+- incluye solo platos vendidos en el período
+- viene ordenado por `cantidadVendida` descendente
+- desempata por `montoVendido` descendente
+- luego por `id` ascendente
 
 ### `ventasConfirmadas`
 Suma de `total` de pedidos `Confirmado` o `Entregado` dentro del período solicitado.
@@ -211,6 +242,7 @@ Frontend recibe:
   "fechaDesde": "2026-06-01",
   "fechaHasta": "2026-06-15",
   "platosMasPedido": [...],
+  "ventasPorPlato": [...],
   "ventasConfirmadas": 2450.0
 }
 ```
@@ -221,8 +253,11 @@ Frontend debe:
 
 1. dejar de leer `gananciasMensuales`
 2. empezar a leer `ventasConfirmadas`
-3. actualizar el tipado/modelo DTO
-4. usar `fechaDesde` y `fechaHasta` para renderizar el período aplicado
+3. usar `cantidadVendida` y `montoVendido` si quiere enriquecer el ranking
+4. leer `ventasPorPlato` si necesita el desglose completo por plato
+5. dejar de asumir que este DTO trae `precio` o `precioFinal`
+6. actualizar el tipado/modelo DTO
+7. usar `fechaDesde` y `fechaHasta` para renderizar el período aplicado
 
 ---
 
@@ -269,6 +304,10 @@ Mensaje esperado:
   "mensaje": "No hay informacion disponible para el periodo seleccionado. Intente con un rango de fechas diferente."
 }
 ```
+
+Importante:
+
+Hoy este caso sigue devolviendo error de negocio. No retorna `200` con listas vacías.
 
 ## 401 Unauthorized
 

@@ -1,6 +1,4 @@
 package com.example.demo.Logica.DataTypes.response;
-
-import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +13,7 @@ import java.util.List;
 public class DtEstadisticasLocal {
     private LocalDate fechaDesde;
     private LocalDate fechaHasta;
-    private List<DtPlato> platosMasPedido;
+    private List<DtPlatoEstadistica> platosMasPedido;
+    private List<DtPlatoEstadistica> ventasPorPlato;
     private Double ventasConfirmadas;
 }

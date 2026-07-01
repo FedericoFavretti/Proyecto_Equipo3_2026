@@ -1,6 +1,5 @@
 package com.example.demo.Logica.Controllers;
-
-import com.example.demo.Logica.DataTypes.shared.DtPlato;
+import com.example.demo.Logica.DataTypes.response.DtPlatoEstadistica;
 import com.example.demo.Logica.Enums.PeriodoEstadisticasPreset;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.Service.LocalService;
@@ -47,12 +46,20 @@ class LocalControllerTest {
                         .fechaHasta(LocalDate.of(2026, 6, 29))
                         .ventasConfirmadas(1500.0)
                         .platosMasPedido(List.of(
-                                DtPlato.builder()
+                                DtPlatoEstadistica.builder()
                                         .id(20L)
                                         .nombre("Milanesa al pan")
-                                        .precio(350.0)
-                                        .disponible(true)
                                         .imagenes(List.of("milanesa.jpg"))
+                                        .cantidadVendida(4)
+                                        .montoVendido(1400.0)
+                                        .build()))
+                        .ventasPorPlato(List.of(
+                                DtPlatoEstadistica.builder()
+                                        .id(20L)
+                                        .nombre("Milanesa al pan")
+                                        .imagenes(List.of("milanesa.jpg"))
+                                        .cantidadVendida(4)
+                                        .montoVendido(1400.0)
                                         .build()))
                         .build());
 
@@ -63,7 +70,9 @@ class LocalControllerTest {
                 .andExpect(jsonPath("$.fechaDesde").value("2026-06-23"))
                 .andExpect(jsonPath("$.fechaHasta").value("2026-06-29"))
                 .andExpect(jsonPath("$.platosMasPedido[0].id").value(20))
-                .andExpect(jsonPath("$.platosMasPedido[0].nombre").value("Milanesa al pan"));
+                .andExpect(jsonPath("$.platosMasPedido[0].nombre").value("Milanesa al pan"))
+                .andExpect(jsonPath("$.platosMasPedido[0].cantidadVendida").value(4))
+                .andExpect(jsonPath("$.ventasPorPlato[0].montoVendido").value(1400.0));
 
         ArgumentCaptor<DtEstadisticasLocalFiltro> captor = ArgumentCaptor.forClass(DtEstadisticasLocalFiltro.class);
         verify(localService).obtenerEstadisticasLocal(eq(10L), captor.capture());
@@ -80,6 +89,7 @@ class LocalControllerTest {
                         .fechaHasta(LocalDate.of(2026, 6, 15))
                         .ventasConfirmadas(850.0)
                         .platosMasPedido(List.of())
+                        .ventasPorPlato(List.of())
                         .build());
 
         mockMvc.perform(get("/api/v1/locales/estadisticas/10")
