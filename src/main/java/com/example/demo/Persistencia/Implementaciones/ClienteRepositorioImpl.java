@@ -29,7 +29,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public List<Cliente> listarTodos() {
         return jdbcTemplate.query(
-                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id",
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE c.documento NOT ILIKE 'ANON-%'",
                 (rs, row)-> mapearCliente(rs)
         );
     }
@@ -37,7 +37,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public Optional<Cliente> buscarPorId(Long id) {
         return jdbcTemplate.query(
-                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id  WHERE u.id = ?",
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id  WHERE u.id = ? ",
                 (rs, row) -> mapearCliente(rs), id
         ).stream().findFirst();
     }
@@ -93,7 +93,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public List<Cliente> buscarConFiltros(DtFiltroUsuario filtro) {
         StringBuilder sql = new StringBuilder(
-                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE 1=1"
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE c.documento NOT ILIKE 'ANON-%' 1=1"
         );
         List<Object> params = new ArrayList<>();
 
