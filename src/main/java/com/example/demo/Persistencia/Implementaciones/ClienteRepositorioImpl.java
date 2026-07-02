@@ -93,7 +93,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
     @Override
     public List<Cliente> buscarConFiltros(DtFiltroUsuario filtro) {
         StringBuilder sql = new StringBuilder(
-                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE c.documento NOT ILIKE 'ANON-%' 1=1"
+                "SELECT u.*, c.* FROM usuario u JOIN cliente c ON u.id = c.id WHERE c.documento NOT ILIKE 'ANON-%' AND 1=1"
         );
         List<Object> params = new ArrayList<>();
 

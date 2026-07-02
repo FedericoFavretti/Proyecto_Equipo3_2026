@@ -22,7 +22,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     private static final String SELECT_LOCAL_CON_USUARIO = """
             SELECT l.*, u.email, u.passwd, u.estado AS estado_cuenta, u.tipo, u.foto, u.sesiones_invalidadas_desde
             FROM Local l
-            LEFT JOIN usuario u ON u.id = l.id WHERE c.documento NOT ILIKE 'ANON-%'
+            LEFT JOIN usuario u ON u.id = l.id 
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -33,7 +33,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     @Override
     public List<Local> listarTodos() {
         return jdbcTemplate.query(
-                SELECT_LOCAL_CON_USUARIO,
+                SELECT_LOCAL_CON_USUARIO + "WHERE c.documento NOT ILIKE 'ANON-%'",
                 (rs, row) -> mapearLocal(rs)
         );
     }
