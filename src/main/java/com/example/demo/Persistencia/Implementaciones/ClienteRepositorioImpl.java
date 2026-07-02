@@ -123,7 +123,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                 FROM usuario u
                 JOIN cliente c ON u.id = c.id
                 JOIN pedido p ON p.idcliente = c.id
-                WHERE p.idlocal = ?
+                WHERE p.idlocal = ? AND c.documento NOT ILIKE 'ANON-%'
                 """);
         List<Object> params = new ArrayList<>();
         params.add(idLocal);
