@@ -85,23 +85,24 @@ public class AdminService {
         Usuario usuario = usuarioRepositorio.buscarPorId(dtResCuentaUsuario.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", dtResCuentaUsuario.getId()));
 
-        Boolean activarObj = dtResCuentaUsuario.getActivo();
-        if (activarObj == null) {
-            throw new BusinessRuleException("El campo 'activo' es obligatorio");
+        EstadoCuenta nuevoEstado = dtResCuentaUsuario.getEstado();
+        if (nuevoEstado == null) {
+            throw new BusinessRuleException("El campo 'estado' es obligatorio");
         }
-        boolean activar = activarObj;
+
+        boolean activar = nuevoEstado == EstadoCuenta.Activo;
 
         if (usuario instanceof Cliente cliente) {
-            cliente.setEstado(activar ? EstadoCuenta.Activo : EstadoCuenta.Bloqueado);
             cliente.setActivo(activar);
             clienteRepositorio.actualizar(cliente);
         } else if (usuario instanceof Local local) {
-            local.setEstado(activar ? EstadoCuenta.Activo : EstadoCuenta.Bloqueado);
             local.setEstadoLocal(activar ? EstadoLocal.Habilitado : EstadoLocal.Bloqueado);
             localRepositorio.actualizar(local);
         } else {
             throw new BusinessRuleException("Tipo de usuario no soportado para este cambio de estado");
         }
+
+        usuarioRepositorio.actualizarEstado(usuario.getId(), nuevoEstado);
 
         if (!activar) {
             cerrarTodasLasSesiones(usuario.getId());
