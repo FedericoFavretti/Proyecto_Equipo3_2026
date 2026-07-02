@@ -121,11 +121,11 @@ El `CU-L08` correcto en la guía es **"Rechazar Pedido de Cliente"**.
 ### Nota de implementación backend actual
 
 - Se implementó con **anonimización segura** en lugar de delete físico para preservar historial de pedidos y reclamos.
-- Mientras no esté resuelta la autenticación/autorización real del actor, el acceso quedó expuesto mediante endpoint temporal DEV:
-  - `DELETE /api/v1/usuarios/clientes/{idCliente}/cuenta-dev`
-- Decisión temporal documentada:
+- La cuenta recreada luego de una eliminación se considera **una identidad nueva**: inicia con carrito vacío y no hereda estado personal previo.
+- Las calificaciones históricas asociadas a la cuenta eliminada se **archivan** y quedan excluidas del promedio, estadísticas visibles y vistas operativas del local.
+- Decisiones operativas documentadas:
   - `Pedido` en estado `Pendiente` o `Confirmado` se considera “en curso”.
-  - Como la persistencia visible de `Reclamo` todavía no modela estado de forma consistente, por ahora cualquier reclamo asociado al cliente bloquea la eliminación.
+  - La eliminación mantiene el historial de pedidos sin reescribir sus estados originales.
 
 ## 4) CU-L14 — Consultar Calificación Global del Local
 

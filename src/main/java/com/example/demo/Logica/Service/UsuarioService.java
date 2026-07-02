@@ -40,6 +40,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -104,11 +105,12 @@ public class UsuarioService {
     private final CodigoVerificacionRepositorio codigoVerificacionRepositorio;
     private final LocalRepositorio localRepositorio;
     private final AdministradorRepositorio administradorRepositorio;
+    private final CalificacionRepositorio calificacionRepositorio;
 
     @Autowired
     private TokenRecuperacionPasswdRepositorio tokenRecuperacionPasswdRepositorio;
 
-    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio) {
+    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio, CalificacionRepositorio calificacionRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
@@ -123,6 +125,7 @@ public class UsuarioService {
         this.codigoVerificacionRepositorio = codigoVerificacionRepositorio;
         this.localRepositorio = localRepositorio;
         this.administradorRepositorio = administradorRepositorio;
+        this.calificacionRepositorio = calificacionRepositorio;
     }
 
     @Transactional
@@ -321,6 +324,10 @@ public class UsuarioService {
             throw new IllegalStateException(MENSAJE_RECLAMOS_PENDIENTES);
         }
 
+        List<Long> idsLocalesAfectados = calificacionRepositorio.obtenerLocalesAfectadosPorArchivoDeCliente(idCliente);
+        calificacionRepositorio.archivarPorCliente(idCliente);
+        recalcularCalificacionGlobalLocales(idsLocalesAfectados);
+        invalidarSesiones(cliente);
         anonimizarCliente(cliente);
         usuarioRepositorio.actualizar(cliente);
     }
@@ -564,6 +571,7 @@ public class UsuarioService {
         Long idCliente = cliente.getId();
         cliente.setEstado(EstadoCuenta.Bloqueado);
         cliente.setActivo(false);
+        cliente.setCalificacionGlobal(0.0);
         cliente.setEmail("anon-" + idCliente + "@deleted.local");
         cliente.setPasswd(passwordEncoder.encode("cuenta-eliminada-" + idCliente));
         cliente.setFoto("anonimizado");
@@ -571,6 +579,26 @@ public class UsuarioService {
         cliente.setApellido("");
         cliente.setDocumento("ANON-" + idCliente);
         cliente.setDireccion(DIRECCION_ANONIMIZADA);
+    }
+
+    private void recalcularCalificacionGlobalLocales(List<Long> idsLocalesAfectados) {
+        if (idsLocalesAfectados == null || idsLocalesAfectados.isEmpty()) {
+            return;
+        }
+
+        for (Long idLocal : idsLocalesAfectados) {
+            if (idLocal == null) {
+                continue;
+            }
+            localRepositorio.buscarPorId(idLocal).ifPresent(local -> {
+                double promedio = calificacionRepositorio.listarPorLocal(idLocal).stream()
+                        .mapToInt(calificacion -> calificacion.getPuntaje())
+                        .average()
+                        .orElse(0.0);
+                local.setCalificacionGlobal(promedio);
+                localRepositorio.actualizar(local);
+            });
+        }
     }
 
     private String normalizarCorreo(String correo) {

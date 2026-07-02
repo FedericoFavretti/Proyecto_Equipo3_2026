@@ -16,4 +16,6 @@ public interface CalificacionRepositorio {
     List<Calificacion> listarPorLocal(Long idLocal);
     List<Calificacion> listarPorCliente(Long idCliente);
     Optional<Calificacion> buscarCalificacionClienteALocal(Long idCliente, Long idLocal);
+    void archivarPorCliente(Long idCliente);
+    List<Long> obtenerLocalesAfectadosPorArchivoDeCliente(Long idCliente);
 }
