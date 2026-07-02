@@ -489,6 +489,10 @@ Reglas generales para TODOS los casos de uso:
   5. Verificar que no existan pedidos activos ni reclamos pendientes.
   6. Eliminar o anonimizar datos personales manteniendo consistencia histórica.
   7. Cerrar sesión activa y redirigir a inicio.
+- **Reglas acordadas para consistencia histórica**:
+  - Si el usuario elimina su cuenta y luego crea otra, la nueva cuenta se considera una identidad nueva.
+  - La nueva cuenta inicia con carrito vacío y no hereda estado personal previo.
+  - Las calificaciones históricas asociadas a la cuenta eliminada se archivan y dejan de contar en promedios, estadísticas visibles y vistas operativas del local.
 - **Alternativos obligatorios**:
   - Pedidos activos: `No es posible eliminar la cuenta mientras tenga pedidos en curso. Espere a que todos sus pedidos sean resueltos.`
   - Reclamos pendientes: `No es posible eliminar la cuenta mientras tenga reclamos pendientes de resolución.`

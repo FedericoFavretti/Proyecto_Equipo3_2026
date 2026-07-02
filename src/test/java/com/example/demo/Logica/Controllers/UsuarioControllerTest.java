@@ -16,7 +16,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class UsuarioControllerTest {
 
     @Test
-    void editarDatosDeCuentaDevuelveNoContentSiElUsuarioEstaAutenticado() {
+    void editarDatosDeCuentaDevuelveOkSiElUsuarioEstaAutenticado() {
         UsuarioService usuarioService = Mockito.mock(UsuarioService.class);
         UsuarioController controller = new UsuarioController(usuarioService);
         MockMultipartFile foto = new MockMultipartFile("foto", "perfil.png", "image/png", new byte[]{1});
@@ -30,7 +30,7 @@ class UsuarioControllerTest {
                 authentication
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         verify(usuarioService).editarDatosDeCuentaDeUsuario("cliente@foodly.com", "Bearer token", Map.of("nombre", "Maria"), foto);
     }
 
@@ -51,13 +51,26 @@ class UsuarioControllerTest {
     }
 
     @Test
-    void eliminarCuentaPropiaDevuelveNoContent() {
+    void eliminarMiCuentaDevuelveNoContent() {
+        UsuarioService usuarioService = Mockito.mock(UsuarioService.class);
+        UsuarioController controller = new UsuarioController(usuarioService);
+        TestingAuthenticationToken authentication =
+                new TestingAuthenticationToken("cliente@foodly.com", null, "ROLE_cliente");
+
+        var response = controller.eliminarMiCuenta(authentication);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(usuarioService).eliminarMiCuenta("cliente@foodly.com");
+    }
+
+    @Test
+    void eliminarMiCuentaDevuelveUnauthorizedSiNoHayAutenticacion() {
         UsuarioService usuarioService = Mockito.mock(UsuarioService.class);
         UsuarioController controller = new UsuarioController(usuarioService);
 
-        var response = controller.eliminarCuentaDeUsuarioPropiaDev(10L);
+        var response = controller.eliminarMiCuenta(null);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(usuarioService).eliminarCuentaDeUsuarioPropia(10L);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        verifyNoInteractions(usuarioService);
     }
 }

@@ -18,4 +18,6 @@ public class Calificacion {
     private TipoCalificacion tipo;
     private Cliente cliente;
     private Local local;
+    @Builder.Default
+    private Boolean archivada = false;
 }

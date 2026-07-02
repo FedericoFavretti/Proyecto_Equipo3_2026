@@ -62,13 +62,14 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
     public void guardar(Calificacion calificacion) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement("INSERT INTO Calificacion (puntaje, comentario, fecha, tipo) VALUES (?, ?, ?, ?)",
+            PreparedStatement ps = connection.prepareStatement("INSERT INTO Calificacion (puntaje, comentario, fecha, tipo, archivada) VALUES (?, ?, ?, ?, ?)",
                     new String[]{"id"}
                     );
                     ps.setDouble(1, calificacion.getPuntaje());
                     ps.setString(2, calificacion.getComentario());
                     ps.setDate(3, java.sql.Date.valueOf(calificacion.getFecha().toLocalDate()));
                     ps.setString(4, calificacion.getTipo().toString());
+                    ps.setBoolean(5, Boolean.TRUE.equals(calificacion.getArchivada()));
                     return ps;
         }, keyHolder);
         Long idCalificacion = keyHolder.getKey().longValue();
@@ -82,11 +83,12 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
 
     @Override
     public void actualizar(Calificacion calificacion) {
-       jdbcTemplate.update("UPDATE Calificacion SET  puntaje = ?, comentario = ?, fecha = ?, tipo = ? WHERE id = ?",
+       jdbcTemplate.update("UPDATE Calificacion SET  puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ? WHERE id = ?",
                calificacion.getPuntaje(),
                calificacion.getComentario(),
                calificacion.getFecha(),
                calificacion.getTipo(),
+               Boolean.TRUE.equals(calificacion.getArchivada()),
                calificacion.getId()
        );
     }
@@ -103,7 +105,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 SELECT c.*
                 FROM calificacion c
                 JOIN local_calificacion lc ON lc.idcalificacion = c.id
-                WHERE lc.idlocal = ? AND c.tipo = ?
+                WHERE lc.idlocal = ? AND c.tipo = ? AND c.archivada = FALSE
                 ORDER BY c.fecha DESC, c.id DESC
                 """,
                 (rs, row) -> calificacionMapper(rs, row),
@@ -119,7 +121,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 SELECT c.*
                 FROM calificacion c
                 JOIN cliente_calificacion lc ON lc.idcalificacion = c.id
-                WHERE lc.idcliente = ? AND c.tipo = ?
+                WHERE lc.idcliente = ? AND c.tipo = ? AND c.archivada = FALSE
                 ORDER BY c.fecha DESC, c.id DESC
                 """,
                 (rs, row) -> calificacionMapper(rs, row),
@@ -136,7 +138,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 FROM calificacion c
                 JOIN cliente_calificacion cc ON cc.idcalificacion = c.id
                 JOIN local_calificacion lc ON lc.idcalificacion = c.id
-                WHERE cc.idcliente = ? AND lc.idlocal = ? AND c.tipo = ?
+                WHERE cc.idcliente = ? AND lc.idlocal = ? AND c.tipo = ? AND c.archivada = FALSE
                 ORDER BY c.fecha DESC, c.id DESC
                 """,
                 (rs, row) -> calificacionMapper(rs, row),
@@ -164,7 +166,34 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 .tipo(tipo)
                 .cliente(cliente)
                 .local(local)
+                .archivada(rs.getBoolean("archivada"))
                 .build();
+    }
+
+    @Override
+    public void archivarPorCliente(Long idCliente) {
+        jdbcTemplate.update("""
+                UPDATE calificacion
+                SET archivada = TRUE
+                WHERE id IN (
+                    SELECT idcalificacion
+                    FROM cliente_calificacion
+                    WHERE idcliente = ?
+                )
+                """, idCliente);
+    }
+
+    @Override
+    public List<Long> obtenerLocalesAfectadosPorArchivoDeCliente(Long idCliente) {
+        return jdbcTemplate.query("""
+                SELECT DISTINCT lc.idlocal
+                FROM local_calificacion lc
+                JOIN cliente_calificacion cc ON cc.idcalificacion = lc.idcalificacion
+                WHERE cc.idcliente = ?
+                """,
+                (rs, row) -> rs.getLong("idlocal"),
+                idCliente
+        );
     }
 
     private Optional<Long> obtenerClienteAsociado(Long idCalificacion) {

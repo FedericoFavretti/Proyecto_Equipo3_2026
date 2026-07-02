@@ -7,7 +7,11 @@ import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
+import com.example.demo.Persistencia.Repositorios.AdministradorRepositorio;
+import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
+import com.example.demo.Persistencia.Repositorios.CodigoVerificacionRepositorio;
+import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import com.example.demo.Persistencia.Repositorios.TokenBlacklistRepositorio;
@@ -59,6 +63,14 @@ class UsuarioServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private CloudinaryService cloudinaryService;
+    @Mock
+    private CodigoVerificacionRepositorio codigoVerificacionRepositorio;
+    @Mock
+    private LocalRepositorio localRepositorio;
+    @Mock
+    private AdministradorRepositorio administradorRepositorio;
+    @Mock
+    private CalificacionRepositorio calificacionRepositorio;
 
     @Test
     void editarDatosDeCuentaClienteActualizaCamposPermitidosYRevocaTokenSiCambianCredenciales() {
@@ -172,16 +184,20 @@ class UsuarioServiceTest {
     }
 
     @Test
-    void eliminarCuentaPropiaAnonimizaClienteYLoBloqueaSiNoTienePedidosActivosNiReclamosPendientes() {
+    void eliminarMiCuentaAnonimizaClienteArchivaCalificacionesYRecalculaLocales() {
         UsuarioService usuarioService = crearServicio();
         Cliente cliente = clienteExistente();
+        Local local = localExistente();
 
-        when(clienteRepositorio.buscarPorId(10L)).thenReturn(Optional.of(cliente));
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente));
         when(pedidoRepositorio.existePedidoActivoPorCliente(10L)).thenReturn(false);
         when(reclamoRepositorio.existeReclamoPendientePorCliente(10L)).thenReturn(false);
+        when(calificacionRepositorio.obtenerLocalesAfectadosPorArchivoDeCliente(10L)).thenReturn(List.of(20L));
+        when(localRepositorio.buscarPorId(20L)).thenReturn(Optional.of(local));
+        when(calificacionRepositorio.listarPorLocal(20L)).thenReturn(List.of());
         when(passwordEncoder.encode("cuenta-eliminada-10")).thenReturn("hash-eliminada");
 
-        usuarioService.eliminarCuentaDeUsuarioPropia(10L);
+        usuarioService.eliminarMiCuenta("cliente@foodly.com");
 
         assertThat(cliente.getEstado()).isEqualTo(EstadoCuenta.Bloqueado);
         assertThat(cliente.getActivo()).isFalse();
@@ -192,55 +208,61 @@ class UsuarioServiceTest {
         assertThat(cliente.getApellido()).isEmpty();
         assertThat(cliente.getDocumento()).isEqualTo("ANON-10");
         assertThat(cliente.getDireccion()).isEqualTo(new DtDireccion("Anonimizada", "S/N", "N/D", "00000"));
-        assertThat(cliente.getCalificacionGlobal()).isEqualTo(4.7);
+        assertThat(cliente.getCalificacionGlobal()).isZero();
+        assertThat(cliente.getSesionesInvalidadasDesde()).isNotNull();
+        assertThat(local.getCalificacionGlobal()).isZero();
 
+        verify(calificacionRepositorio).archivarPorCliente(10L);
+        verify(localRepositorio).actualizar(local);
         verify(usuarioRepositorio).actualizar(cliente);
         verifyNoInteractions(jwtService, tokenBlacklistRepositorio, cloudinaryService);
     }
 
     @Test
-    void eliminarCuentaPropiaRechazaSiTienePedidosActivos() {
+    void eliminarMiCuentaRechazaSiTienePedidosActivos() {
         UsuarioService usuarioService = crearServicio();
         Cliente cliente = clienteExistente();
 
-        when(clienteRepositorio.buscarPorId(10L)).thenReturn(Optional.of(cliente));
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente));
         when(pedidoRepositorio.existePedidoActivoPorCliente(10L)).thenReturn(true);
 
-        assertThatThrownBy(() -> usuarioService.eliminarCuentaDeUsuarioPropia(10L))
+        assertThatThrownBy(() -> usuarioService.eliminarMiCuenta("cliente@foodly.com"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("No es posible eliminar la cuenta mientras tenga pedidos en curso. Espere a que todos sus pedidos sean resueltos.");
 
         verify(reclamoRepositorio, never()).existeReclamoPendientePorCliente(10L);
+        verify(calificacionRepositorio, never()).archivarPorCliente(10L);
         verify(usuarioRepositorio, never()).actualizar(cliente);
     }
 
     @Test
-    void eliminarCuentaPropiaRechazaSiTieneReclamosPendientes() {
+    void eliminarMiCuentaRechazaSiTieneReclamosPendientes() {
         UsuarioService usuarioService = crearServicio();
         Cliente cliente = clienteExistente();
 
-        when(clienteRepositorio.buscarPorId(10L)).thenReturn(Optional.of(cliente));
+        when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente));
         when(pedidoRepositorio.existePedidoActivoPorCliente(10L)).thenReturn(false);
         when(reclamoRepositorio.existeReclamoPendientePorCliente(10L)).thenReturn(true);
 
-        assertThatThrownBy(() -> usuarioService.eliminarCuentaDeUsuarioPropia(10L))
+        assertThatThrownBy(() -> usuarioService.eliminarMiCuenta("cliente@foodly.com"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("No es posible eliminar la cuenta mientras tenga reclamos pendientes de resolución.");
 
+        verify(calificacionRepositorio, never()).archivarPorCliente(10L);
         verify(usuarioRepositorio, never()).actualizar(cliente);
     }
 
     @Test
-    void eliminarCuentaPropiaFallaSiElClienteNoExiste() {
+    void eliminarMiCuentaFallaSiElUsuarioNoExiste() {
         UsuarioService usuarioService = crearServicio();
 
-        when(clienteRepositorio.buscarPorId(404L)).thenReturn(Optional.empty());
+        when(usuarioRepositorio.buscarPorEmail("desconocido@foodly.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> usuarioService.eliminarCuentaDeUsuarioPropia(404L))
+        assertThatThrownBy(() -> usuarioService.eliminarMiCuenta("desconocido@foodly.com"))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Cliente no encontrado.");
+                .hasMessage("Usuario no encontrado.");
 
-        verifyNoInteractions(pedidoRepositorio, reclamoRepositorio, passwordEncoder, usuarioRepositorio);
+        verifyNoInteractions(pedidoRepositorio, reclamoRepositorio, passwordEncoder, calificacionRepositorio);
     }
 
     private UsuarioService crearServicio() {
@@ -255,7 +277,11 @@ class UsuarioServiceTest {
                 userDetailsService,
                 tokenBlacklistRepositorio,
                 passwordEncoder,
-                cloudinaryService
+                cloudinaryService,
+                codigoVerificacionRepositorio,
+                localRepositorio,
+                administradorRepositorio,
+                calificacionRepositorio
         );
     }
 
