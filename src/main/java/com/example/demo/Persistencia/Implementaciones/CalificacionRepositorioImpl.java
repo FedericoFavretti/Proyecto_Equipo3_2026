@@ -83,7 +83,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
 
     @Override
     public void actualizar(Calificacion calificacion) {
-       jdbcTemplate.update(("UPDATE Calificacion SET  puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ? WHERE id = ?",
+       jdbcTemplate.update("UPDATE Calificacion SET  puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ? WHERE id = ?",
                calificacion.getPuntaje(),
                calificacion.getComentario(),
                calificacion.getFecha(),
