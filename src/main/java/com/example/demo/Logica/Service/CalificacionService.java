@@ -4,6 +4,7 @@ import com.example.demo.Logica.Clases.Calificacion;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
+import com.example.demo.Logica.DataTypes.response.DtCalificacionDetalleClienteResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionDetalleResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
 import com.example.demo.Logica.DataTypes.response.DtMiCalificacionLocalResponse;
@@ -109,6 +110,39 @@ public class CalificacionService {
         }
 
         return consultarCalificacionGlobalDelLocalPorId(local.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DtCalificacionDetalleClienteResponse> consultarCalificacionesDetalladasDelLocal(String emailAutenticado) {
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
+        if (!(usuario instanceof Local local)) {
+            throw new BusinessRuleException(MENSAJE_USUARIO_NO_ES_LOCAL);
+        }
+
+        List<Calificacion> calificaciones = calificacionRepositorio.listarPorLocal(local.getId()).stream()
+                .filter(c -> c.getTipo() == TipoCalificacion.Cliente_a_local)
+                .toList();
+
+        return calificaciones.stream()
+                .map(c -> DtCalificacionDetalleClienteResponse.builder()
+                        .idCliente(c.getCliente() != null ? c.getCliente().getId() : null)
+                        .nombreCliente(nombreCompletoCliente(c.getCliente()))
+                        .puntaje(c.getPuntaje())
+                        .comentario(c.getComentario())
+                        .fecha(c.getFecha())
+                        .build())
+                .toList();
+    }
+
+    private String nombreCompletoCliente(Cliente cliente) {
+        if (cliente == null) {
+            return "Cliente";
+        }
+        String nombre = cliente.getNombre() != null ? cliente.getNombre() : "";
+        String apellido = cliente.getApellido() != null ? cliente.getApellido() : "";
+        String nombreCompleto = (nombre + " " + apellido).trim();
+        return nombreCompleto.isEmpty() ? "Cliente" : nombreCompleto;
     }
 
     @Transactional(readOnly = true)

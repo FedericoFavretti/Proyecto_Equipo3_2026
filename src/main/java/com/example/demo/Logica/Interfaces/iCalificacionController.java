@@ -1,5 +1,6 @@
 package com.example.demo.Logica.Interfaces;
 
+import com.example.demo.Logica.DataTypes.response.DtCalificacionDetalleClienteResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionDetalleResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
 import com.example.demo.Logica.DataTypes.response.DtMiCalificacionLocalResponse;
@@ -18,4 +19,5 @@ public interface iCalificacionController {
     ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente);
     ResponseEntity<DtMiCalificacionLocalResponse> consultarMiCalificacionDeLocal(@PathVariable("idLocal") Long idLocal, Authentication authentication);
     ResponseEntity<List<DtCalificacionDetalleResponse>> consultarCalificacionDetalle(@PathVariable("idCliente") Long idCliente);
+    ResponseEntity<List<DtCalificacionDetalleClienteResponse>> consultarCalificacionDetalleDelLocal(Authentication authentication);
 }
