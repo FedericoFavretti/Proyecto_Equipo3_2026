@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
-    @Value("${ACTIVAR_CUENTA_URL}")
+    @Value("${app.account.activation-url}")
     private String activarCuenta;
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
@@ -27,8 +27,8 @@ public class EmailService {
     public void enviarMailDeActivacion(String email) {
         enviarCorreo(
                 email,
-                "Activ· tu cuenta en Foodly",
-                "HacÈ clic en el siguiente enlace para activar tu cuenta: "
+                "Activ√° tu cuenta en Foodly",
+                "Hac√© clic en el siguiente enlace para activar tu cuenta: "
                         + activarCuenta + email
         );
     }
@@ -37,34 +37,34 @@ public class EmailService {
         enviarCorreo(
                 correo,
                 "Recupera tu cuenta en Foodly",
-                "HacÈ clic en el siguiente enlace para recuperar tu cuenta (v·lido por 30 minutos): " + link
+                "Hac√© clic en el siguiente enlace para recuperar tu cuenta (v√°lido por 30 minutos): " + link
         );
     }
 
     public void enviarCodigoVerificacion(String correo, String codigo) {
         enviarCorreo(
                 correo,
-                "CÛdigo de verificaciÛn - Foodly",
-                "Tu cÛdigo de verificaciÛn para cambiar la contraseÒa es: " + codigo
-                        + ". Este cÛdigo vence en 10 minutos. Si no solicitaste este cambio, ignor· este mensaje."
+                "C√≥digo de verificaci√≥n - Foodly",
+                "Tu c√≥digo de verificaci√≥n para cambiar la contrase√±a es: " + codigo
+                        + ". Este c√≥digo vence en 10 minutos. Si no solicitaste este cambio, ignor√° este mensaje."
         );
     }
 
     public void enviarConfirmacionCambioPasswd(String correo) {
         enviarCorreo(
                 correo,
-                "Tu contraseÒa fue actualizada - Foodly",
-                "Te confirmamos que tu contraseÒa fue cambiada exitosamente. Si no realizaste este cambio, contactate con soporte de inmediato."
+                "Tu contrase√±a fue actualizada - Foodly",
+                "Te confirmamos que tu contrase√±a fue cambiada exitosamente. Si no realizaste este cambio, contactate con soporte de inmediato."
         );
     }
 
     public void solicitarCambioCorreo(String correoActual, String correoNuevo, String link) {
         enviarCorreo(
                 correoActual,
-                "Confirm· el cambio de correo de tu cuenta - Foodly",
+                "Confirm√° el cambio de correo de tu cuenta - Foodly",
                 "Solicitaste cambiar el correo de tu cuenta de Foodly a " + correoNuevo
-                        + ". HacÈ clic en el siguiente enlace para confirmar el cambio (v·lido por 30 minutos): " + link
-                        + ". Si no solicitaste este cambio, ignor· este mensaje; tu correo actual seguir· funcionando con normalidad."
+                        + ". Hac√© clic en el siguiente enlace para confirmar el cambio (v√°lido por 30 minutos): " + link
+                        + ". Si no solicitaste este cambio, ignor√° este mensaje; tu correo actual seguir√° funcionando con normalidad."
         );
     }
 
@@ -78,7 +78,7 @@ public class EmailService {
         enviarCorreo(
                 correoNuevo,
                 "Tu correo de cuenta fue actualizado - Foodly",
-                "Este correo ahora est· asociado a tu cuenta de Foodly. A partir de ahora, usalo para iniciar sesiÛn."
+                "Este correo ahora est√° asociado a tu cuenta de Foodly. A partir de ahora, usalo para iniciar sesi√≥n."
         );
     }
 

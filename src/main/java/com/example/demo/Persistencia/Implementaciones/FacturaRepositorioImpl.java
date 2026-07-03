@@ -1,6 +1,7 @@
 package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Logica.Clases.Factura;
+import com.example.demo.Logica.Clases.FacturaDetalle;
 import com.example.demo.Logica.Enums.EstadoFacturaPdf;
 import com.example.demo.Persistencia.Repositorios.FacturaRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
@@ -43,7 +44,7 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
 
     @Override
     public Optional<Factura> buscarPorPedidoId(Long pedidoId) {
-        return jdbcTemplate.query("SELECT * FROM Factura WHERE idPedido = ?",
+        return jdbcTemplate.query("SELECT * FROM Factura WHERE id_pedido = ?",
                 (rs, row) -> mapearFactura(rs), pedidoId
         ).stream().findFirst();
     }
@@ -51,10 +52,12 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
     @Override
     public List<Factura> buscarPendientesDeProcesamiento(LocalDateTime fechaCorte) {
         return jdbcTemplate.query("""
-                        SELECT * FROM Factura
-                        WHERE estado_pdf = 'PENDIENTE'
-                           OR (estado_pdf = 'ERROR_REINTENTABLE' AND proximo_reintento IS NOT NULL AND proximo_reintento <= ?)
-                        ORDER BY COALESCE(proximo_reintento, fecha_ultimo_intento, NOW()), id
+                        SELECT f.*
+                        FROM Factura f
+                        JOIN FacturaPdfProceso fpp ON fpp.id_factura = f.id
+                        WHERE fpp.estado_pdf = 'PENDIENTE'
+                           OR (fpp.estado_pdf = 'ERROR_REINTENTABLE' AND fpp.proximo_reintento IS NOT NULL AND fpp.proximo_reintento <= ?)
+                        ORDER BY COALESCE(fpp.proximo_reintento, fpp.fecha_ultimo_intento, NOW()), f.id
                         """,
                 (rs, row) -> mapearFactura(rs),
                 Timestamp.valueOf(fechaCorte)
@@ -67,68 +70,58 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO Factura
-                    (numero, monto, archivoPdf, estado_pdf, intentos_generacion, ultimo_error_pdf,
-                     fecha_ultimo_intento, proximo_reintento, fecha_generacion_pdf,
+                    (numero, id_pedido, fecha_pedido, fecha_emision, monto_total,
                      local_nombre_snapshot, local_email_snapshot, cliente_nombre_snapshot,
-                     cliente_email_snapshot, direccion_entrega_snapshot, medio_pago_snapshot,
-                     detalle_items_json, idPedido)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     cliente_email_snapshot, direccion_entrega_snapshot, medio_pago_snapshot)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, new String[]{"id"});
             ps.setString(1, factura.getNumero());
-            ps.setDouble(2, factura.getMonto());
-            ps.setString(3, factura.getArchivoPdf());
-            ps.setString(4, factura.getEstadoPdf() != null ? factura.getEstadoPdf().name() : null);
-            ps.setObject(5, factura.getIntentosGeneracion());
-            ps.setString(6, factura.getUltimoErrorPdf());
-            ps.setTimestamp(7, toTimestamp(factura.getFechaUltimoIntento()));
-            ps.setTimestamp(8, toTimestamp(factura.getProximoReintento()));
-            ps.setTimestamp(9, toTimestamp(factura.getFechaGeneracionPdf()));
-            ps.setString(10, factura.getLocalNombreSnapshot());
-            ps.setString(11, factura.getLocalEmailSnapshot());
-            ps.setString(12, factura.getClienteNombreSnapshot());
-            ps.setString(13, factura.getClienteEmailSnapshot());
-            ps.setString(14, factura.getDireccionEntregaSnapshot());
-            ps.setString(15, factura.getMedioPagoSnapshot());
-            ps.setString(16, factura.getDetalleItemsJson());
-            ps.setLong(17, factura.getPedido().getId());
+            ps.setLong(2, factura.getPedido().getId());
+            ps.setTimestamp(3, toTimestamp(factura.getFechaPedido()));
+            ps.setTimestamp(4, toTimestamp(factura.getFechaEmision()));
+            ps.setDouble(5, factura.getMontoTotal());
+            ps.setString(6, factura.getLocalNombreSnapshot());
+            ps.setString(7, factura.getLocalEmailSnapshot());
+            ps.setString(8, factura.getClienteNombreSnapshot());
+            ps.setString(9, factura.getClienteEmailSnapshot());
+            ps.setString(10, factura.getDireccionEntregaSnapshot());
+            ps.setString(11, factura.getMedioPagoSnapshot());
             return ps;
         }, keyHolder);
 
         if (keyHolder.getKey() != null) {
             factura.setId(keyHolder.getKey().longValue());
         }
+
+        guardarDetalles(factura);
+        guardarProcesoPdf(factura);
     }
 
     @Override
     public void actualizar(Factura factura) {
         jdbcTemplate.update("""
                         UPDATE Factura
-                        SET numero = ?, monto = ?, archivoPdf = ?, estado_pdf = ?, intentos_generacion = ?,
-                            ultimo_error_pdf = ?, fecha_ultimo_intento = ?, proximo_reintento = ?,
-                            fecha_generacion_pdf = ?, local_nombre_snapshot = ?, local_email_snapshot = ?,
-                            cliente_nombre_snapshot = ?, cliente_email_snapshot = ?, direccion_entrega_snapshot = ?,
-                            medio_pago_snapshot = ?, detalle_items_json = ?, idPedido = ?
+                        SET numero = ?, id_pedido = ?, fecha_pedido = ?, fecha_emision = ?, monto_total = ?,
+                            local_nombre_snapshot = ?, local_email_snapshot = ?, cliente_nombre_snapshot = ?,
+                            cliente_email_snapshot = ?, direccion_entrega_snapshot = ?, medio_pago_snapshot = ?
                         WHERE id = ?
                         """,
                 factura.getNumero(),
-                factura.getMonto(),
-                factura.getArchivoPdf(),
-                factura.getEstadoPdf() != null ? factura.getEstadoPdf().name() : null,
-                factura.getIntentosGeneracion(),
-                factura.getUltimoErrorPdf(),
-                toTimestamp(factura.getFechaUltimoIntento()),
-                toTimestamp(factura.getProximoReintento()),
-                toTimestamp(factura.getFechaGeneracionPdf()),
+                factura.getPedido().getId(),
+                toTimestamp(factura.getFechaPedido()),
+                toTimestamp(factura.getFechaEmision()),
+                factura.getMontoTotal(),
                 factura.getLocalNombreSnapshot(),
                 factura.getLocalEmailSnapshot(),
                 factura.getClienteNombreSnapshot(),
                 factura.getClienteEmailSnapshot(),
                 factura.getDireccionEntregaSnapshot(),
                 factura.getMedioPagoSnapshot(),
-                factura.getDetalleItemsJson(),
-                factura.getPedido().getId(),
                 factura.getId()
         );
+
+        reemplazarDetalles(factura);
+        guardarProcesoPdf(factura);
     }
 
     @Override
@@ -136,28 +129,126 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
         jdbcTemplate.update("DELETE FROM Factura WHERE id = ?", id);
     }
 
+    private void guardarDetalles(Factura factura) {
+        if (factura.getDetalles() == null || factura.getDetalles().isEmpty()) {
+            return;
+        }
+
+        for (FacturaDetalle detalle : factura.getDetalles()) {
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement("""
+                        INSERT INTO FacturaDetalle
+                        (id_factura, nombre_producto_snapshot, cantidad, precio_unitario, subtotal)
+                        VALUES (?, ?, ?, ?, ?)
+                        """, new String[]{"id"});
+                ps.setLong(1, factura.getId());
+                ps.setString(2, detalle.getNombreProductoSnapshot());
+                ps.setInt(3, detalle.getCantidad());
+                ps.setDouble(4, detalle.getPrecioUnitario());
+                ps.setDouble(5, detalle.getSubtotal());
+                return ps;
+            }, keyHolder);
+
+            if (keyHolder.getKey() != null) {
+                detalle.setId(keyHolder.getKey().longValue());
+            }
+        }
+    }
+
+    private void reemplazarDetalles(Factura factura) {
+        jdbcTemplate.update("DELETE FROM FacturaDetalle WHERE id_factura = ?", factura.getId());
+        guardarDetalles(factura);
+    }
+
+    private void guardarProcesoPdf(Factura factura) {
+        jdbcTemplate.update("""
+                        INSERT INTO FacturaPdfProceso
+                        (id_factura, archivo_pdf, estado_pdf, intentos_generacion, ultimo_error_pdf,
+                         fecha_ultimo_intento, proximo_reintento, fecha_generacion_pdf)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (id_factura)
+                        DO UPDATE SET archivo_pdf = EXCLUDED.archivo_pdf,
+                                      estado_pdf = EXCLUDED.estado_pdf,
+                                      intentos_generacion = EXCLUDED.intentos_generacion,
+                                      ultimo_error_pdf = EXCLUDED.ultimo_error_pdf,
+                                      fecha_ultimo_intento = EXCLUDED.fecha_ultimo_intento,
+                                      proximo_reintento = EXCLUDED.proximo_reintento,
+                                      fecha_generacion_pdf = EXCLUDED.fecha_generacion_pdf
+                        """,
+                factura.getId(),
+                factura.getArchivoPdf(),
+                factura.getEstadoPdf() != null ? factura.getEstadoPdf().name() : EstadoFacturaPdf.PENDIENTE.name(),
+                factura.getIntentosGeneracion() != null ? factura.getIntentosGeneracion() : 0,
+                factura.getUltimoErrorPdf(),
+                toTimestamp(factura.getFechaUltimoIntento()),
+                toTimestamp(factura.getProximoReintento()),
+                toTimestamp(factura.getFechaGeneracionPdf())
+        );
+    }
+
     private Factura mapearFactura(ResultSet rs) throws SQLException {
-        String estadoPdf = rs.getString("estado_pdf");
-        return Factura.builder()
-                .id(rs.getLong("id"))
+        Long facturaId = rs.getLong("id");
+        Factura factura = Factura.builder()
+                .id(facturaId)
                 .numero(rs.getString("numero"))
-                .monto(rs.getDouble("monto"))
-                .archivoPdf(rs.getString("archivoPdf"))
-                .estadoPdf(estadoPdf != null ? EstadoFacturaPdf.valueOf(estadoPdf) : null)
-                .intentosGeneracion(rs.getObject("intentos_generacion") != null ? rs.getInt("intentos_generacion") : null)
-                .ultimoErrorPdf(rs.getString("ultimo_error_pdf"))
-                .fechaUltimoIntento(toLocalDateTime(rs.getTimestamp("fecha_ultimo_intento")))
-                .proximoReintento(toLocalDateTime(rs.getTimestamp("proximo_reintento")))
-                .fechaGeneracionPdf(toLocalDateTime(rs.getTimestamp("fecha_generacion_pdf")))
+                .fechaPedido(toLocalDateTime(rs.getTimestamp("fecha_pedido")))
+                .fechaEmision(toLocalDateTime(rs.getTimestamp("fecha_emision")))
+                .montoTotal(rs.getDouble("monto_total"))
                 .localNombreSnapshot(rs.getString("local_nombre_snapshot"))
                 .localEmailSnapshot(rs.getString("local_email_snapshot"))
                 .clienteNombreSnapshot(rs.getString("cliente_nombre_snapshot"))
                 .clienteEmailSnapshot(rs.getString("cliente_email_snapshot"))
                 .direccionEntregaSnapshot(rs.getString("direccion_entrega_snapshot"))
                 .medioPagoSnapshot(rs.getString("medio_pago_snapshot"))
-                .detalleItemsJson(rs.getString("detalle_items_json"))
-                .pedido(pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(() -> new RuntimeException("Pedido no encontrado")))
+                .detalles(buscarDetallesPorFacturaId(facturaId))
+                .pedido(pedidoRepositorio.buscarPorId(rs.getLong("id_pedido")).orElseThrow(() -> new RuntimeException("Pedido no encontrado")))
                 .build();
+
+        cargarProcesoPdf(factura);
+        return factura;
+    }
+
+    private List<FacturaDetalle> buscarDetallesPorFacturaId(Long facturaId) {
+        return jdbcTemplate.query("""
+                        SELECT id, nombre_producto_snapshot, cantidad, precio_unitario, subtotal
+                        FROM FacturaDetalle
+                        WHERE id_factura = ?
+                        ORDER BY id
+                        """,
+                (rs, row) -> FacturaDetalle.builder()
+                        .id(rs.getLong("id"))
+                        .nombreProductoSnapshot(rs.getString("nombre_producto_snapshot"))
+                        .cantidad(rs.getInt("cantidad"))
+                        .precioUnitario(rs.getDouble("precio_unitario"))
+                        .subtotal(rs.getDouble("subtotal"))
+                        .build(),
+                facturaId
+        );
+    }
+
+    private void cargarProcesoPdf(Factura factura) {
+        jdbcTemplate.query("""
+                        SELECT archivo_pdf, estado_pdf, intentos_generacion, ultimo_error_pdf,
+                               fecha_ultimo_intento, proximo_reintento, fecha_generacion_pdf
+                        FROM FacturaPdfProceso
+                        WHERE id_factura = ?
+                        """,
+                rs -> {
+                    if (!rs.next()) {
+                        return;
+                    }
+                    String estadoPdf = rs.getString("estado_pdf");
+                    factura.setArchivoPdf(rs.getString("archivo_pdf"));
+                    factura.setEstadoPdf(estadoPdf != null ? EstadoFacturaPdf.valueOf(estadoPdf) : null);
+                    factura.setIntentosGeneracion(rs.getInt("intentos_generacion"));
+                    factura.setUltimoErrorPdf(rs.getString("ultimo_error_pdf"));
+                    factura.setFechaUltimoIntento(toLocalDateTime(rs.getTimestamp("fecha_ultimo_intento")));
+                    factura.setProximoReintento(toLocalDateTime(rs.getTimestamp("proximo_reintento")));
+                    factura.setFechaGeneracionPdf(toLocalDateTime(rs.getTimestamp("fecha_generacion_pdf")));
+                },
+                factura.getId()
+        );
     }
 
     private Timestamp toTimestamp(LocalDateTime value) {
