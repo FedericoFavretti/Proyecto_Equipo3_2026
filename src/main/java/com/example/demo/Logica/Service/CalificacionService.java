@@ -98,14 +98,6 @@ public class CalificacionService {
         throw new BusinessRuleException("Solo clientes y locales pueden calificar.");
     }
 
-    @Transactional
-    public void editarCalificacion(DtCalificacion dtCalificacion, String emailAutenticado) {
-        calificacionRepositorio.buscarPorId(dtCalificacion.getId()).orElseThrow(() -> new ResourceNotFoundException("Calificacion", dtCalificacion.getId()));
-        validarPuntaje(dtCalificacion);
-        Calificacion calificacion = calificacionMapper.mapearCalificacionDeDt(dtCalificacion);
-        calificacionRepositorio.actualizar(calificacion);
-        sincronizarCalificacionGlobal(calificacion);
-    }
 
     @Transactional
     public Map<String, Object> consultarCalificacionGlobalDelLocal(String emailAutenticado) {
@@ -222,11 +214,27 @@ public class CalificacionService {
         }
 
         Long idCliente = dtCalificacion.getDtCliente().getId();
-        clienteRepositorio.buscarPorId(idCliente)
+        Cliente cliente = clienteRepositorio.buscarPorId(idCliente)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
 
         if (!pedidoRepositorio.existePedidoDeClienteEnLocal(idCliente, localAutenticado.getId())) {
             throw new BusinessRuleException(MENSAJE_LOCAL_SIN_PEDIDOS_DE_CLIENTE);
+        }
+
+        Calificacion calificacionExistente = calificacionRepositorio
+                .buscarCalificacionLocalACliente(idCliente, localAutenticado.getId())
+                .orElse(null);
+
+        if (calificacionExistente != null) {
+            calificacionExistente.setPuntaje(dtCalificacion.getPuntaje());
+            calificacionExistente.setComentario(dtCalificacion.getComentario());
+            calificacionExistente.setFecha(LocalDateTime.now());
+            calificacionExistente.setTipo(TipoCalificacion.Cliente_a_local);
+            calificacionExistente.setCliente(cliente);
+            calificacionExistente.setLocal(localAutenticado);
+            calificacionRepositorio.actualizar(calificacionExistente);
+            sincronizarCalificacionGlobal(calificacionExistente);
+            return;
         }
 
         dtCalificacion.setDtLocal(localMapper.mapearDtLocalDeClase(localAutenticado));

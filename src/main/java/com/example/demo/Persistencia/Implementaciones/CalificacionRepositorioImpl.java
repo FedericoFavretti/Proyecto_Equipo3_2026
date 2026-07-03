@@ -160,6 +160,24 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
         ).stream().findFirst();
     }
 
+    @Override
+    public Optional<Calificacion> buscarCalificacionLocalACliente(Long idCliente, Long idLocal) {
+        return jdbcTemplate.query(
+                """
+                SELECT c.*
+                FROM calificacion c
+                JOIN local_calificacion cl ON cl.idcalificacion = c.id
+                JOIN cliente_calificacion cc ON cc.idcalificacion = c.id
+                WHERE cc.idcliente = ? AND cl.idlocal = ? AND c.tipo = ? AND c.archivada = FALSE
+                ORDER BY c.fecha DESC, c.id DESC
+                """,
+                (rs, row) -> calificacionMapper(rs, row),
+                idCliente,
+                idLocal,
+                TipoCalificacion.Local_a_cliente.toString()
+        ).stream().findFirst();
+    }
+
     private Calificacion calificacionMapper(ResultSet rs, int row) throws SQLException {
         TipoCalificacion tipo = TipoCalificacion.valueOf(rs.getString("tipo"));
         Long idCalificacion = rs.getLong("id");
