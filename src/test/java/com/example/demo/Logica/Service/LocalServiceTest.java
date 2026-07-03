@@ -215,6 +215,45 @@ class LocalServiceTest {
     }
 
     @Test
+    void gestionarPlatoModificacionConservaImagenesActualesCuandoNoLlegaNuevaImagen() {
+        DtPlato solicitud = platoValido();
+        solicitud.setDescripcion("Milanesa con cheddar");
+        solicitud.setImagenes(null);
+
+        Local local = localHabilitado(false);
+        Plato existente = platoExistente(local);
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+        when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(existente));
+        when(platoRepositorio.buscarPorNombre("Milanesa al pan")).thenReturn(Optional.of(existente));
+        when(platoRepositorio.actualizar(org.mockito.ArgumentMatchers.any(Plato.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Plato actualizado = localService.gestionarPlatoModificacion(20L, solicitud);
+
+        assertThat(actualizado.getDescripcion()).isEqualTo("Milanesa con cheddar");
+        assertThat(actualizado.getImagenes()).containsExactly("milanesa.jpg");
+        verify(platoRepositorio).actualizar(actualizado);
+    }
+
+    @Test
+    void gestionarPlatoModificacionRechazaCuandoNoQuedanImagenes() {
+        DtPlato solicitud = platoValido();
+        solicitud.setImagenes(null);
+
+        Local local = localHabilitado(false);
+        Plato existente = platoExistenteSinImagenes(local);
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+        when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(existente));
+        when(platoRepositorio.buscarPorNombre("Milanesa al pan")).thenReturn(Optional.of(existente));
+
+        assertThatThrownBy(() -> localService.gestionarPlatoModificacion(20L, solicitud))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Debe completar todos los datos del plato.");
+
+        verify(platoRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any(Plato.class));
+    }
+
+    @Test
     void gestionarPlatoModificacionRechazaCuandoPlatoPerteneceAOtroLocal() {
         DtPlato solicitud = platoValido();
         Local localSolicitante = localHabilitado(false);
@@ -480,6 +519,12 @@ class LocalServiceTest {
                 .disponible(true)
                 .local(local)
                 .build();
+    }
+
+    private Plato platoExistenteSinImagenes(Local local) {
+        Plato plato = platoExistente(local);
+        plato.setImagenes(List.of());
+        return plato;
     }
 }
 
