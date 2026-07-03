@@ -132,10 +132,15 @@ public class LocalService {
 
     @Transactional
     public Plato gestionarPlatoModificacion(long idPlato, DtPlato dtPlato) {
-        validarDatosPlato(dtPlato);
+        validarDatosPlatoModificacion(dtPlato);
 
         Plato platoExistente = platoRepositorio.buscarPorId(idPlato)
                 .orElseThrow(() -> new ResourceNotFoundException("Plato", idPlato));
+
+        if (listaVacia(dtPlato.getImagenes())) {
+            dtPlato.setImagenes(platoExistente.getImagenes());
+        }
+        validarImagenesPlato(dtPlato.getImagenes());
 
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
@@ -347,11 +352,15 @@ public class LocalService {
     }
 
     private void validarDatosPlato(DtPlato dtPlato) {
+        validarDatosPlatoModificacion(dtPlato);
+        validarImagenesPlato(dtPlato.getImagenes());
+    }
+
+    private void validarDatosPlatoModificacion(DtPlato dtPlato) {
         if (dtPlato == null
                 || dtPlato.getDtLocal() == null
                 || dtPlato.getDtLocal().getId() == null
                 || textoVacio(dtPlato.getDescripcion())
-                || listaVacia(dtPlato.getImagenes())
                 || dtPlato.getDisponible() == null) {
             throw new BusinessRuleException(MENSAJE_DATOS_PLATO_INCOMPLETOS);
         }
@@ -363,8 +372,14 @@ public class LocalService {
         if (precioInvalido(dtPlato.getPrecio())) {
             throw new BusinessRuleException(MENSAJE_PRECIO_PLATO_INVALIDO);
         }
+    }
 
-        if (dtPlato.getImagenes().stream().anyMatch(this::imagenPlatoNoPermitida)) {
+    private void validarImagenesPlato(List<String> imagenes) {
+        if (listaVacia(imagenes)) {
+            throw new BusinessRuleException(MENSAJE_DATOS_PLATO_INCOMPLETOS);
+        }
+
+        if (imagenes.stream().anyMatch(this::imagenPlatoNoPermitida)) {
             throw new BusinessRuleException(MENSAJE_IMAGEN_PLATO_INVALIDA);
         }
     }
