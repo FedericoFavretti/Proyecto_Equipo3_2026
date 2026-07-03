@@ -1,11 +1,6 @@
 package com.example.demo.Logica.Service;
 
-import com.example.demo.Logica.Clases.Administrador;
-import com.example.demo.Logica.Clases.Cliente;
-import com.example.demo.Logica.Clases.CodigoVerificacion;
-import com.example.demo.Logica.Clases.Local;
-import com.example.demo.Logica.Clases.TokenRecuperacionPasswd;
-import com.example.demo.Logica.Clases.Usuario;
+import com.example.demo.Logica.Clases.*;
 import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseAdmin;
@@ -52,6 +47,7 @@ public class UsuarioService {
     private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
 
     private static final String RUTA_RESTABLECER_PASSWD = "/restablecer-contrasena";
+    private static final String RUTA_CONFIRMAR_CAMBIO_CORREO = "/confirmar-cambio-correo";
 
     @Value("${app.password-reset.frontend-base-url}")
     private String passwordResetFrontendBaseUrl;
@@ -90,6 +86,8 @@ public class UsuarioService {
             "Las contraseñas ingresadas no coinciden. Por favor, verifique e inténtelo de nuevo.";
     private static final DtDireccion DIRECCION_ANONIMIZADA =
             new DtDireccion("Anonimizada", "S/N", "N/D", "00000");
+    private static final String MENSAJE_LINK_CAMBIO_CORREO_INVALIDO =
+            "El enlace de confirmación de cambio de correo no es válido o ha expirado. Por favor, solicite el cambio nuevamente.";
 
     private final UsuarioRepositorio usuarioRepositorio;
     private final ClienteRepositorio clienteRepositorio;
@@ -106,11 +104,12 @@ public class UsuarioService {
     private final LocalRepositorio localRepositorio;
     private final AdministradorRepositorio administradorRepositorio;
     private final CalificacionRepositorio calificacionRepositorio;
+    private final SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio;
 
     @Autowired
     private TokenRecuperacionPasswdRepositorio tokenRecuperacionPasswdRepositorio;
 
-    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio, CalificacionRepositorio calificacionRepositorio) {
+    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio, CalificacionRepositorio calificacionRepositorio, SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
@@ -126,6 +125,7 @@ public class UsuarioService {
         this.localRepositorio = localRepositorio;
         this.administradorRepositorio = administradorRepositorio;
         this.calificacionRepositorio = calificacionRepositorio;
+        this.solicitudCambioCorreoRepositorio = solicitudCambioCorreoRepositorio;
     }
 
     @Transactional
@@ -271,6 +271,89 @@ public class UsuarioService {
     }
 
     @Transactional
+    public void iniciarCambioCorreo(String emailAutenticado, DtIniciarCambioCorreoRequest request) {
+        if (emailAutenticado == null || emailAutenticado.isBlank()) {
+            throw new AuthenticationCredentialsNotFoundException(MENSAJE_USUARIO_NO_AUTENTICADO);
+        }
+        if (request == null || request.getNuevoCorreo() == null || request.getNuevoCorreo().isBlank()) {
+            throw formatoInvalido("nuevoCorreo");
+        }
+
+        String nuevoCorreo = normalizarCorreo(request.getNuevoCorreo());
+        if (!FORMATO_EMAIL.matcher(nuevoCorreo).matches()) {
+            throw formatoInvalido("nuevoCorreo");
+        }
+
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
+
+        if (nuevoCorreo.equalsIgnoreCase(usuario.getEmail())) {
+            throw new BusinessRuleException("El nuevo correo debe ser distinto al actual.");
+        }
+        if (usuarioRepositorio.existeCorreo(nuevoCorreo)) {
+            throw new ResourceConflictException(MENSAJE_EMAIL_DUPLICADO);
+        }
+
+        solicitudCambioCorreoRepositorio.invalidarActivasPorUsuario(usuario.getId());
+
+        String tokenPlano = generarTokenRecuperacion();
+        SolicitudCambioCorreo solicitud = SolicitudCambioCorreo.builder()
+                .idUsuario(usuario.getId())
+                .correoNuevo(nuevoCorreo)
+                .tokenHash(hashToken(tokenPlano))
+                .fechaCreacion(LocalDateTime.now())
+                .fechaExpiracion(LocalDateTime.now().plusMinutes(30))
+                .fechaConsumo(null)
+                .usado(false)
+                .build();
+
+        solicitudCambioCorreoRepositorio.guardar(solicitud);
+
+        try {
+            emailService.solicitarCambioCorreo(usuario.getEmail(), nuevoCorreo, construirLinkCambioCorreo(tokenPlano));
+        } catch (Exception ex) {
+            logger.error("No se pudo enviar el correo de confirmación de cambio de correo para el usuario {}", usuario.getId(), ex);
+        }
+    }
+
+    @Transactional
+    public void confirmarCambioCorreo(DtConfirmarCambioCorreoRequest request) {
+        if (request == null || request.getToken() == null || request.getToken().isBlank()) {
+            throw new BusinessRuleException(MENSAJE_LINK_CAMBIO_CORREO_INVALIDO);
+        }
+
+        SolicitudCambioCorreo solicitud = solicitudCambioCorreoRepositorio
+                .buscarVigentePorTokenHash(hashToken(request.getToken()))
+                .orElseThrow(() -> new BusinessRuleException(MENSAJE_LINK_CAMBIO_CORREO_INVALIDO));
+
+        if (Boolean.TRUE.equals(solicitud.getUsado())
+                || LocalDateTime.now().isAfter(solicitud.getFechaExpiracion())) {
+            throw new BusinessRuleException(MENSAJE_LINK_CAMBIO_CORREO_INVALIDO);
+        }
+
+        Usuario usuario = usuarioRepositorio.buscarPorId(solicitud.getIdUsuario())
+                .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_USUARIO_NO_ENCONTRADO));
+
+        if (usuarioRepositorio.existeCorreo(solicitud.getCorreoNuevo())
+                && !solicitud.getCorreoNuevo().equalsIgnoreCase(usuario.getEmail())) {
+            throw new ResourceConflictException(MENSAJE_EMAIL_DUPLICADO);
+        }
+
+        String correoAnterior = usuario.getEmail();
+        usuario.setEmail(solicitud.getCorreoNuevo());
+        invalidarSesiones(usuario);
+        usuarioRepositorio.actualizar(usuario);
+
+        solicitudCambioCorreoRepositorio.marcarComoUsada(solicitud.getId(), LocalDateTime.now());
+
+        try {
+            emailService.confirmarCambioCorreo(correoAnterior, solicitud.getCorreoNuevo());
+        } catch (Exception ex) {
+            logger.error("No se pudo enviar el correo de confirmación final de cambio de correo para el usuario {}", usuario.getId(), ex);
+        }
+    }
+
+    @Transactional
     public void editarDatosDeCuentaDeUsuario(String emailAutenticado, String authHeader, Map<String, String> datos, MultipartFile foto) {
         if (emailAutenticado == null || emailAutenticado.isBlank()) {
             throw new AuthenticationCredentialsNotFoundException(MENSAJE_USUARIO_NO_AUTENTICADO);
@@ -278,6 +361,10 @@ public class UsuarioService {
 
         Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
+
+        if(!emailAutenticado.equals(usuario.getEmail()) && emailAutenticado != null) {
+
+        }
 
         Map<String, String> datosActualizacion = datos == null ? Map.of() : datos;
         validarCamposPermitidos(usuario, datosActualizacion);
@@ -440,6 +527,16 @@ public class UsuarioService {
                 throw formatoInvalido(field);
             }
         }
+    }
+
+    private String construirLinkCambioCorreo(String tokenPlano) {
+        return UriComponentsBuilder.fromUriString(passwordResetFrontendBaseUrl)
+                .replacePath(RUTA_CONFIRMAR_CAMBIO_CORREO)
+                .replaceQuery(null)
+                .queryParam("token", tokenPlano)
+                .build()
+                .encode()
+                .toUriString();
     }
 
     private Set<String> obtenerCamposPermitidos(Usuario usuario) {

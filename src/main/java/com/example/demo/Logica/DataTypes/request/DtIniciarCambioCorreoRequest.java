@@ -1,0 +1,11 @@
+package com.example.demo.Logica.DataTypes.request;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class DtIniciarCambioCorreoRequest {
+    private String nuevoCorreo;
+}

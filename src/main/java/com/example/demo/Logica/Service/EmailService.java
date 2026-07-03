@@ -54,6 +54,30 @@ public class EmailService {
         );
     }
 
+    public void solicitarCambioCorreo(String correoActual, String correoNuevo, String link) {
+        enviarCorreo(
+                correoActual,
+                "Confirmá el cambio de correo de tu cuenta - Foodly",
+                "Solicitaste cambiar el correo de tu cuenta de Foodly a " + correoNuevo
+                        + ". Hacé clic en el siguiente enlace para confirmar el cambio (válido por 30 minutos): " + link
+                        + ". Si no solicitaste este cambio, ignorá este mensaje; tu correo actual seguirá funcionando con normalidad."
+        );
+    }
+
+    public void confirmarCambioCorreo(String correoAnterior, String correoNuevo) {
+        enviarCorreo(
+                correoAnterior,
+                "Tu correo de cuenta fue actualizado - Foodly",
+                "Te confirmamos que el correo de tu cuenta de Foodly fue cambiado a " + correoNuevo
+                        + ". Si no realizaste este cambio, contactate con soporte de inmediato."
+        );
+        enviarCorreo(
+                correoNuevo,
+                "Tu correo de cuenta fue actualizado - Foodly",
+                "Este correo ahora está asociado a tu cuenta de Foodly. A partir de ahora, usalo para iniciar sesión."
+        );
+    }
+
     public void enviarCorreo(String destinatario, String asunto, String cuerpo) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {

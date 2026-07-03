@@ -65,6 +65,24 @@ public class UsuarioController implements iUsuarioController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @PostMapping("/cambiar-correo/iniciar")
+    public ResponseEntity<Void> iniciarCambioCorreo(
+            @RequestBody DtIniciarCambioCorreoRequest request,
+            Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        usuarioService.iniciarCambioCorreo(authentication.getName(), request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/cambiar-correo/confirmar")
+    public ResponseEntity<Void> confirmarCambioCorreo(@RequestBody DtConfirmarCambioCorreoRequest request) {
+        usuarioService.confirmarCambioCorreo(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/mi-cuenta")
     public ResponseEntity<Void> eliminarMiCuenta(Authentication authentication) {
         if (autenticacionInvalida(authentication)) {
