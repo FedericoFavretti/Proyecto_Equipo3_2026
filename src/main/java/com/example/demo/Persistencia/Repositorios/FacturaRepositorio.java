@@ -13,5 +13,6 @@ public interface FacturaRepositorio {
     List<Factura> buscarPendientesDeProcesamiento(LocalDateTime fechaCorte);
     void guardar(Factura factura);
     void actualizar(Factura factura);
+    void actualizarProcesoPdf(Factura factura);
     void eliminar(Long id);
 }

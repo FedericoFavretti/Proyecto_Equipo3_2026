@@ -125,6 +125,11 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
     }
 
     @Override
+    public void actualizarProcesoPdf(Factura factura) {
+        guardarProcesoPdf(factura);
+    }
+
+    @Override
     public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM Factura WHERE id = ?", id);
     }

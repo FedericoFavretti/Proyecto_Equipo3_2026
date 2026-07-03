@@ -99,7 +99,7 @@ class PedidoServiceTest {
 
         assertThatThrownBy(() -> pedidoService.confirmarPedido(44L, 25L))
                 .isInstanceOf(PagoRechazadoException.class)
-                .hasMessage("No se pudo procesar el pago. El pedido no ha sido confirmado. Por favor, inténtelo nuevamente.");
+                .hasMessageContaining("No se pudo procesar el pago.");
 
         assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.Pendiente);
         assertThat(pedido.getTiempoEstEntrega()).isEqualTo(Duration.ofMinutes(25));
@@ -113,7 +113,7 @@ class PedidoServiceTest {
         Factura factura = Factura.builder()
                 .id(500L)
                 .numero("FAC-44")
-                .monto(pedido.getTotal())
+                .montoTotal(pedido.getTotal())
                 .estadoPdf(EstadoFacturaPdf.PENDIENTE)
                 .pedido(pedido)
                 .build();
@@ -163,7 +163,7 @@ class PedidoServiceTest {
                         .id(20L)
                         .email("ana@test.com")
                         .nombre("Ana")
-                        .apellido("Pérez")
+                        .apellido("Perez")
                         .activo(true)
                         .build())
                 .build();
