@@ -113,7 +113,10 @@ public class CalificacionService {
 
     @Transactional(readOnly = true)
     public List<DtCalificacionDetalleResponse> consultarCalificacionesDetalladasDelCliente(Long idCliente) {
-        List<Calificacion> calificaciones = calificacionRepositorio.listarPorCliente(idCliente);
+        List<Calificacion> calificaciones = calificacionRepositorio.listarPorCliente(idCliente).stream()
+                .filter(c -> c.getTipo() == TipoCalificacion.Local_a_cliente)
+                .toList();
+
         return calificaciones.stream()
                 .map(c -> new DtCalificacionDetalleResponse(
                         c.getLocal().getId(),
