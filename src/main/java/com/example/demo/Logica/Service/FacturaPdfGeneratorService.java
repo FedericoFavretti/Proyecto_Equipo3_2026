@@ -1,7 +1,7 @@
 package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Factura;
-import com.example.demo.Logica.Record.FacturaDetalleSnapshot;
+import com.example.demo.Logica.Clases.FacturaDetalle;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.Charset;
@@ -18,21 +18,21 @@ public class FacturaPdfGeneratorService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final int MAX_LINEAS_POR_PAGINA = 34;
 
-    public byte[] generarFacturaPdf(Factura factura, List<FacturaDetalleSnapshot> detalles) {
+    public byte[] generarFacturaPdf(Factura factura, List<FacturaDetalle> detalles) {
         List<String> lineas = construirLineasFactura(factura, detalles);
         List<List<String>> paginas = paginar(lineas, MAX_LINEAS_POR_PAGINA);
         return construirPdf(paginas);
     }
 
-    private List<String> construirLineasFactura(Factura factura, List<FacturaDetalleSnapshot> detalles) {
+    private List<String> construirLineasFactura(Factura factura, List<FacturaDetalle> detalles) {
         List<String> lineas = new ArrayList<>();
         lineas.add("Factura " + valorSeguro(factura.getNumero()));
         lineas.add("Pedido: #" + (factura.getPedido() != null ? factura.getPedido().getId() : "-"));
-        lineas.add("Fecha pedido: " + (factura.getPedido() != null && factura.getPedido().getFecha() != null
-                ? factura.getPedido().getFecha().format(DATE_TIME_FORMATTER)
+        lineas.add("Fecha pedido: " + (factura.getFechaPedido() != null
+                ? factura.getFechaPedido().format(DATE_TIME_FORMATTER)
                 : "-"));
-        lineas.add("Fecha generacion: " + (factura.getFechaGeneracionPdf() != null
-                ? factura.getFechaGeneracionPdf().format(DATE_TIME_FORMATTER)
+        lineas.add("Fecha emision: " + (factura.getFechaEmision() != null
+                ? factura.getFechaEmision().format(DATE_TIME_FORMATTER)
                 : factura.getFechaUltimoIntento() != null
                 ? factura.getFechaUltimoIntento().format(DATE_TIME_FORMATTER)
                 : "-"));
@@ -43,18 +43,18 @@ public class FacturaPdfGeneratorService {
         lineas.add("Email cliente: " + valorSeguro(factura.getClienteEmailSnapshot()));
         lineas.add("Direccion entrega: " + valorSeguro(factura.getDireccionEntregaSnapshot()));
         lineas.add("Medio de pago: " + valorSeguro(factura.getMedioPagoSnapshot()));
-        lineas.add(String.format(Locale.US, "Total: %.2f", factura.getMonto() != null ? factura.getMonto() : 0.0));
+        lineas.add(String.format(Locale.US, "Total: %.2f", factura.getMontoTotal() != null ? factura.getMontoTotal() : 0.0));
         lineas.add("");
         lineas.add("Detalle:");
 
         if (detalles == null || detalles.isEmpty()) {
             lineas.add("- Sin items registrados");
         } else {
-            for (FacturaDetalleSnapshot detalle : detalles) {
-                lineas.add("- " + valorSeguro(detalle.nombreProducto()));
-                lineas.add("  Cantidad: " + valorSeguro(detalle.cantidad()));
-                lineas.add(String.format(Locale.US, "  Precio unitario: %.2f", detalle.precioUnitario() != null ? detalle.precioUnitario() : 0.0));
-                lineas.add(String.format(Locale.US, "  Subtotal: %.2f", detalle.subtotal() != null ? detalle.subtotal() : 0.0));
+            for (FacturaDetalle detalle : detalles) {
+                lineas.add("- " + valorSeguro(detalle.getNombreProductoSnapshot()));
+                lineas.add("  Cantidad: " + valorSeguro(detalle.getCantidad()));
+                lineas.add(String.format(Locale.US, "  Precio unitario: %.2f", detalle.getPrecioUnitario() != null ? detalle.getPrecioUnitario() : 0.0));
+                lineas.add(String.format(Locale.US, "  Subtotal: %.2f", detalle.getSubtotal() != null ? detalle.getSubtotal() : 0.0));
             }
         }
 

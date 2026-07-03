@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
 @Data
@@ -15,7 +16,9 @@ import java.time.LocalDateTime;
 public class DtFactura {
     private long id;
     private String numero;
-    private Double monto;
+    private LocalDateTime fechaPedido;
+    private LocalDateTime fechaEmision;
+    private Double montoTotal;
     private String archivoPdf;
     private EstadoFacturaPdf estadoPdf;
     private Integer intentosGeneracion;
@@ -29,7 +32,7 @@ public class DtFactura {
     private String clienteEmailSnapshot;
     private String direccionEntregaSnapshot;
     private String medioPagoSnapshot;
-    private String detalleItemsJson;
+    private List<DtFacturaDetalle> detalles;
     private DtPedido dtPedido;
 }
 

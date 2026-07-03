@@ -1,8 +1,12 @@
 package com.example.demo.Logica.Mappers;
 
 import com.example.demo.Logica.Clases.Factura;
+import com.example.demo.Logica.Clases.FacturaDetalle;
 import com.example.demo.Logica.DataTypes.shared.DtFactura;
+import com.example.demo.Logica.DataTypes.shared.DtFacturaDetalle;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class FacturaMapper {
@@ -17,7 +21,9 @@ public class FacturaMapper {
         return Factura.builder()
                 .id(dtFactura.getId())
                 .numero(dtFactura.getNumero())
-                .monto(dtFactura.getMonto())
+                .fechaPedido(dtFactura.getFechaPedido())
+                .fechaEmision(dtFactura.getFechaEmision())
+                .montoTotal(dtFactura.getMontoTotal())
                 .archivoPdf(dtFactura.getArchivoPdf())
                 .estadoPdf(dtFactura.getEstadoPdf())
                 .intentosGeneracion(dtFactura.getIntentosGeneracion())
@@ -31,7 +37,7 @@ public class FacturaMapper {
                 .clienteEmailSnapshot(dtFactura.getClienteEmailSnapshot())
                 .direccionEntregaSnapshot(dtFactura.getDireccionEntregaSnapshot())
                 .medioPagoSnapshot(dtFactura.getMedioPagoSnapshot())
-                .detalleItemsJson(dtFactura.getDetalleItemsJson())
+                .detalles(mapearDetallesDeDt(dtFactura.getDetalles()))
                 .pedido(pedidoMapper.mapearPedidoDeDt(dtFactura.getDtPedido()))
                 .build();
     }
@@ -40,7 +46,9 @@ public class FacturaMapper {
         return DtFactura.builder()
                 .id(factura.getId())
                 .numero(factura.getNumero())
-                .monto(factura.getMonto())
+                .fechaPedido(factura.getFechaPedido())
+                .fechaEmision(factura.getFechaEmision())
+                .montoTotal(factura.getMontoTotal())
                 .archivoPdf(factura.getArchivoPdf())
                 .estadoPdf(factura.getEstadoPdf())
                 .intentosGeneracion(factura.getIntentosGeneracion())
@@ -54,9 +62,41 @@ public class FacturaMapper {
                 .clienteEmailSnapshot(factura.getClienteEmailSnapshot())
                 .direccionEntregaSnapshot(factura.getDireccionEntregaSnapshot())
                 .medioPagoSnapshot(factura.getMedioPagoSnapshot())
-                .detalleItemsJson(factura.getDetalleItemsJson())
+                .detalles(mapearDetallesDeClase(factura.getDetalles()))
                 .dtPedido(pedidoMapper.mapearDtPedidoDeClase(factura.getPedido()))
                 .build();
+    }
+
+    private List<FacturaDetalle> mapearDetallesDeDt(List<DtFacturaDetalle> detalles) {
+        if (detalles == null) {
+            return List.of();
+        }
+
+        return detalles.stream()
+                .map(detalle -> FacturaDetalle.builder()
+                        .id(detalle.getId())
+                        .nombreProductoSnapshot(detalle.getNombreProductoSnapshot())
+                        .cantidad(detalle.getCantidad())
+                        .precioUnitario(detalle.getPrecioUnitario())
+                        .subtotal(detalle.getSubtotal())
+                        .build())
+                .toList();
+    }
+
+    private List<DtFacturaDetalle> mapearDetallesDeClase(List<FacturaDetalle> detalles) {
+        if (detalles == null) {
+            return List.of();
+        }
+
+        return detalles.stream()
+                .map(detalle -> DtFacturaDetalle.builder()
+                        .id(detalle.getId() != null ? detalle.getId() : 0L)
+                        .nombreProductoSnapshot(detalle.getNombreProductoSnapshot())
+                        .cantidad(detalle.getCantidad())
+                        .precioUnitario(detalle.getPrecioUnitario())
+                        .subtotal(detalle.getSubtotal())
+                        .build())
+                .toList();
     }
 }
 

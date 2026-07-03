@@ -3,15 +3,12 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.DetallePedido;
 import com.example.demo.Logica.Clases.Factura;
+import com.example.demo.Logica.Clases.FacturaDetalle;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoFacturaPdf;
-import com.example.demo.Logica.Record.FacturaDetalleSnapshot;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.FacturaRepositorio;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +29,6 @@ public class FacturaService {
     private final FacturaPdfGeneratorService facturaPdfGeneratorService;
     private final FacturaStorageService facturaStorageService;
     private final NotificacionPedidoService notificacionPedidoService;
-    private final ObjectMapper objectMapper;
     private final int maxIntentos;
     private final long retryDelayMinutes;
 
@@ -42,7 +38,6 @@ public class FacturaService {
             FacturaPdfGeneratorService facturaPdfGeneratorService,
             FacturaStorageService facturaStorageService,
             NotificacionPedidoService notificacionPedidoService,
-            ObjectMapper objectMapper,
             @Value("${app.facturas.max-intentos:3}") int maxIntentos,
             @Value("${app.facturas.retry-delay-minutes:15}") long retryDelayMinutes) {
         this.facturaRepositorio = facturaRepositorio;
@@ -50,7 +45,6 @@ public class FacturaService {
         this.facturaPdfGeneratorService = facturaPdfGeneratorService;
         this.facturaStorageService = facturaStorageService;
         this.notificacionPedidoService = notificacionPedidoService;
-        this.objectMapper = objectMapper;
         this.maxIntentos = maxIntentos;
         this.retryDelayMinutes = retryDelayMinutes;
     }
@@ -61,7 +55,9 @@ public class FacturaService {
 
         Factura factura = Factura.builder()
                 .numero("FAC-" + pedido.getId())
-                .monto(pedido.getTotal())
+                .fechaPedido(pedido.getFecha() != null ? pedido.getFecha() : LocalDateTime.now())
+                .fechaEmision(LocalDateTime.now())
+                .montoTotal(pedido.getTotal())
                 .archivoPdf(null)
                 .estadoPdf(EstadoFacturaPdf.PENDIENTE)
                 .intentosGeneracion(0)
@@ -75,7 +71,7 @@ public class FacturaService {
                 .clienteEmailSnapshot(pedido.getCliente() != null ? pedido.getCliente().getEmail() : null)
                 .direccionEntregaSnapshot(formatearDireccion(pedido.getDomicilioEntrega()))
                 .medioPagoSnapshot(pedido.getMedioDePago())
-                .detalleItemsJson(serializarDetalles(detalles))
+                .detalles(construirDetallesFactura(detalles))
                 .pedido(pedido)
                 .build();
 
@@ -102,7 +98,7 @@ public class FacturaService {
         facturaRepositorio.actualizar(factura);
 
         try {
-            List<FacturaDetalleSnapshot> detalles = deserializarDetalles(factura.getDetalleItemsJson());
+            List<FacturaDetalle> detalles = factura.getDetalles() != null ? factura.getDetalles() : List.of();
             byte[] pdf = facturaPdfGeneratorService.generarFacturaPdf(factura, detalles);
             String ruta = facturaStorageService.guardarFacturaPdf(factura, pdf);
 
@@ -142,34 +138,15 @@ public class FacturaService {
         return factura.getIntentosGeneracion() == null ? 1 : factura.getIntentosGeneracion() + 1;
     }
 
-    private String serializarDetalles(List<DetallePedido> detalles) {
-        List<FacturaDetalleSnapshot> snapshot = detalles.stream()
-                .map(detalle -> new FacturaDetalleSnapshot(
-                        detalle.getPlato() != null ? detalle.getPlato().getNombre() : null,
-                        detalle.getCantidad(),
-                        detalle.getPrecioUnitario(),
-                        detalle.getSubtotal()
-                ))
+    private List<FacturaDetalle> construirDetallesFactura(List<DetallePedido> detalles) {
+        return detalles.stream()
+                .map(detalle -> FacturaDetalle.builder()
+                        .nombreProductoSnapshot(detalle.getPlato() != null ? detalle.getPlato().getNombre() : null)
+                        .cantidad(detalle.getCantidad())
+                        .precioUnitario(detalle.getPrecioUnitario())
+                        .subtotal(detalle.getSubtotal())
+                        .build())
                 .toList();
-
-        try {
-            return objectMapper.writeValueAsString(snapshot);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("No se pudo serializar el detalle de la factura.", e);
-        }
-    }
-
-    private List<FacturaDetalleSnapshot> deserializarDetalles(String detalleItemsJson) {
-        if (detalleItemsJson == null || detalleItemsJson.isBlank()) {
-            return List.of();
-        }
-
-        try {
-            return objectMapper.readValue(detalleItemsJson, new TypeReference<>() {
-            });
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("No se pudo leer el detalle congelado de la factura.", e);
-        }
     }
 
     private String construirNombreCliente(Cliente cliente) {
