@@ -53,8 +53,9 @@ public class CalificacionController implements iCalificacionController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/mis-calificaciones-detalle")
-    public ResponseEntity<List<DtCalificacionDetalleResponse>> misCalificacionesDetalle(@PathVariable Long idCliente) {
+    @PreAuthorize("hasRole('Cliente')")
+    @GetMapping("/{idCliente}/calificacion/detalle")
+    public ResponseEntity<List<DtCalificacionDetalleResponse>> consultarCalificacionDetalle(@PathVariable("idCliente") Long idCliente) {
         return ResponseEntity.ok(calificacionService.consultarCalificacionesDetalladasDelCliente(idCliente));
     }
 
