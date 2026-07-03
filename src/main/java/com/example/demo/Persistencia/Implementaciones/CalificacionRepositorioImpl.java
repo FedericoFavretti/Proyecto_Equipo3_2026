@@ -68,7 +68,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                     ps.setDouble(1, calificacion.getPuntaje());
                     ps.setString(2, calificacion.getComentario());
                     ps.setDate(3, java.sql.Date.valueOf(calificacion.getFecha().toLocalDate()));
-                    ps.setString(4, calificacion.getTipo().toString());
+                    ps.setString(4, calificacion.getTipo().name());
                     ps.setBoolean(5, Boolean.TRUE.equals(calificacion.getArchivada()));
                     return ps;
         }, keyHolder);
@@ -87,7 +87,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                calificacion.getPuntaje(),
                calificacion.getComentario(),
                calificacion.getFecha(),
-               calificacion.getTipo(),
+               calificacion.getTipo().name(),
                Boolean.TRUE.equals(calificacion.getArchivada()),
                calificacion.getId()
        );
