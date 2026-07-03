@@ -100,9 +100,6 @@ public class CalificacionService {
 
     @Transactional
     public void editarCalificacion(DtCalificacion dtCalificacion, String emailAutenticado) {
-        Usuario usuarioAutenticado = usuarioRepositorio.buscarPorEmail(emailAutenticado)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
-
         calificacionRepositorio.buscarPorId(dtCalificacion.getId()).orElseThrow(() -> new ResourceNotFoundException("Calificacion", dtCalificacion.getId()));
         validarPuntaje(dtCalificacion);
         Calificacion calificacion = calificacionMapper.mapearCalificacionDeDt(dtCalificacion);
