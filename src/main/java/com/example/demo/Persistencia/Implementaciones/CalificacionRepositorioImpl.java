@@ -83,14 +83,26 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
 
     @Override
     public void actualizar(Calificacion calificacion) {
-       jdbcTemplate.update("UPDATE Calificacion SET  puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ? WHERE id = ?",
-               calificacion.getPuntaje(),
-               calificacion.getComentario(),
-               calificacion.getFecha(),
-               calificacion.getTipo(),
-               Boolean.TRUE.equals(calificacion.getArchivada()),
-               calificacion.getId()
-       );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+       jdbcTemplate.update(connection -> {
+           PreparedStatement ps = connection.prepareStatement("UPDATE Calificacion SET  puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ? WHERE id = ?",
+                   new String[]{"id"}
+           );
+               calificacion.getPuntaje();
+               calificacion.getComentario();
+               calificacion.getFecha();
+               calificacion.getTipo();
+               Boolean.TRUE.equals(calificacion.getArchivada());
+               calificacion.getId();
+               return ps;
+       }, keyHolder);
+        Long idCalificacion = keyHolder.getKey().longValue();
+        if (calificacion.getCliente() != null && calificacion.getCliente().getId() != null) {
+            clienteCalificacionRepositorio.calificar(calificacion.getCliente().getId(), idCalificacion);
+        }
+        if (calificacion.getLocal() != null && calificacion.getLocal().getId() != null) {
+            localCalificacionRepositorio.calificar(calificacion.getLocal().getId(), idCalificacion);
+        }
     }
 
     @Override

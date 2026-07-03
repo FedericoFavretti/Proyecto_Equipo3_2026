@@ -32,6 +32,17 @@ public class CalificacionController implements iCalificacionController {
         calificacionService.calificar(dtCalificacion, authentication.getName());
         return ResponseEntity.noContent().build();
     }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/editar_calificacion")
+    public ResponseEntity<Void> editarCalificacion(@RequestBody DtCalificacion dtCalificacion, Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        calificacionService.editarCalificacion(dtCalificacion, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
+
     @PreAuthorize("hasRole('Local')")
     @GetMapping("/local/mi-calificacion")
     public ResponseEntity<Map<String, Object>> consultarCalificacionGlobalDelLocal(Authentication authentication) {

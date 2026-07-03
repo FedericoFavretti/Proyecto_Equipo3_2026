@@ -79,23 +79,6 @@ public class CalificacionService {
     }
 
     @Transactional
-    public void calificar(DtCalificacion dtCalificacion) {
-        validarPuntaje(dtCalificacion);
-        if (dtCalificacion.getDtCliente() == null && dtCalificacion.getDtLocal() == null) {
-            throw new BusinessRuleException(MENSAJE_CLIENTE_O_LOCAL_REQUERIDO);
-        }
-        if (dtCalificacion.getTipo() == null && dtCalificacion.getDtCliente() != null) {
-            dtCalificacion.setTipo(TipoCalificacion.Local_a_cliente);
-        } else if (dtCalificacion.getTipo() == null && dtCalificacion.getDtLocal() != null) {
-            dtCalificacion.setTipo(TipoCalificacion.Cliente_a_local);
-        }
-        dtCalificacion.setFecha(LocalDateTime.now());
-        Calificacion calificacion = calificacionMapper.mapearCalificacionDeDt(dtCalificacion);
-        calificacionRepositorio.guardar(calificacion);
-        sincronizarCalificacionGlobal(calificacion);
-    }
-
-    @Transactional
     public void calificar(DtCalificacion dtCalificacion, String emailAutenticado) {
         Usuario usuarioAutenticado = usuarioRepositorio.buscarPorEmail(emailAutenticado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
@@ -113,6 +96,18 @@ public class CalificacionService {
         }
 
         throw new BusinessRuleException("Solo clientes y locales pueden calificar.");
+    }
+
+    @Transactional
+    public void editarCalificacion(DtCalificacion dtCalificacion, String emailAutenticado) {
+        Usuario usuarioAutenticado = usuarioRepositorio.buscarPorEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
+
+        calificacionRepositorio.buscarPorId(dtCalificacion.getId()).orElseThrow(() -> new ResourceNotFoundException("Calificacion", dtCalificacion.getId()));
+        validarPuntaje(dtCalificacion);
+        Calificacion calificacion = calificacionMapper.mapearCalificacionDeDt(dtCalificacion);
+        calificacionRepositorio.actualizar(calificacion);
+        sincronizarCalificacionGlobal(calificacion);
     }
 
     @Transactional
