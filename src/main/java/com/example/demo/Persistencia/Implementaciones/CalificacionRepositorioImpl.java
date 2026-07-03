@@ -83,20 +83,20 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
 
     @Override
     public void actualizar(Calificacion calificacion) {
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-       jdbcTemplate.update(connection -> {
-           PreparedStatement ps = connection.prepareStatement("UPDATE Calificacion SET  puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ? WHERE id = ?",
-                   new String[]{"id"}
-           );
-           ps.setInt(1, calificacion.getPuntaje());
-           ps.setString(2, calificacion.getComentario());
-           ps.setObject(3, calificacion.getFecha());
-           ps.setString(4, calificacion.getTipo().name());
-           ps.setBoolean(5, Boolean.TRUE.equals(calificacion.getArchivada()));
-           ps.setLong(6, calificacion.getId());
-           return ps;
-       }, keyHolder);
-        Long idCalificacion = keyHolder.getKey().longValue();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE Calificacion SET puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ? WHERE id = ?"
+            );
+            ps.setInt(1, calificacion.getPuntaje());
+            ps.setString(2, calificacion.getComentario());
+            ps.setObject(3, calificacion.getFecha());
+            ps.setString(4, calificacion.getTipo().name());
+            ps.setBoolean(5, Boolean.TRUE.equals(calificacion.getArchivada()));
+            ps.setLong(6, calificacion.getId());
+            return ps;
+        });
+
+        Long idCalificacion = calificacion.getId();
         if (calificacion.getCliente() != null && calificacion.getCliente().getId() != null) {
             clienteCalificacionRepositorio.calificar(calificacion.getCliente().getId(), idCalificacion);
         }
