@@ -95,7 +95,7 @@ public class FacturaService {
         factura.setFechaUltimoIntento(ahora);
         factura.setUltimoErrorPdf(null);
         factura.setProximoReintento(null);
-        facturaRepositorio.actualizar(factura);
+        facturaRepositorio.actualizarProcesoPdf(factura);
 
         try {
             List<FacturaDetalle> detalles = factura.getDetalles() != null ? factura.getDetalles() : List.of();
@@ -107,7 +107,7 @@ public class FacturaService {
             factura.setFechaGeneracionPdf(LocalDateTime.now());
             factura.setUltimoErrorPdf(null);
             factura.setProximoReintento(null);
-            facturaRepositorio.actualizar(factura);
+            facturaRepositorio.actualizarProcesoPdf(factura);
 
             try {
                 notificacionPedidoService.notificarFacturaGenerada(factura, pdf);
@@ -131,7 +131,7 @@ public class FacturaService {
             factura.setProximoReintento(LocalDateTime.now().plusMinutes(retryDelayMinutes));
         }
 
-        facturaRepositorio.actualizar(factura);
+        facturaRepositorio.actualizarProcesoPdf(factura);
     }
 
     private int siguienteIntento(Factura factura) {

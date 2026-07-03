@@ -3,15 +3,14 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.DetallePedido;
 import com.example.demo.Logica.Clases.Factura;
+import com.example.demo.Logica.Clases.FacturaDetalle;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoFacturaPdf;
-import com.example.demo.Logica.Record.FacturaDetalleSnapshot;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.FacturaRepositorio;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +53,6 @@ class FacturaServiceTest {
                 facturaPdfGeneratorService,
                 facturaStorageService,
                 notificacionPedidoService,
-                new ObjectMapper(),
                 3,
                 15
         );
@@ -78,7 +76,10 @@ class FacturaServiceTest {
         assertThat(guardada.getClienteEmailSnapshot()).isEqualTo("ana@test.com");
         assertThat(guardada.getDireccionEntregaSnapshot()).contains("Av. Italia").contains("Montevideo");
         assertThat(guardada.getMedioPagoSnapshot()).isEqualTo("Tarjeta");
-        assertThat(guardada.getDetalleItemsJson()).contains("Milanesa").contains("precioUnitario");
+        assertThat(guardada.getDetalles())
+                .singleElement()
+                .extracting(FacturaDetalle::getNombreProductoSnapshot, FacturaDetalle::getPrecioUnitario)
+                .containsExactly("Milanesa", 15.0);
     }
 
     @Test
@@ -92,7 +93,7 @@ class FacturaServiceTest {
         facturaService.procesarFactura(factura);
 
         ArgumentCaptor<Factura> captor = ArgumentCaptor.forClass(Factura.class);
-        verify(facturaRepositorio, times(2)).actualizar(captor.capture());
+        verify(facturaRepositorio, times(2)).actualizarProcesoPdf(captor.capture());
 
         Factura finalState = captor.getAllValues().getLast();
         assertThat(finalState.getEstadoPdf()).isEqualTo(EstadoFacturaPdf.GENERADA);
@@ -115,7 +116,7 @@ class FacturaServiceTest {
         facturaService.procesarFactura(factura);
 
         ArgumentCaptor<Factura> captor = ArgumentCaptor.forClass(Factura.class);
-        verify(facturaRepositorio, times(2)).actualizar(captor.capture());
+        verify(facturaRepositorio, times(2)).actualizarProcesoPdf(captor.capture());
 
         Factura finalState = captor.getAllValues().getLast();
         assertThat(finalState.getEstadoPdf()).isEqualTo(EstadoFacturaPdf.GENERADA);
@@ -131,7 +132,7 @@ class FacturaServiceTest {
         facturaService.procesarFactura(factura);
 
         ArgumentCaptor<Factura> captor = ArgumentCaptor.forClass(Factura.class);
-        verify(facturaRepositorio, times(2)).actualizar(captor.capture());
+        verify(facturaRepositorio, times(2)).actualizarProcesoPdf(captor.capture());
 
         Factura finalState = captor.getAllValues().getLast();
         assertThat(finalState.getEstadoPdf()).isEqualTo(EstadoFacturaPdf.ERROR_REINTENTABLE);
@@ -150,7 +151,7 @@ class FacturaServiceTest {
         facturaService.procesarFactura(factura);
 
         ArgumentCaptor<Factura> captor = ArgumentCaptor.forClass(Factura.class);
-        verify(facturaRepositorio, times(2)).actualizar(captor.capture());
+        verify(facturaRepositorio, times(2)).actualizarProcesoPdf(captor.capture());
 
         Factura finalState = captor.getAllValues().getLast();
         assertThat(finalState.getEstadoPdf()).isEqualTo(EstadoFacturaPdf.ERROR_FINAL);
@@ -189,14 +190,12 @@ class FacturaServiceTest {
                 .build();
     }
 
-    private Factura facturaPendienteConSnapshot() throws Exception {
+    private Factura facturaPendienteConSnapshot() {
         Pedido pedido = pedidoCompleto();
-        List<FacturaDetalleSnapshot> detalles = List.of(new FacturaDetalleSnapshot("Milanesa", 2, 15.0, 30.0));
-
         return Factura.builder()
                 .id(500L)
                 .numero("FAC-44")
-                .monto(450.0)
+                .montoTotal(450.0)
                 .estadoPdf(EstadoFacturaPdf.PENDIENTE)
                 .intentosGeneracion(0)
                 .localNombreSnapshot("La Cocina")
@@ -205,7 +204,12 @@ class FacturaServiceTest {
                 .clienteEmailSnapshot("ana@test.com")
                 .direccionEntregaSnapshot("Av. Italia, 1234, Montevideo, 11600")
                 .medioPagoSnapshot("Tarjeta")
-                .detalleItemsJson(new ObjectMapper().writeValueAsString(detalles))
+                .detalles(List.of(FacturaDetalle.builder()
+                        .nombreProductoSnapshot("Milanesa")
+                        .cantidad(2)
+                        .precioUnitario(15.0)
+                        .subtotal(30.0)
+                        .build()))
                 .pedido(pedido)
                 .build();
     }
