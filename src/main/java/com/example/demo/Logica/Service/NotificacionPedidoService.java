@@ -33,14 +33,40 @@ public class NotificacionPedidoService {
                     "Tu pedido #" + pedido.getId()
                             + " fue confirmado. Tiempo estimado: "
                             + pedido.getTiempoEstEntrega().toMinutes()
-                            + " minutos. Factura: "
+                            + " minutos. La factura "
                             + factura.getNumero()
-                            + "."
+                            + " se está preparando y te la enviaremos por correo apenas quede generada."
             );
         }
 
-        logger.info("NotificaciÃ³n web pendiente para pedido {}", pedido.getId());
-        logger.info("NotificaciÃ³n push pendiente para pedido {}", pedido.getId());
+        logger.info("Notificación web pendiente para pedido {}", pedido.getId());
+        logger.info("Notificación push pendiente para pedido {}", pedido.getId());
+    }
+
+    public void notificarFacturaGenerada(Factura factura, byte[] pdf) {
+        String mensaje = "Tu factura " + factura.getNumero() + " ya fue generada y se adjunta en este correo.";
+
+        notificacionRepositorio.guardar(Notificacion.builder()
+                .tipo(TipoNotificacion.Pedido)
+                .mensaje(mensaje)
+                .canal(CanalNotificacion.Email)
+                .leida(false)
+                .fecha(LocalDateTime.now())
+                .pedido(factura.getPedido())
+                .build());
+
+        if (factura.getClienteEmailSnapshot() != null && !factura.getClienteEmailSnapshot().isBlank()) {
+            emailService.enviarCorreoConAdjunto(
+                    factura.getClienteEmailSnapshot(),
+                    "Factura de tu pedido",
+                    mensaje,
+                    pdf,
+                    factura.getNumero() + ".pdf"
+            );
+        }
+
+        logger.info("Notificación web pendiente para factura {}", factura.getNumero());
+        logger.info("Notificación push pendiente para factura {}", factura.getNumero());
     }
 
     public void notificarRechazo(Pedido pedido, String motivo) {
@@ -63,7 +89,7 @@ public class NotificacionPedidoService {
             );
         }
 
-        logger.info("NotificaciÃ³n web pendiente para rechazo de pedido {}", pedido.getId());
-        logger.info("NotificaciÃ³n push pendiente para rechazo de pedido {}", pedido.getId());
+        logger.info("Notificación web pendiente para rechazo de pedido {}", pedido.getId());
+        logger.info("Notificación push pendiente para rechazo de pedido {}", pedido.getId());
     }
 }
