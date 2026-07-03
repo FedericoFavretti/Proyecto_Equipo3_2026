@@ -1,5 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
+import com.example.demo.Logica.Clases.Cliente;
+import com.example.demo.Logica.DataTypes.response.DtCalificacionDetalleResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
 import com.example.demo.Logica.DataTypes.response.DtMiCalificacionLocalResponse;
 import com.example.demo.Logica.DataTypes.shared.DtCalificacion;
@@ -11,6 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import static com.example.demo.Utils.AuthUtils.autenticacionInvalida;
+
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -47,6 +51,11 @@ public class CalificacionController implements iCalificacionController {
     public ResponseEntity<DtCalificacionGlobalResponse> consultarCalificacionGlobal(@PathVariable("idCliente") Long idCliente) {
         DtCalificacionGlobalResponse response = calificacionService.consultarCalificacionGlobal(idCliente);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/mis-calificaciones-detalle")
+    public ResponseEntity<List<DtCalificacionDetalleResponse>> misCalificacionesDetalle(@PathVariable Long idCliente) {
+        return ResponseEntity.ok(calificacionService.consultarCalificacionesDetalladasDelCliente(idCliente));
     }
 
     @PreAuthorize("hasRole('Cliente')")

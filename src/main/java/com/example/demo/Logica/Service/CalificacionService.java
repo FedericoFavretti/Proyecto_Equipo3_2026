@@ -4,6 +4,7 @@ import com.example.demo.Logica.Clases.Calificacion;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Usuario;
+import com.example.demo.Logica.DataTypes.response.DtCalificacionDetalleResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
 import com.example.demo.Logica.DataTypes.response.DtMiCalificacionLocalResponse;
 import com.example.demo.Logica.DataTypes.shared.DtCalificacion;
@@ -108,6 +109,20 @@ public class CalificacionService {
         }
 
         return consultarCalificacionGlobalDelLocalPorId(local.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DtCalificacionDetalleResponse> consultarCalificacionesDetalladasDelCliente(Long idCliente) {
+        List<Calificacion> calificaciones = calificacionRepositorio.listarPorCliente(idCliente);
+        return calificaciones.stream()
+                .map(c -> new DtCalificacionDetalleResponse(
+                        c.getLocal().getId(),
+                        c.getLocal().getNombre(),
+                        c.getPuntaje(),
+                        c.getComentario(),
+                        c.getFecha()
+                ))
+                .toList();
     }
 
     @Transactional
