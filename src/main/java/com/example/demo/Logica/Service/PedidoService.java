@@ -148,7 +148,7 @@ public class PedidoService {
         pedido.setEstado(EstadoPedido.Confirmado);
         pedidoRepositorio.actualizar(pedido);
 
-        Factura factura = facturaService.generarYGuardarFactura(pedido);
+        Factura factura = facturaService.crearFacturaPendiente(pedido);
         notificacionPedidoService.notificarConfirmacion(pedido, factura);
 
         return pedido;

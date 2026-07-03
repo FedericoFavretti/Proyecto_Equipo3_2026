@@ -1,11 +1,15 @@
 package com.example.demo.Logica.Service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,8 +27,8 @@ public class EmailService {
     public void enviarMailDeActivacion(String email) {
         enviarCorreo(
                 email,
-                "Activ√° tu cuenta en Foodly",
-                "Hac√© clic en el siguiente enlace para activar tu cuenta: "
+                "Activ· tu cuenta en Foodly",
+                "HacÈ clic en el siguiente enlace para activar tu cuenta: "
                         + activarCuenta + email
         );
     }
@@ -33,34 +37,34 @@ public class EmailService {
         enviarCorreo(
                 correo,
                 "Recupera tu cuenta en Foodly",
-                "Hac√© clic en el siguiente enlace para recuperar tu cuenta (v√°lido por 30 minutos): " + link
+                "HacÈ clic en el siguiente enlace para recuperar tu cuenta (v·lido por 30 minutos): " + link
         );
     }
 
     public void enviarCodigoVerificacion(String correo, String codigo) {
         enviarCorreo(
                 correo,
-                "C√≥digo de verificaci√≥n - Foodly",
-                "Tu c√≥digo de verificaci√≥n para cambiar la contrase√±a es: " + codigo
-                        + ". Este c√≥digo vence en 10 minutos. Si no solicitaste este cambio, ignor√° este mensaje."
+                "CÛdigo de verificaciÛn - Foodly",
+                "Tu cÛdigo de verificaciÛn para cambiar la contraseÒa es: " + codigo
+                        + ". Este cÛdigo vence en 10 minutos. Si no solicitaste este cambio, ignor· este mensaje."
         );
     }
 
     public void enviarConfirmacionCambioPasswd(String correo) {
         enviarCorreo(
                 correo,
-                "Tu contrase√±a fue actualizada - Foodly",
-                "Te confirmamos que tu contrase√±a fue cambiada exitosamente. Si no realizaste este cambio, contactate con soporte de inmediato."
+                "Tu contraseÒa fue actualizada - Foodly",
+                "Te confirmamos que tu contraseÒa fue cambiada exitosamente. Si no realizaste este cambio, contactate con soporte de inmediato."
         );
     }
 
     public void solicitarCambioCorreo(String correoActual, String correoNuevo, String link) {
         enviarCorreo(
                 correoActual,
-                "Confirm√° el cambio de correo de tu cuenta - Foodly",
+                "Confirm· el cambio de correo de tu cuenta - Foodly",
                 "Solicitaste cambiar el correo de tu cuenta de Foodly a " + correoNuevo
-                        + ". Hac√© clic en el siguiente enlace para confirmar el cambio (v√°lido por 30 minutos): " + link
-                        + ". Si no solicitaste este cambio, ignor√° este mensaje; tu correo actual seguir√° funcionando con normalidad."
+                        + ". HacÈ clic en el siguiente enlace para confirmar el cambio (v·lido por 30 minutos): " + link
+                        + ". Si no solicitaste este cambio, ignor· este mensaje; tu correo actual seguir· funcionando con normalidad."
         );
     }
 
@@ -74,7 +78,7 @@ public class EmailService {
         enviarCorreo(
                 correoNuevo,
                 "Tu correo de cuenta fue actualizado - Foodly",
-                "Este correo ahora est√° asociado a tu cuenta de Foodly. A partir de ahora, usalo para iniciar sesi√≥n."
+                "Este correo ahora est· asociado a tu cuenta de Foodly. A partir de ahora, usalo para iniciar sesiÛn."
         );
     }
 
@@ -90,5 +94,25 @@ public class EmailService {
         mensaje.setSubject(asunto);
         mensaje.setText(cuerpo);
         mailSender.send(mensaje);
+    }
+
+    public void enviarCorreoConAdjunto(String destinatario, String asunto, String cuerpo, byte[] adjunto, String nombreArchivo) {
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            logger.warn("No hay JavaMailSender configurado; no se pudo enviar correo con adjunto '{}' a {}", asunto, destinatario);
+            return;
+        }
+
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setTo(destinatario);
+            helper.setSubject(asunto);
+            helper.setText(cuerpo);
+            helper.addAttachment(nombreArchivo, new ByteArrayResource(adjunto), "application/pdf");
+            mailSender.send(mimeMessage);
+        } catch (MessagingException ex) {
+            throw new IllegalStateException("No se pudo enviar el correo con la factura adjunta.", ex);
+        }
     }
 }
