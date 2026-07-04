@@ -139,6 +139,11 @@ public class PedidoService {
         pedido.setTiempoEstEntrega(Duration.ofMinutes(tiempoEstimadoEntregaMinutos));
 
         if (!Boolean.TRUE.equals(pedido.getPagado())) {
+            boolean esMedioSimulado = "EFECTIVO".equalsIgnoreCase(pedido.getMedioDePago()); // o el valor que corresponda
+
+            if (!esMedioSimulado) {
+                throw new BusinessRuleException("El pedido no puede confirmarse: el pago no fue acreditado por Mercado Pago.");
+            }
             if (!pagoSimuladoService.procesarPago(pedido)) {
                 throw new PagoRechazadoException(MENSAJE_PAGO_FALLIDO);
             }
