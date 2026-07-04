@@ -14,4 +14,7 @@ public class DtClienteLocalResponse {
     private String nombre;
     private String apellido;
     private Double calificacionGlobal;
+    private Boolean yaCalificado;
+    private Integer miPuntaje;
+    private String miComentario;
 }

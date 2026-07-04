@@ -99,8 +99,9 @@ public class LocalService {
     private final PromocionRepositorio promocionRepositorio;
     private final PromocionMapper promocionMapper;
     private final ClienteRepositorio clienteRepositorio;
+    private final CalificacionRepositorio calificacionRepositorio;
 
-    public LocalService(LocalRepositorio localRepositorio, PlatoRepositorio platoRepositorio, RegistroLocalNotificador registroLocalNotificador, UsuarioRepositorio usuarioRepositorio, PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper, PromocionRepositorio promocionRepositorio, PromocionMapper promocionMapper, ClienteRepositorio clienteRepositorio) {
+    public LocalService(LocalRepositorio localRepositorio, PlatoRepositorio platoRepositorio, RegistroLocalNotificador registroLocalNotificador, UsuarioRepositorio usuarioRepositorio, PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper, PromocionRepositorio promocionRepositorio, PromocionMapper promocionMapper, ClienteRepositorio clienteRepositorio, CalificacionRepositorio calificacionRepositorio) {
         this.localRepositorio = localRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;
@@ -112,6 +113,7 @@ public class LocalService {
         this.promocionRepositorio = promocionRepositorio;
         this.promocionMapper = promocionMapper;
         this.clienteRepositorio = clienteRepositorio;
+        this.calificacionRepositorio = calificacionRepositorio;
     }
 
     @Transactional
@@ -324,12 +326,21 @@ public class LocalService {
         List<Cliente> clientes = clienteRepositorio.buscarClientesDelLocal(idLocal, filtro);
 
         return clientes.stream()
-                .map(cliente -> DtClienteLocalResponse.builder()
-                        .id(cliente.getId())
-                        .nombre(cliente.getNombre())
-                        .apellido(cliente.getApellido())
-                        .calificacionGlobal(cliente.getCalificacionGlobal())
-                        .build())
+                .map(cliente -> {
+                    var calificacionExistente = calificacionRepositorio
+                            .buscarCalificacionLocalACliente(cliente.getId(), idLocal)
+                            .orElse(null);
+
+                    return DtClienteLocalResponse.builder()
+                            .id(cliente.getId())
+                            .nombre(cliente.getNombre())
+                            .apellido(cliente.getApellido())
+                            .calificacionGlobal(cliente.getCalificacionGlobal())
+                            .yaCalificado(calificacionExistente != null)
+                            .miPuntaje(calificacionExistente != null ? calificacionExistente.getPuntaje() : null)
+                            .miComentario(calificacionExistente != null ? calificacionExistente.getComentario() : null)
+                            .build();
+                })
                 .toList();
     }
 
