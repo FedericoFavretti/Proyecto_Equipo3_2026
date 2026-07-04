@@ -33,8 +33,8 @@ public class NotificacionPedidoService {
                     pedido.getLocal().getEmail(),
                     "Se ah recibido un pedido",
                     "Se recibio el pedido #"+ pedido.getId()
-                    +"por el cliente "+pedido.getCliente().getNombre() + pedido.getCliente().getApellido()
-                    +"ingresa a la web para confirmar o rechazar el pedido."
+                    +" por el cliente "+pedido.getCliente().getNombre() +" "+  pedido.getCliente().getApellido()
+                    +"ingresa a la web para confirmar o rechazar el pedido. "
                             +pedidiosUrl
 
             );
@@ -47,7 +47,7 @@ public class NotificacionPedidoService {
                     pedido.getLocal().getEmail(),
                     "Se ah cancelado un pedido",
                     "Se cancelado el pedido #"+ pedido.getId()
-                            +"por el cliente "+pedido.getCliente().getNombre() + pedido.getCliente().getApellido()
+                            +" por el cliente "+pedido.getCliente().getNombre() +" "+ pedido.getCliente().getApellido()
             );
         }
     }

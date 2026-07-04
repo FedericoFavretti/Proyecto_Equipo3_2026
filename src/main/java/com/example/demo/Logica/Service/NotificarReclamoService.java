@@ -19,8 +19,8 @@ public class NotificarReclamoService {
                 reclamo.getPedido().getLocal().getEmail(),
                 "Se recibio un reclamo",
                 "Se ah recibido un reclamo para el pedido "+reclamo.getPedido().getId()
-                +"fue realizado por el cliente "+reclamo.getPedido().getCliente().getNombre() + reclamo.getPedido().getCliente().getApellido()
-                        +"ingresa a la web para resolver el reclamo."+
+                +" fue realizado por el cliente "+reclamo.getPedido().getCliente().getNombre() +" "+  reclamo.getPedido().getCliente().getApellido()
+                        +" ingresa a la web para resolver el reclamo. "+
                         reclamoUrl
         );
     }
