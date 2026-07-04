@@ -337,7 +337,8 @@ public class CalificacionService {
                     .mapToInt(Calificacion::getPuntaje)
                     .average()
                     .orElse(0.0);
-            local.setCalificacionGlobal(promedio);
+            double promedioRedondeado = Math.round(promedio * 10.0) / 10.0;
+            local.setCalificacionGlobal(promedioRedondeado);
             localRepositorio.actualizar(local);
             return;
         }
@@ -352,7 +353,8 @@ public class CalificacionService {
                 .mapToInt(Calificacion::getPuntaje)
                 .average()
                 .orElse(0.0);
-        cliente.setCalificacionGlobal(promedio);
+        double promedioRedondeado = Math.round(promedio * 10.0) / 10.0;
+        cliente.setCalificacionGlobal(promedioRedondeado);
         clienteRepositorio.actualizar(cliente);
     }
 
