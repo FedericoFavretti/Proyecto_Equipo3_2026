@@ -27,4 +27,5 @@ public class PedidoListadoView {
     private String localNombre;
     private Integer cantidadItems;
     private String motivoRechazo;
+    private Boolean pagado;
 }

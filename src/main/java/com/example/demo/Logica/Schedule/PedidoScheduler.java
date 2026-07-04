@@ -17,4 +17,9 @@ public class PedidoScheduler {
     public void actualizarPedidosEntregados() {
         pedidoService.marcarPedidosComoEntregados();
     }
+
+    @Scheduled(fixedRate = 60000)
+    public void cancelarPedidosMercadoPagoAbandonados() {
+        pedidoService.cancelarPedidosMercadoPagoAbandonados();
+    }
 }

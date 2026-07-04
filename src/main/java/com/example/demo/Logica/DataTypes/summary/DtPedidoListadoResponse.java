@@ -25,5 +25,5 @@ public class DtPedidoListadoResponse {
     private DtLocalResumenResponse local;
     private Integer cantidadItems;
     private String motivoRechazo;
+    private Boolean pagado;
 }
-

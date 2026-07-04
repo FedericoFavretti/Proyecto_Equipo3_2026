@@ -25,10 +25,10 @@ public class DtPedidoResponse {
     private DtDireccion domicilioEntrega;
     private String medioDePago;
     private Boolean pagoSimulado;
+    private Boolean pagado;
     private EstadoPedido estado;
     private DtLocalResumenResponse local;
     private DtClienteResumenResponse cliente;
     private List<DtDetallePedidoResponse> detalles;
     private String mpInitPoint;
 }
-

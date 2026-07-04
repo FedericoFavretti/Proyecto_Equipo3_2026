@@ -18,20 +18,20 @@ public class PedidoListadoMapper {
                 .tiempoEstEntrega(pedidoListadoView.getTiempoEstEntrega())
                 .cantidadItems(pedidoListadoView.getCantidadItems())
                 .motivoRechazo(pedidoListadoView.getMotivoRechazo())
+                .pagado(pedidoListadoView.getPagado())
                 .cliente(pedidoListadoView.getClienteId() != null
                         ? DtClienteResumenResponse.builder()
-                                .id(pedidoListadoView.getClienteId())
-                                .nombre(pedidoListadoView.getClienteNombre())
-                                .apellido(pedidoListadoView.getClienteApellido())
-                                .build()
+                        .id(pedidoListadoView.getClienteId())
+                        .nombre(pedidoListadoView.getClienteNombre())
+                        .apellido(pedidoListadoView.getClienteApellido())
+                        .build()
                         : null)
                 .local(pedidoListadoView.getLocalId() != null
                         ? DtLocalResumenResponse.builder()
-                                .id(pedidoListadoView.getLocalId())
-                                .nombre(pedidoListadoView.getLocalNombre())
-                                .build()
+                        .id(pedidoListadoView.getLocalId())
+                        .nombre(pedidoListadoView.getLocalNombre())
+                        .build()
                         : null)
                 .build();
     }
 }
-

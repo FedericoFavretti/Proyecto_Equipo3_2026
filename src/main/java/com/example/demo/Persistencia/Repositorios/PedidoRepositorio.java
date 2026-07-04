@@ -31,5 +31,5 @@ public interface PedidoRepositorio {
     Double obtenerVentasParaEstadisticasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva);
     List<Pedido> buscarEnCaminoVencidos(LocalDateTime ahora);
     void marcarPagoAprobado(Long pedidoId);
+    List<Pedido> buscarPendientesMercadoPagoVencidos(LocalDateTime limite);
 }
-

@@ -28,17 +28,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
-import com.mercadopago.client.preference.PreferenceClient;
-import com.mercadopago.client.preference.PreferenceItemRequest;
-import com.mercadopago.client.preference.PreferenceRequest;
-import com.mercadopago.resources.preference.Preference;
+
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 import java.util.Map;
-import java.math.BigDecimal;
 
 @Service
 public class PedidoService {
@@ -75,6 +69,10 @@ public class PedidoService {
     private static final String MENSAJE_ORDEN_INVALIDO = "El campo de orden no es válido.";
     private static final String MENSAJE_DIRECCION_ORDEN_INVALIDA = "La dirección de orden no es válida.";
     private static final String MENSAJE_ERROR_NOTIFICACION_PAGO = "Error procesando notificación de pago.";
+    private static final String MENSAJE_PAGO_NO_ACREDITADO =
+            "El pedido no puede confirmarse: el pago no fue acreditado por Mercado Pago.";
+    private static final String MEDIO_PAGO_EFECTIVO = "EFECTIVO";
+    private static final long MINUTOS_LIMITE_PAGO_MP = 30;
     private static final Logger LOGGER = LoggerFactory.getLogger(PedidoService.class);
     private final PedidoRepositorio pedidoRepositorio;
     private final ClienteRepositorio clienteRepositorio;
@@ -139,15 +137,16 @@ public class PedidoService {
         pedido.setTiempoEstEntrega(Duration.ofMinutes(tiempoEstimadoEntregaMinutos));
 
         if (!Boolean.TRUE.equals(pedido.getPagado())) {
-            boolean esMedioSimulado = "EFECTIVO".equalsIgnoreCase(pedido.getMedioDePago()); // o el valor que corresponda
+            boolean esMedioSimulado = MEDIO_PAGO_EFECTIVO.equalsIgnoreCase(pedido.getMedioDePago());
 
             if (!esMedioSimulado) {
-                throw new BusinessRuleException("El pedido no puede confirmarse: el pago no fue acreditado por Mercado Pago.");
+                throw new BusinessRuleException(MENSAJE_PAGO_NO_ACREDITADO);
             }
             if (!pagoSimuladoService.procesarPago(pedido)) {
                 throw new PagoRechazadoException(MENSAJE_PAGO_FALLIDO);
             }
             pedido.setPagoSimulado(true);
+            pedido.setPagado(true);
         }
 
         pedido.setEstado(EstadoPedido.Confirmado);
@@ -218,8 +217,16 @@ public class PedidoService {
             detallePedidoRepositorio.guardar(detalle);
         });
 
-        crearPreferenciaPago(pedido, detalles);
-        notificacionPedidoService.notificarPedido(pedido);
+        boolean esMedioSimulado = MEDIO_PAGO_EFECTIVO.equalsIgnoreCase(pedido.getMedioDePago());
+
+        if (esMedioSimulado) {
+            // Sin pasarela externa: el local se entera apenas se crea el pedido, como hasta ahora.
+            notificacionPedidoService.notificarPedido(pedido);
+        } else {
+            // Mercado Pago: recién se avisa al local cuando el webhook confirme el pago (ver procesarPagoConfirmado).
+            crearPreferenciaPago(pedido, detalles);
+        }
+
         return pedido;
     }
 
@@ -346,6 +353,17 @@ public class PedidoService {
     }
 
     @Transactional
+    public void cancelarPedidosMercadoPagoAbandonados() {
+        LocalDateTime limite = LocalDateTime.now().minusMinutes(MINUTOS_LIMITE_PAGO_MP);
+        List<Pedido> pedidos = pedidoRepositorio.buscarPendientesMercadoPagoVencidos(limite);
+        for (Pedido pedido : pedidos) {
+            pedido.setEstado(EstadoPedido.Cancelado);
+            pedidoRepositorio.actualizar(pedido);
+            LOGGER.info("Pedido {} cancelado automáticamente por falta de pago en Mercado Pago.", pedido.getId());
+        }
+    }
+
+    @Transactional
     public void procesarPagoConfirmado(String paymentId) {
         try {
             Payment payment = new PaymentClient().get(Long.parseLong(paymentId));
@@ -353,7 +371,11 @@ public class PedidoService {
                 Long pedidoId = Long.parseLong(payment.getExternalReference());
                 pedidoRepositorio.buscarPorId(pedidoId).ifPresentOrElse(pedido -> {
                     if (pedido.getEstado() != EstadoPedido.Cancelado) {
-                        pedidoRepositorio.marcarPagoAprobado(pedidoId);
+                        if (!Boolean.TRUE.equals(pedido.getPagado())) {
+                            pedidoRepositorio.marcarPagoAprobado(pedidoId);
+                            pedido.setPagado(true);
+                            notificacionPedidoService.notificarPedido(pedido);
+                        }
                     }
                 }, () -> LOGGER.warn("Notificación de pago recibida para un pedido inexistente: {}", pedidoId));
             }

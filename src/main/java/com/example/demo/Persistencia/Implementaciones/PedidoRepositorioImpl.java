@@ -73,6 +73,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     p.total,
                     p.tiempoestentrega,
                     p.motivorechazo,
+                    p.pagado,
                     c.id AS cliente_id,
                     c.nombre AS cliente_nombre,
                     c.apellido AS cliente_apellido,
@@ -84,6 +85,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 LEFT JOIN detallepedido dp ON dp.idpedido = p.id
                 WHERE p.idlocal = ?
                   AND c.documento NOT ILIKE 'ANON-%'
+                  AND (p.pagado = true OR UPPER(p.mediopago) = 'EFECTIVO')
                 """);
 
         List<Object> parametros = new ArrayList<>();
@@ -107,7 +109,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         sql.append("""
 
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
-                         p.motivorechazo, c.id, c.nombre, c.apellido
+                         p.motivorechazo, p.pagado, c.id, c.nombre, c.apellido
                 ORDER BY 
                 """);
         sql.append(resolverCampoOrden(filtro));
@@ -131,6 +133,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     p.total,
                     p.tiempoestentrega,
                     p.motivorechazo,
+                    p.pagado,
                     NULL::bigint AS cliente_id,
                     NULL::varchar AS cliente_nombre,
                     NULL::varchar AS cliente_apellido,
@@ -141,6 +144,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 JOIN local l ON l.id = p.idlocal
                 LEFT JOIN detallepedido dp ON dp.idpedido = p.id
                 WHERE p.idcliente = ?
+                  AND (p.pagado = true OR UPPER(p.mediopago) = 'EFECTIVO')
                 """);
 
         List<Object> parametros = new ArrayList<>();
@@ -169,7 +173,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         sql.append("""
 
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
-                         p.motivorechazo, l.id, l.nombre
+                         p.motivorechazo, p.pagado, l.id, l.nombre
                 ORDER BY
                 """);
         sql.append(resolverCampoOrden(filtro));
@@ -268,10 +272,10 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new PlatoVendidoEstadisticaProjection(
-                rs.getLong("id_plato"),
-                rs.getInt("cantidad_total"),
-                rs.getDouble("monto_total")
-        ), idLocal,
+                        rs.getLong("id_plato"),
+                        rs.getInt("cantidad_total"),
+                        rs.getDouble("monto_total")
+                ), idLocal,
                 EstadoPedido.Confirmado.name(),
                 EstadoPedido.Entregado.name(),
                 Timestamp.valueOf(fechaDesdeInclusive),
@@ -296,10 +300,10 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new PlatoVendidoEstadisticaProjection(
-                rs.getLong("id_plato"),
-                rs.getInt("cantidad_total"),
-                rs.getDouble("monto_total")
-        ), idLocal,
+                        rs.getLong("id_plato"),
+                        rs.getInt("cantidad_total"),
+                        rs.getDouble("monto_total")
+                ), idLocal,
                 EstadoPedido.Confirmado.name(),
                 EstadoPedido.Entregado.name(),
                 Timestamp.valueOf(fechaDesdeInclusive),
@@ -455,6 +459,18 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         return jdbcTemplate.query(sql, new Object[]{Timestamp.valueOf(ahora)}, this::mapearPedido);
     }
 
+    @Override
+    public List<Pedido> buscarPendientesMercadoPagoVencidos(LocalDateTime limite) {
+        String sql = """
+        SELECT * FROM pedido
+        WHERE estado = 'Pendiente'
+          AND pagado = false
+          AND UPPER(mediopago) <> 'EFECTIVO'
+          AND fecha <= ?
+        """;
+        return jdbcTemplate.query(sql, new Object[]{Timestamp.valueOf(limite)}, this::mapearPedido);
+    }
+
     private PedidoListadoView mapearPedidoListadoView(ResultSet rs, int row) throws SQLException {
         Time tiempoEstEntrega = rs.getTime("tiempoestentrega");
 
@@ -473,6 +489,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 .localNombre(rs.getString("local_nombre"))
                 .cantidadItems(rs.getInt("cantidad_items"))
                 .motivoRechazo(rs.getString("motivorechazo"))
+                .pagado(rs.getBoolean("pagado"))
                 .build();
     }
 
@@ -498,4 +515,3 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
 
 
 }
-
