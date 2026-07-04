@@ -41,6 +41,7 @@ import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class LocalService {
@@ -606,6 +607,20 @@ public class LocalService {
             LocalDateTime fechaDesdeInclusive,
             LocalDateTime fechaHastaExclusiva
     ) {
+    }
+
+    public void validarPartesMultimediaRegistroLocal(MultipartFile logo, List<MultipartFile> imagenes) {
+        List<String> camposFaltantes = new ArrayList<>();
+        if (logo == null || logo.isEmpty()) {
+            camposFaltantes.add("logo");
+        }
+        if (imagenes == null || imagenes.isEmpty()) {
+            camposFaltantes.add("imagenes");
+        }
+        if (!camposFaltantes.isEmpty()) {
+            throw new BusinessRuleException(
+                    String.format(MENSAJE_CAMPOS_REQUERIDOS, String.join(", ", camposFaltantes)));
+        }
     }
 }
 

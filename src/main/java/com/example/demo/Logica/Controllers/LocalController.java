@@ -85,6 +85,7 @@ public class LocalController implements iLocalController {
 
     @PostMapping(value = "/solicitudes-habilitacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> solicitarHabilitacion(@RequestPart("datos") DtLocal dtLocal,@RequestPart("logo") MultipartFile logo , @RequestPart("imagenes") List<MultipartFile> imagenes){
+        localService.validarPartesMultimediaRegistroLocal(logo, imagenes);
         List<String> urls = cloudinaryService.subirImagenes(imagenes);
         String logoLocal = cloudinaryService.subirImagen(logo);
         dtLocal.setFoto(logoLocal);

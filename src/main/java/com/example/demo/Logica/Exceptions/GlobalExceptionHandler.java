@@ -79,6 +79,18 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, MENSAJE_ACCESO_DENEGADO, req);
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingPart(
+            org.springframework.web.multipart.support.MissingServletRequestPartException ex, WebRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Falta el campo obligatorio: " + ex.getRequestPartName(), req);
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException ex, WebRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Los datos enviados son inválidos o están incompletos.", req);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, WebRequest req) {
         log.error("Error no manejado en {}: {}", req.getDescription(false), ex.getMessage(), ex);
