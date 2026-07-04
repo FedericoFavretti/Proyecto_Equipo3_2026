@@ -233,6 +233,9 @@ public class ClienteService {
         }
 
         if (usuarioRepositorio.existeCorreo(email)) {
+            if (Boolean.TRUE.equals(request.getEsRegistro())) {
+                throw new BusinessRuleException("Ya existe una cuenta registrada con este email. Iniciá sesión en su lugar.");
+            }
             Cliente clienteExistente = clienteRepositorio.buscarPorEmail(email)
                     .orElseThrow(() -> new BusinessRuleException("La cuenta existe pero no es de tipo cliente."));
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);

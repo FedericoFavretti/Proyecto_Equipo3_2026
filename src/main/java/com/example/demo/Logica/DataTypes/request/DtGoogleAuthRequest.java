@@ -12,4 +12,5 @@ public class DtGoogleAuthRequest {
     private String idToken;
     private DtDireccion direccion;
     private String documento;
+    private Boolean esRegistro;
 }
