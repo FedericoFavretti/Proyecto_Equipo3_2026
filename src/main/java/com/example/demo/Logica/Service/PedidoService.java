@@ -282,6 +282,7 @@ public class PedidoService {
             throw new BusinessRuleException(MENSAJE_PEDIDO_NO_PENDIENTE);
         }
         pedido.setEstado(EstadoPedido.Cancelado);
+        notificacionPedidoService.notificarPedidoCancelado(pedido);
         pedidoRepositorio.actualizar(pedido);
     }
 

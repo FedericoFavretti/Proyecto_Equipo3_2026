@@ -29,12 +29,14 @@ public class ReclamoService {
     private final PedidoRepositorio pedidoRepositorio;
     private final ReclamoMapper reclamoMapper;
     private final PedidoMapper pedidoMapper;
+    private final NotificarReclamoService notificarReclamoService;
 
-    public ReclamoService(ReclamoRepositorio reclamoRepositorio, PedidoRepositorio pedidoRepositorio,  ReclamoMapper reclamoMapper, PedidoMapper pedidoMapper) {
+    public ReclamoService(ReclamoRepositorio reclamoRepositorio, PedidoRepositorio pedidoRepositorio,  ReclamoMapper reclamoMapper, PedidoMapper pedidoMapper, NotificarReclamoService notificarReclamoService) {
         this.reclamoRepositorio = reclamoRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
         this.reclamoMapper = reclamoMapper;
         this.pedidoMapper = pedidoMapper;
+        this.notificarReclamoService = notificarReclamoService;
     }
 
     @Transactional
@@ -53,6 +55,7 @@ public class ReclamoService {
         dtReclamo.setMontoReintegro(pedido.getTotal());
         dtReclamo.setFecha(LocalDateTime.now());
         Reclamo reclamo = reclamoMapper.mapearReclamoDeDt(dtReclamo);
+        notificarReclamoService.notificarReclamo(reclamo);
         reclamoRepositorio.guardar(reclamo);
     }
 
@@ -75,6 +78,7 @@ public class ReclamoService {
         if (dtReclamo.getMotivo() != null && !dtReclamo.getMotivo().isBlank()) {
             reclamoExistente.setMotivo(dtReclamo.getMotivo());
         }
+        notificarReclamoService.notificarReslucionReclamo(reclamoExistente);
         reclamoRepositorio.actualizar(reclamoExistente);
     }
 }

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 
 @Service
 public class NotificacionPedidoService {
-    @Value("${app.conrimar.pedido}")
+    @Value("${app.pedido.url}")
     private String pedidiosUrl;
     private static final Logger logger = LoggerFactory.getLogger(NotificacionPedidoService.class);
 
@@ -37,6 +37,17 @@ public class NotificacionPedidoService {
                     +"ingresa a la web para confirmar o rechazar el pedido."
                             +pedidiosUrl
 
+            );
+        }
+    }
+
+    public void notificarPedidoCancelado(Pedido pedido){
+        if(pedido != null){
+            emailService.enviarCorreo(
+                    pedido.getLocal().getEmail(),
+                    "Se ah cancelado un pedido",
+                    "Se cancelado el pedido #"+ pedido.getId()
+                            +"por el cliente "+pedido.getCliente().getNombre() + pedido.getCliente().getApellido()
             );
         }
     }
