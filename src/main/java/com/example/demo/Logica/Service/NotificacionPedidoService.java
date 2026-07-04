@@ -8,13 +8,15 @@ import com.example.demo.Logica.Enums.TipoNotificacion;
 import com.example.demo.Persistencia.Repositorios.NotificacionRepositorio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Service
 public class NotificacionPedidoService {
-
+    @Value("${app.conrimar.pedido}")
+    private String pedidiosUrl;
     private static final Logger logger = LoggerFactory.getLogger(NotificacionPedidoService.class);
 
     private final EmailService emailService;
@@ -23,6 +25,20 @@ public class NotificacionPedidoService {
     public NotificacionPedidoService(EmailService emailService, NotificacionRepositorio notificacionRepositorio) {
         this.emailService = emailService;
         this.notificacionRepositorio = notificacionRepositorio;
+    }
+
+    public void notificarPedido(Pedido pedido){
+        if(pedido != null){
+            emailService.enviarCorreo(
+                    pedido.getLocal().getEmail(),
+                    "Se ah recibido un pedido",
+                    "Se recibio el pedido #"+ pedido.getId()
+                    +"por el cliente "+pedido.getCliente().getNombre() + pedido.getCliente().getApellido()
+                    +"ingresa a la web para confirmar o rechazar el pedido."
+                            +pedidiosUrl
+
+            );
+        }
     }
 
     public void notificarConfirmacion(Pedido pedido, Factura factura) {
@@ -35,12 +51,12 @@ public class NotificacionPedidoService {
                             + pedido.getTiempoEstEntrega().toMinutes()
                             + " minutos. La factura "
                             + factura.getNumero()
-                            + " se est· preparando y te la enviaremos por correo apenas quede generada."
+                            + " se est√° preparando y te la enviaremos por correo apenas quede generada."
             );
         }
 
-        logger.info("NotificaciÛn web pendiente para pedido {}", pedido.getId());
-        logger.info("NotificaciÛn push pendiente para pedido {}", pedido.getId());
+        logger.info("Notificaci√≥n web pendiente para pedido {}", pedido.getId());
+        logger.info("Notificaci√≥n push pendiente para pedido {}", pedido.getId());
     }
 
     public void notificarFacturaGenerada(Factura factura, byte[] pdf) {
@@ -65,8 +81,8 @@ public class NotificacionPedidoService {
             );
         }
 
-        logger.info("NotificaciÛn web pendiente para factura {}", factura.getNumero());
-        logger.info("NotificaciÛn push pendiente para factura {}", factura.getNumero());
+        logger.info("Notificaci√≥n web pendiente para factura {}", factura.getNumero());
+        logger.info("Notificaci√≥n push pendiente para factura {}", factura.getNumero());
     }
 
     public void notificarRechazo(Pedido pedido, String motivo) {
@@ -89,7 +105,7 @@ public class NotificacionPedidoService {
             );
         }
 
-        logger.info("NotificaciÛn web pendiente para rechazo de pedido {}", pedido.getId());
-        logger.info("NotificaciÛn push pendiente para rechazo de pedido {}", pedido.getId());
+        logger.info("Notificaci√≥n web pendiente para rechazo de pedido {}", pedido.getId());
+        logger.info("Notificaci√≥n push pendiente para rechazo de pedido {}", pedido.getId());
     }
 }

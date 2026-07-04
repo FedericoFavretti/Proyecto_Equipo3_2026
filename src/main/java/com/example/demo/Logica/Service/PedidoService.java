@@ -214,7 +214,7 @@ public class PedidoService {
         });
 
         crearPreferenciaPago(pedido, detalles);
-
+        notificacionPedidoService.notificarPedido(pedido);
         return pedido;
     }
 
