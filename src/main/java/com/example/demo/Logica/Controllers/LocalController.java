@@ -14,6 +14,7 @@ import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
 import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
 import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
+import com.example.demo.Logica.DataTypes.response.DtPromocionesLocalResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.MediaType;
@@ -128,7 +129,7 @@ public class LocalController implements iLocalController {
 
     @PreAuthorize("hasRole('Local')")
     @GetMapping("/busqueda_promocion_local/{idLocal}")
-    public ResponseEntity<List<DtPromocion>> buscaPromocionesDeLocal(@PathVariable("idLocal") Long idLocal) {
+    public ResponseEntity<DtPromocionesLocalResponse> buscaPromocionesDeLocal(@PathVariable("idLocal") Long idLocal) {
         return ResponseEntity.ok(localService.buscaPromocionesDeLocal(idLocal));
     }
 

@@ -7,9 +7,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.demo.Logica.Clases.Promocion;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
@@ -26,8 +28,10 @@ import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
+import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
+import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
@@ -63,6 +67,8 @@ class LocalServiceTest {
     private PromocionMapper promocionMapper;
     @Mock
     private ClienteRepositorio clienteRepositorio;
+    @Mock
+    private CalificacionRepositorio calificacionRepositorio;
 
     private LocalService localService;
 
@@ -85,7 +91,8 @@ class LocalServiceTest {
                 platoMapper,
                 promocionRepositorio,
                 promocionMapper,
-                clienteRepositorio
+                clienteRepositorio,
+                calificacionRepositorio
                 );
     }
 
@@ -295,6 +302,55 @@ class LocalServiceTest {
 
         verify(platoRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any(Plato.class));
         verify(platoRepositorio, never()).eliminar(20L);
+    }
+
+    @Test
+    void buscaPromocionesDeLocalSeparaVigentesVencidasYProximas() {
+        Long idLocal = 10L;
+        Local local = localHabilitado(false);
+        Plato plato = platoExistente(local);
+        LocalDateTime ahora = LocalDateTime.now();
+
+        Promocion vigente = Promocion.builder()
+                .id(1L)
+                .descripcion("Vigente")
+                .descuento(15.0)
+                .fechaInicio(ahora.minusDays(2))
+                .fechaFin(ahora.plusDays(2))
+                .plato(plato)
+                .build();
+        Promocion vencida = Promocion.builder()
+                .id(2L)
+                .descripcion("Vencida")
+                .descuento(10.0)
+                .fechaInicio(ahora.minusDays(5))
+                .fechaFin(ahora.minusDays(1))
+                .plato(plato)
+                .build();
+        Promocion programada = Promocion.builder()
+                .id(3L)
+                .descripcion("Programada")
+                .descuento(20.0)
+                .fechaInicio(ahora.plusDays(1))
+                .fechaFin(ahora.plusDays(4))
+                .plato(plato)
+                .build();
+
+        DtPromocion dtVigente = DtPromocion.builder().id(1L).descripcion("Vigente").build();
+        DtPromocion dtVencida = DtPromocion.builder().id(2L).descripcion("Vencida").build();
+        DtPromocion dtProgramada = DtPromocion.builder().id(3L).descripcion("Programada").build();
+
+        when(promocionRepositorio.buscarPromocionesDelocal(idLocal))
+                .thenReturn(List.of(vigente, vencida, programada));
+        when(promocionMapper.mapearDtPromocionDeClase(vigente)).thenReturn(dtVigente);
+        when(promocionMapper.mapearDtPromocionDeClase(vencida)).thenReturn(dtVencida);
+        when(promocionMapper.mapearDtPromocionDeClase(programada)).thenReturn(dtProgramada);
+
+        var response = localService.buscaPromocionesDeLocal(idLocal);
+
+        assertThat(response.getVigentes()).containsExactly(dtVigente);
+        assertThat(response.getVencidas()).containsExactly(dtVencida);
+        assertThat(response.getProximas()).containsExactly(dtProgramada);
     }
 
     @Test

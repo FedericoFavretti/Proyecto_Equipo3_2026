@@ -31,6 +31,7 @@ import com.example.demo.Logica.Mappers.PromocionMapper;
 import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
 import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
+import com.example.demo.Logica.DataTypes.response.DtPromocionesLocalResponse;
 import com.example.demo.Logica.Clases.Cliente;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -306,8 +307,31 @@ public class LocalService {
     }
 
     @Transactional(readOnly = true)
-    public List<DtPromocion> buscaPromocionesDeLocal(Long idLocal) {
-        return promocionMapper.mapearDtPromocionesDeClase(promocionRepositorio.buscarPromocionesDelocal(idLocal));
+    public DtPromocionesLocalResponse buscaPromocionesDeLocal(Long idLocal) {
+        List<Promocion> promociones = promocionRepositorio.buscarPromocionesDelocal(idLocal);
+        LocalDate hoy = LocalDate.now();
+
+        List<DtPromocion> vigentes = promociones.stream()
+                .filter(promocion -> !promocion.getFechaInicio().toLocalDate().isAfter(hoy)
+                        && !promocion.getFechaFin().toLocalDate().isBefore(hoy))
+                .map(promocionMapper::mapearDtPromocionDeClase)
+                .toList();
+
+        List<DtPromocion> vencidas = promociones.stream()
+                .filter(promocion -> promocion.getFechaFin().toLocalDate().isBefore(hoy))
+                .map(promocionMapper::mapearDtPromocionDeClase)
+                .toList();
+
+        List<DtPromocion> proximas = promociones.stream()
+                .filter(promocion -> promocion.getFechaInicio().toLocalDate().isAfter(hoy))
+                .map(promocionMapper::mapearDtPromocionDeClase)
+                .toList();
+
+        return DtPromocionesLocalResponse.builder()
+                .vigentes(vigentes)
+                .vencidas(vencidas)
+                .proximas(proximas)
+                .build();
     }
 
     @Transactional(readOnly = true)

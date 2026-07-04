@@ -1,10 +1,12 @@
 package com.example.demo.Logica.Controllers;
+import com.example.demo.Logica.DataTypes.response.DtPromocionesLocalResponse;
 import com.example.demo.Logica.DataTypes.response.DtPlatoEstadistica;
 import com.example.demo.Logica.Enums.PeriodoEstadisticasPreset;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.Service.LocalService;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
+import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -12,6 +14,7 @@ import org.mockito.Mockito;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -105,5 +108,43 @@ class LocalControllerTest {
         assertThat(captor.getValue().getFechaDesde()).isEqualTo(LocalDate.of(2026, 6, 1));
         assertThat(captor.getValue().getFechaHasta()).isEqualTo(LocalDate.of(2026, 6, 15));
         assertThat(captor.getValue().getPreset()).isNull();
+    }
+
+    @Test
+    void buscaPromocionesDeLocalRespondeSeparadasEnVigentesVencidasYProximas() throws Exception {
+        DtPromocion vigente = DtPromocion.builder()
+                .id(1L)
+                .descripcion("Vigente")
+                .fechaInicio(LocalDateTime.of(2026, 7, 1, 0, 0))
+                .fechaFin(LocalDateTime.of(2026, 7, 10, 0, 0))
+                .build();
+        DtPromocion vencida = DtPromocion.builder()
+                .id(2L)
+                .descripcion("Vencida")
+                .fechaInicio(LocalDateTime.of(2026, 6, 1, 0, 0))
+                .fechaFin(LocalDateTime.of(2026, 6, 10, 0, 0))
+                .build();
+        DtPromocion proxima = DtPromocion.builder()
+                .id(3L)
+                .descripcion("Proxima")
+                .fechaInicio(LocalDateTime.of(2026, 7, 20, 0, 0))
+                .fechaFin(LocalDateTime.of(2026, 7, 25, 0, 0))
+                .build();
+
+        when(localService.buscaPromocionesDeLocal(10L))
+                .thenReturn(DtPromocionesLocalResponse.builder()
+                        .vigentes(List.of(vigente))
+                        .vencidas(List.of(vencida))
+                        .proximas(List.of(proxima))
+                        .build());
+
+        mockMvc.perform(get("/api/v1/locales/busqueda_promocion_local/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.vigentes[0].id").value(1))
+                .andExpect(jsonPath("$.vigentes[0].descripcion").value("Vigente"))
+                .andExpect(jsonPath("$.vencidas[0].id").value(2))
+                .andExpect(jsonPath("$.vencidas[0].descripcion").value("Vencida"))
+                .andExpect(jsonPath("$.proximas[0].id").value(3))
+                .andExpect(jsonPath("$.proximas[0].descripcion").value("Proxima"));
     }
 }
