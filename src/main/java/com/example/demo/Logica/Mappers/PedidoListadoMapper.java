@@ -17,6 +17,7 @@ public class PedidoListadoMapper {
                 .total(pedidoListadoView.getTotal())
                 .tiempoEstEntrega(pedidoListadoView.getTiempoEstEntrega())
                 .cantidadItems(pedidoListadoView.getCantidadItems())
+                .motivoRechazo(pedidoListadoView.getMotivoRechazo())
                 .cliente(pedidoListadoView.getClienteId() != null
                         ? DtClienteResumenResponse.builder()
                                 .id(pedidoListadoView.getClienteId())

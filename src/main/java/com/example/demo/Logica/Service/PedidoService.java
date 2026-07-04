@@ -167,9 +167,11 @@ public class PedidoService {
             throw new BusinessRuleException(MENSAJE_MOTIVO_RECHAZO_REQUERIDO);
         }
 
+        String motivoNormalizado = motivo.trim();
         pedido.setEstado(EstadoPedido.Rechazado);
+        pedido.setMotivoRechazo(motivoNormalizado);
         pedidoRepositorio.actualizar(pedido);
-        notificacionPedidoService.notificarRechazo(pedido, motivo.trim());
+        notificacionPedidoService.notificarRechazo(pedido, motivoNormalizado);
     }
 
     @Transactional

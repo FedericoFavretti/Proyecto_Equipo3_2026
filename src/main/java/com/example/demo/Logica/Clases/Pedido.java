@@ -23,6 +23,7 @@ public class Pedido {
     private Boolean pagoSimulado;
     private Boolean pagado;
     private EstadoPedido estado;
+    private String motivoRechazo;
     private Local local;
     private Cliente cliente;
     private String mpPreferenciaId;

@@ -49,6 +49,7 @@ class PedidoListadoMapperTest {
                 .localId(19L)
                 .localNombre("La Cocina")
                 .cantidadItems(3)
+                .motivoRechazo("Sin stock de ingredientes")
                 .build();
 
         DtPedidoListadoResponse response = pedidoListadoMapper.toResponse(view);
@@ -57,5 +58,6 @@ class PedidoListadoMapperTest {
         assertThat(response.getLocal().getId()).isEqualTo(19L);
         assertThat(response.getLocal().getNombre()).isEqualTo("La Cocina");
         assertThat(response.getCliente()).isNull();
+        assertThat(response.getMotivoRechazo()).isEqualTo("Sin stock de ingredientes");
     }
 }
