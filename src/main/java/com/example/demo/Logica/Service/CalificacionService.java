@@ -281,7 +281,7 @@ public class CalificacionService {
             calificacionExistente.setPuntaje(dtCalificacion.getPuntaje());
             calificacionExistente.setComentario(dtCalificacion.getComentario());
             calificacionExistente.setFecha(LocalDateTime.now());
-            calificacionExistente.setTipo(TipoCalificacion.Cliente_a_local);
+            calificacionExistente.setTipo(TipoCalificacion.Local_a_cliente);
             calificacionExistente.setCliente(cliente);
             calificacionExistente.setLocal(localAutenticado);
             calificacionRepositorio.actualizar(calificacionExistente);
