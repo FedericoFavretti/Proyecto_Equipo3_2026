@@ -113,11 +113,19 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
                 FROM reclamo r
                 JOIN pedido p ON p.id = r.idpedido
                 WHERE p.idcliente = ?
+                AND r.estado = 'Pendiente'
                 """,
                 Integer.class,
                 idCliente
         );
         return cantidad != null && cantidad > 0;
+    }
+
+    @Override
+    public Optional<Reclamo> buscarReclamoPorPedido(Long idPedido) {
+        return jdbcTemplate.query("SELECT * FROM Reclamo WHERE idPedido = ?",
+                (rs, row) -> mapearRecalamo(rs), idPedido
+        ).stream().findFirst();
     }
 
     private Reclamo mapearRecalamo(ResultSet rs) throws SQLException {

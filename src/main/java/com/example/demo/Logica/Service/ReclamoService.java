@@ -81,4 +81,19 @@ public class ReclamoService {
         notificarReclamoService.notificarReslucionReclamo(reclamoExistente);
         reclamoRepositorio.actualizar(reclamoExistente);
     }
+
+    @Transactional(readOnly = true)
+    public DtReclamo buscarReclamoPropioDePedido(String emailAutenticado, Long idPedido) {
+        Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", idPedido));
+
+        if (pedido.getCliente() == null || pedido.getCliente().getEmail() == null
+                || !pedido.getCliente().getEmail().equalsIgnoreCase(emailAutenticado)) {
+            throw new BusinessRuleException("El pedido no pertenece al usuario autenticado.");
+        }
+
+        return reclamoRepositorio.buscarReclamoPorPedido(idPedido)
+                .map(reclamoMapper::mapearDtReclamoDeClase)
+                .orElse(null);
+    }
 }

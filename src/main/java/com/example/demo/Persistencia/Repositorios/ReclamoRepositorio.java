@@ -14,4 +14,5 @@ public interface ReclamoRepositorio {
     void eliminar(long id);
     List<Reclamo> buscarReclamosPorFiltro(DtFiltroReclamo dtFiltroReclamo);
     boolean existeReclamoPendientePorCliente(Long idCliente);
+    Optional<Reclamo> buscarReclamoPorPedido(Long idPedido);
 }
