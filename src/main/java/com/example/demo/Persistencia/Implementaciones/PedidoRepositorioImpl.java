@@ -83,6 +83,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 JOIN cliente c ON c.id = p.idcliente
                 LEFT JOIN detallepedido dp ON dp.idpedido = p.id
                 WHERE p.idlocal = ?
+                  AND c.documento NOT ILIKE 'ANON-%'
                 """);
 
         List<Object> parametros = new ArrayList<>();
