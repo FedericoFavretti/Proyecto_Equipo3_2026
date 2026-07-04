@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,15 +22,11 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
     private final JdbcTemplate jdbcTemplate;
     private final ClienteRepositorio clienteRepositorio;
     private final LocalRepositorio localRepositorio;
-    private final ClienteCalificacionRepositorio clienteCalificacionRepositorio;
-    private final LocalCalificacionRepositorio localCalificacionRepositorio;
 
-    public CalificacionRepositorioImpl(JdbcTemplate jdbcTemplate, ClienteRepositorio clienteRepositorio, LocalRepositorio localRepositorio,  ClienteCalificacionRepositorio clienteCalificacionRepositorio,  LocalCalificacionRepositorio localCalificacionRepositorio) {
+    public CalificacionRepositorioImpl(JdbcTemplate jdbcTemplate, ClienteRepositorio clienteRepositorio, LocalRepositorio localRepositorio) {
         this.jdbcTemplate = jdbcTemplate;
         this.clienteRepositorio = clienteRepositorio;
         this.localRepositorio = localRepositorio;
-        this.clienteCalificacionRepositorio = clienteCalificacionRepositorio;
-        this.localCalificacionRepositorio = localCalificacionRepositorio;
     }
 
     @Override
@@ -60,37 +57,85 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
 
     @Override
     public void guardar(Calificacion calificacion) {
+        validarClienteYLocal(calificacion);
+
+        Long idClienteEmisor = null;
+        Long idLocalReceptor = null;
+        Long idLocalEmisor = null;
+        Long idClienteReceptor = null;
+
+        if (calificacion.getTipo() == TipoCalificacion.Cliente_a_local) {
+            idClienteEmisor = calificacion.getCliente().getId();
+            idLocalReceptor = calificacion.getLocal().getId();
+        } else {
+            idLocalEmisor = calificacion.getLocal().getId();
+            idClienteReceptor = calificacion.getCliente().getId();
+        }
+
+        Long fIdClienteEmisor = idClienteEmisor;
+        Long fIdLocalReceptor = idLocalReceptor;
+        Long fIdLocalEmisor = idLocalEmisor;
+        Long fIdClienteReceptor = idClienteReceptor;
+
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement("INSERT INTO Calificacion (puntaje, comentario, fecha, tipo, archivada) VALUES (?, ?, ?, ?, ?)",
+            PreparedStatement ps = connection.prepareStatement(
+                    """
+                    INSERT INTO Calificacion
+                        (puntaje, comentario, fecha, tipo, archivada, idcliente_emisor, idlocal_receptor, idlocal_emisor, idcliente_receptor)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
                     new String[]{"id"}
-                    );
-                    ps.setDouble(1, calificacion.getPuntaje());
-                    ps.setString(2, calificacion.getComentario());
-                    ps.setDate(3, java.sql.Date.valueOf(calificacion.getFecha().toLocalDate()));
-                    ps.setString(4, calificacion.getTipo().name());
-                    ps.setBoolean(5, Boolean.TRUE.equals(calificacion.getArchivada()));
-                    return ps;
+            );
+            ps.setDouble(1, calificacion.getPuntaje());
+            ps.setString(2, calificacion.getComentario());
+            ps.setDate(3, java.sql.Date.valueOf(calificacion.getFecha().toLocalDate()));
+            ps.setString(4, calificacion.getTipo().name());
+            ps.setBoolean(5, Boolean.TRUE.equals(calificacion.getArchivada()));
+            setNullableLong(ps, 6, fIdClienteEmisor);
+            setNullableLong(ps, 7, fIdLocalReceptor);
+            setNullableLong(ps, 8, fIdLocalEmisor);
+            setNullableLong(ps, 9, fIdClienteReceptor);
+            return ps;
         }, keyHolder);
-        Long idCalificacion = keyHolder.getKey().longValue();
-        if (calificacion.getCliente() != null && calificacion.getCliente().getId() != null) {
-            clienteCalificacionRepositorio.calificar(calificacion.getCliente().getId(), idCalificacion);
-        }
-        if (calificacion.getLocal() != null && calificacion.getLocal().getId() != null) {
-            localCalificacionRepositorio.calificar(calificacion.getLocal().getId(), idCalificacion);
-        }
+        calificacion.setId(keyHolder.getKey().longValue());
     }
 
     @Override
     public void actualizar(Calificacion calificacion) {
-       jdbcTemplate.update("UPDATE Calificacion SET  puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ? WHERE id = ?",
-               calificacion.getPuntaje(),
-               calificacion.getComentario(),
-               calificacion.getFecha(),
-               calificacion.getTipo().name(),
-               Boolean.TRUE.equals(calificacion.getArchivada()),
-               calificacion.getId()
-       );
+        validarClienteYLocal(calificacion);
+
+        Long idClienteEmisor = null;
+        Long idLocalReceptor = null;
+        Long idLocalEmisor = null;
+        Long idClienteReceptor = null;
+
+        if (calificacion.getTipo() == TipoCalificacion.Cliente_a_local) {
+            idClienteEmisor = calificacion.getCliente().getId();
+            idLocalReceptor = calificacion.getLocal().getId();
+        } else {
+            idLocalEmisor = calificacion.getLocal().getId();
+            idClienteReceptor = calificacion.getCliente().getId();
+        }
+
+        jdbcTemplate.update(
+                """
+                UPDATE Calificacion
+                SET puntaje = ?, comentario = ?, fecha = ?, tipo = ?, archivada = ?,
+                    idcliente_emisor = ?, idlocal_receptor = ?, idlocal_emisor = ?, idcliente_receptor = ?
+                WHERE id = ?
+                """,
+                calificacion.getPuntaje(),
+                calificacion.getComentario(),
+                calificacion.getFecha(),
+                calificacion.getTipo().name(),
+                Boolean.TRUE.equals(calificacion.getArchivada()),
+                idClienteEmisor,
+                idLocalReceptor,
+                idLocalEmisor,
+                idClienteReceptor,
+                calificacion.getId()
+        );
     }
 
     @Override
@@ -104,8 +149,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 """
                 SELECT c.*
                 FROM calificacion c
-                JOIN local_calificacion lc ON lc.idcalificacion = c.id
-                WHERE lc.idlocal = ? AND c.tipo = ? AND c.archivada = FALSE
+                WHERE c.idlocal_receptor = ? AND c.tipo = ? AND c.archivada = FALSE
                 ORDER BY c.fecha DESC, c.id DESC
                 """,
                 (rs, row) -> calificacionMapper(rs, row),
@@ -120,8 +164,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 """
                 SELECT c.*
                 FROM calificacion c
-                JOIN cliente_calificacion lc ON lc.idcalificacion = c.id
-                WHERE lc.idcliente = ? AND c.tipo = ? AND c.archivada = FALSE
+                WHERE c.idcliente_receptor = ? AND c.tipo = ? AND c.archivada = FALSE
                 ORDER BY c.fecha DESC, c.id DESC
                 """,
                 (rs, row) -> calificacionMapper(rs, row),
@@ -136,9 +179,7 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 """
                 SELECT c.*
                 FROM calificacion c
-                JOIN cliente_calificacion cc ON cc.idcalificacion = c.id
-                JOIN local_calificacion lc ON lc.idcalificacion = c.id
-                WHERE cc.idcliente = ? AND lc.idlocal = ? AND c.tipo = ? AND c.archivada = FALSE
+                WHERE c.idcliente_emisor = ? AND c.idlocal_receptor = ? AND c.tipo = ? AND c.archivada = FALSE
                 ORDER BY c.fecha DESC, c.id DESC
                 """,
                 (rs, row) -> calificacionMapper(rs, row),
@@ -154,27 +195,60 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 """
                 SELECT c.*
                 FROM calificacion c
-                JOIN local_calificacion cl ON cl.idcalificacion = c.id
-                JOIN cliente_calificacion cc ON cc.idcalificacion = c.id
-                WHERE cc.idcliente = ? AND cl.idlocal = ? AND c.tipo = ? AND c.archivada = FALSE
+                WHERE c.idlocal_emisor = ? AND c.idcliente_receptor = ? AND c.tipo = ? AND c.archivada = FALSE
                 ORDER BY c.fecha DESC, c.id DESC
                 """,
                 (rs, row) -> calificacionMapper(rs, row),
-                idCliente,
                 idLocal,
+                idCliente,
                 TipoCalificacion.Local_a_cliente.toString()
         ).stream().findFirst();
+    }
+
+    @Override
+    public void archivarPorCliente(Long idCliente) {
+        jdbcTemplate.update("""
+                UPDATE calificacion
+                SET archivada = TRUE
+                WHERE idcliente_emisor = ? OR idcliente_receptor = ?
+                """, idCliente, idCliente);
+    }
+
+    @Override
+    public List<Long> obtenerLocalesAfectadosPorArchivoDeCliente(Long idCliente) {
+        return jdbcTemplate.query("""
+                SELECT DISTINCT idlocal_receptor AS idlocal
+                FROM calificacion
+                WHERE idcliente_emisor = ? AND idlocal_receptor IS NOT NULL
+                UNION
+                SELECT DISTINCT idlocal_emisor AS idlocal
+                FROM calificacion
+                WHERE idcliente_receptor = ? AND idlocal_emisor IS NOT NULL
+                """,
+                (rs, row) -> rs.getLong("idlocal"),
+                idCliente,
+                idCliente
+        );
     }
 
     private Calificacion calificacionMapper(ResultSet rs, int row) throws SQLException {
         TipoCalificacion tipo = TipoCalificacion.valueOf(rs.getString("tipo"));
         Long idCalificacion = rs.getLong("id");
-        Cliente cliente = obtenerClienteAsociado(idCalificacion)
-                .flatMap(clienteRepositorio::buscarPorId)
-                .orElse(null);
-        Local local = obtenerLocalAsociado(idCalificacion)
-                .flatMap(localRepositorio::buscarPorId)
-                .orElse(null);
+
+        Long idClienteEmisor = getNullableLong(rs, "idcliente_emisor");
+        Long idLocalReceptor = getNullableLong(rs, "idlocal_receptor");
+        Long idLocalEmisor = getNullableLong(rs, "idlocal_emisor");
+        Long idClienteReceptor = getNullableLong(rs, "idcliente_receptor");
+
+        Long idClienteAsociado = idClienteEmisor != null ? idClienteEmisor : idClienteReceptor;
+        Long idLocalAsociado = idLocalReceptor != null ? idLocalReceptor : idLocalEmisor;
+
+        Cliente cliente = idClienteAsociado != null
+                ? clienteRepositorio.buscarPorId(idClienteAsociado).orElse(null)
+                : null;
+        Local local = idLocalAsociado != null
+                ? localRepositorio.buscarPorId(idLocalAsociado).orElse(null)
+                : null;
 
         return Calificacion.builder()
                 .id(idCalificacion)
@@ -188,45 +262,28 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
                 .build();
     }
 
-    @Override
-    public void archivarPorCliente(Long idCliente) {
-        jdbcTemplate.update("""
-                UPDATE calificacion
-                SET archivada = TRUE
-                WHERE id IN (
-                    SELECT idcalificacion
-                    FROM cliente_calificacion
-                    WHERE idcliente = ?
-                )
-                """, idCliente);
+    private void validarClienteYLocal(Calificacion calificacion) {
+        if (calificacion.getCliente() == null || calificacion.getCliente().getId() == null) {
+            throw new IllegalArgumentException("La calificación debe tener un cliente asociado.");
+        }
+        if (calificacion.getLocal() == null || calificacion.getLocal().getId() == null) {
+            throw new IllegalArgumentException("La calificación debe tener un local asociado.");
+        }
+        if (calificacion.getTipo() == null) {
+            throw new IllegalArgumentException("La calificación debe tener un tipo (Cliente_a_local o Local_a_cliente).");
+        }
     }
 
-    @Override
-    public List<Long> obtenerLocalesAfectadosPorArchivoDeCliente(Long idCliente) {
-        return jdbcTemplate.query("""
-                SELECT DISTINCT lc.idlocal
-                FROM local_calificacion lc
-                JOIN cliente_calificacion cc ON cc.idcalificacion = lc.idcalificacion
-                WHERE cc.idcliente = ?
-                """,
-                (rs, row) -> rs.getLong("idlocal"),
-                idCliente
-        );
+    private void setNullableLong(PreparedStatement ps, int index, Long value) throws SQLException {
+        if (value != null) {
+            ps.setLong(index, value);
+        } else {
+            ps.setNull(index, Types.BIGINT);
+        }
     }
 
-    private Optional<Long> obtenerClienteAsociado(Long idCalificacion) {
-        return jdbcTemplate.query(
-                "SELECT idcliente FROM cliente_calificacion WHERE idcalificacion = ?",
-                (rs, row) -> rs.getLong("idcliente"),
-                idCalificacion
-        ).stream().findFirst();
-    }
-
-    private Optional<Long> obtenerLocalAsociado(Long idCalificacion) {
-        return jdbcTemplate.query(
-                "SELECT idlocal FROM local_calificacion WHERE idcalificacion = ?",
-                (rs, row) -> rs.getLong("idlocal"),
-                idCalificacion
-        ).stream().findFirst();
+    private Long getNullableLong(ResultSet rs, String column) throws SQLException {
+        long value = rs.getLong(column);
+        return rs.wasNull() ? null : value;
     }
 }

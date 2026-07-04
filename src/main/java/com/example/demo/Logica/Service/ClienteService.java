@@ -22,8 +22,6 @@ import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Logica.Clases.Calificacion;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
-import com.example.demo.Persistencia.Repositorios.ClienteCalificacionRepositorio;
-import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
 import com.example.demo.Logica.DataTypes.request.DtGoogleAuthRequest;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
