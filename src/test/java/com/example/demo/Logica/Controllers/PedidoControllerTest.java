@@ -40,9 +40,10 @@ class PedidoControllerTest {
     void buscarYListarHistorialPedidosPropiosDevuelveListado() throws Exception {
         DtPedidoListadoResponse response = DtPedidoListadoResponse.builder()
                 .id(88L)
-                .estado(EstadoPedido.Confirmado)
+                .estado(EstadoPedido.Rechazado)
                 .total(45.0)
                 .cantidadItems(3)
+                .motivoRechazo("Se cortó la energía en el local")
                 .local(DtLocalResumenResponse.builder()
                         .id(10L)
                         .nombre("La Cocina")
@@ -58,7 +59,8 @@ class PedidoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(88))
                 .andExpect(jsonPath("$[0].local.id").value(10))
-                .andExpect(jsonPath("$[0].local.nombre").value("La Cocina"));
+                .andExpect(jsonPath("$[0].local.nombre").value("La Cocina"))
+                .andExpect(jsonPath("$[0].motivoRechazo").value("Se cortó la energía en el local"));
     }
 
     @Test

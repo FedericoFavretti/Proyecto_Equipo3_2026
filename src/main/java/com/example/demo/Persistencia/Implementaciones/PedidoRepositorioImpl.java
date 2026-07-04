@@ -72,6 +72,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     p.estado,
                     p.total,
                     p.tiempoestentrega,
+                    p.motivorechazo,
                     c.id AS cliente_id,
                     c.nombre AS cliente_nombre,
                     c.apellido AS cliente_apellido,
@@ -103,9 +104,9 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         }
 
         sql.append("""
-                
+
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
-                         c.id, c.nombre, c.apellido
+                         p.motivorechazo, c.id, c.nombre, c.apellido
                 ORDER BY 
                 """);
         sql.append(resolverCampoOrden(filtro));
@@ -128,6 +129,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     p.estado,
                     p.total,
                     p.tiempoestentrega,
+                    p.motivorechazo,
                     NULL::bigint AS cliente_id,
                     NULL::varchar AS cliente_nombre,
                     NULL::varchar AS cliente_apellido,
@@ -166,7 +168,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         sql.append("""
 
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
-                         l.id, l.nombre
+                         p.motivorechazo, l.id, l.nombre
                 ORDER BY
                 """);
         sql.append(resolverCampoOrden(filtro));
@@ -333,8 +335,8 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     """
                     INSERT INTO pedido
                         (fecha, tiempoestentrega, total, calle, numero, ciudad, codigopostal,
-                         mediopago, pagosimulado, estado, idlocal, idcliente)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         mediopago, pagosimulado, estado, motivorechazo, idlocal, idcliente)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     new String[]{"id"}
             );
@@ -352,8 +354,9 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
             ps.setString(8, pedido.getMedioDePago());
             ps.setBoolean(9, pedido.getPagoSimulado());
             ps.setString(10, pedido.getEstado().name());
-            ps.setLong(11, pedido.getLocal().getId());
-            ps.setLong(12, pedido.getCliente().getId());
+            ps.setString(11, pedido.getMotivoRechazo());
+            ps.setLong(12, pedido.getLocal().getId());
+            ps.setLong(13, pedido.getCliente().getId());
             return ps;
         }, keyHolder);
 
@@ -363,7 +366,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     @Override
     public void actualizar(Pedido pedido) {
         jdbcTemplate.update(
-                "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?, ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?, estado = ? WHERE id = ?",
+                "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?, ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?, estado = ?, motivorechazo = ? WHERE id = ?",
                 java.sql.Timestamp.valueOf(pedido.getFecha()),
                 pedido.getTiempoEstEntrega() != null
                         ? Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds()))
@@ -376,6 +379,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 pedido.getMedioDePago(),
                 pedido.getPagoSimulado(),
                 pedido.getEstado().name(),
+                pedido.getMotivoRechazo(),
                 pedido.getId()
         );
     }
@@ -432,6 +436,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 .mpPreferenciaId(rs.getString("mp_preferencia_id"))
                 .mpInitPoint(rs.getString("mp_init_point"))
                 .estado(EstadoPedido.valueOf(rs.getString("estado")))
+                .motivoRechazo(rs.getString("motivorechazo"))
                 .local(localRepositorio.buscarPorId(rs.getLong("idlocal"))
                         .orElseThrow(() -> new RuntimeException("Local no encontrado")))
                 .cliente(clienteRepositorio.buscarPorId(rs.getLong("idcliente"))
@@ -466,6 +471,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 .localId(rs.getObject("local_id", Long.class))
                 .localNombre(rs.getString("local_nombre"))
                 .cantidadItems(rs.getInt("cantidad_items"))
+                .motivoRechazo(rs.getString("motivorechazo"))
                 .build();
     }
 

@@ -143,6 +143,46 @@ class PedidoServiceTest {
         verifyNoInteractions(facturaService, pagoSimuladoService, notificacionPedidoService);
     }
 
+    @Test
+    void rechazarPedidoGuardaMotivoRechazoYPersisteNotificacion() {
+        Pedido pedido = pedidoPendiente();
+        when(pedidoRepositorio.buscarPorId(44L)).thenReturn(Optional.of(pedido));
+
+        pedidoService.rechazarPedido(44L, "  Sin disponibilidad de ingredientes  ");
+
+        assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.Rechazado);
+        assertThat(pedido.getMotivoRechazo()).isEqualTo("Sin disponibilidad de ingredientes");
+        verify(pedidoRepositorio).actualizar(eq(pedido));
+        verify(notificacionPedidoService).notificarRechazo(eq(pedido), eq("Sin disponibilidad de ingredientes"));
+        verifyNoInteractions(facturaService, pagoSimuladoService);
+    }
+
+    @Test
+    void rechazarPedidoRechazaCuandoMotivoEsVacio() {
+        Pedido pedido = pedidoPendiente();
+        when(pedidoRepositorio.buscarPorId(44L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoService.rechazarPedido(44L, "   "))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Debe seleccionar o escribir un motivo de rechazo antes de continuar.");
+
+        assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.Pendiente);
+        assertThat(pedido.getMotivoRechazo()).isNull();
+        verify(pedidoRepositorio, never()).actualizar(any(Pedido.class));
+        verifyNoInteractions(notificacionPedidoService, facturaService, pagoSimuladoService);
+    }
+
+    @Test
+    void rechazarPedidoRechazaCuandoPedidoNoExiste() {
+        when(pedidoRepositorio.buscarPorId(44L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> pedidoService.rechazarPedido(44L, "Sin stock"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Pedido no encontrado con id: 44");
+
+        verifyNoInteractions(notificacionPedidoService, facturaService, pagoSimuladoService);
+    }
+
     private Pedido pedidoPendiente() {
         return Pedido.builder()
                 .id(44L)
