@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -79,6 +80,7 @@ public class PedidoService {
     private final LocalRepositorio localRepositorio;
     private final DetallePedidoRepositorio detallePedidoRepositorio;
     private final PlatoRepositorio platoRepositorio;
+    private final PromocionRepositorio promocionRepositorio;
     private final FacturaService facturaService;
     private final PagoSimuladoService pagoSimuladoService;
     private final NotificacionPedidoService notificacionPedidoService;
@@ -105,6 +107,7 @@ public class PedidoService {
             LocalRepositorio localRepositorio,
             DetallePedidoRepositorio detallePedidoRepositorio,
             PlatoRepositorio platoRepositorio,
+            PromocionRepositorio promocionRepositorio,
             FacturaService facturaService,
             PagoSimuladoService pagoSimuladoService,
             NotificacionPedidoService notificacionPedidoService,
@@ -114,6 +117,7 @@ public class PedidoService {
         this.localRepositorio = localRepositorio;
         this.detallePedidoRepositorio = detallePedidoRepositorio;
         this.platoRepositorio = platoRepositorio;
+        this.promocionRepositorio = promocionRepositorio;
         this.facturaService = facturaService;
         this.pagoSimuladoService = pagoSimuladoService;
         this.notificacionPedidoService = notificacionPedidoService;
@@ -193,12 +197,13 @@ public class PedidoService {
         Cliente cliente = clienteRepositorio.buscarPorId(dtPedido.getDtCliente().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", dtPedido.getDtCliente().getId()));
 
-        List<DetallePedido> detalles = construirDetalles(dtPedidoConDetalles.getDetalles(), local);
+        LocalDateTime fechaPedido = LocalDateTime.now();
+        List<DetallePedido> detalles = construirDetalles(dtPedidoConDetalles.getDetalles(), local, fechaPedido);
         double total = detalles.stream()
                 .mapToDouble(DetallePedido::getSubtotal)
                 .sum();
         Pedido pedido = Pedido.builder()
-                .fecha(LocalDateTime.now())
+                .fecha(fechaPedido)
                 .tiempoEstEntrega(null)
                 .total(total)
                 .domicilioEntrega(dtPedido.getDomicilioEntrega())
@@ -384,7 +389,7 @@ public class PedidoService {
         }
     }
 
-    private List<DetallePedido> construirDetalles(List<DtDetallePedido> detallesSolicitados, Local local) {
+    private List<DetallePedido> construirDetalles(List<DtDetallePedido> detallesSolicitados, Local local, LocalDateTime fechaPedido) {
         List<DetallePedido> detalles = new ArrayList<>();
 
         for (DtDetallePedido detalleSolicitado : detallesSolicitados) {
@@ -405,7 +410,7 @@ public class PedidoService {
                 throw new BusinessRuleException(MENSAJE_PLATO_OTRO_LOCAL);
             }
 
-            double precioUnitario = plato.getPrecio();
+            double precioUnitario = obtenerPrecioUnitarioParaPedido(plato, fechaPedido);
             double subtotal = precioUnitario * detalleSolicitado.getCantidad();
 
             detalles.add(DetallePedido.builder()
@@ -417,6 +422,21 @@ public class PedidoService {
         }
 
         return detalles;
+    }
+
+    private double obtenerPrecioUnitarioParaPedido(Plato plato, LocalDateTime fechaPedido) {
+        return promocionRepositorio.buscarPorPlato(plato.getId()).stream()
+                .filter(promocion -> esPromocionVigente(promocion, fechaPedido))
+                .max(Comparator.comparing(Promocion::getDescuento))
+                .map(promocion -> plato.getPrecio() * (1 - promocion.getDescuento() / 100))
+                .orElse(plato.getPrecio());
+    }
+
+    private boolean esPromocionVigente(Promocion promocion, LocalDateTime fechaPedido) {
+        return promocion.getFechaInicio() != null
+                && promocion.getFechaFin() != null
+                && !promocion.getFechaInicio().isAfter(fechaPedido)
+                && !promocion.getFechaFin().isBefore(fechaPedido);
     }
 
     private void validarPedidoConDetalles(DtPedidoConDetalles dtPedidoConDetalles) {

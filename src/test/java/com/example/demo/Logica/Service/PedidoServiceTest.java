@@ -3,8 +3,17 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Local;
+import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.Clases.Pedido;
+import com.example.demo.Logica.Clases.Promocion;
+import com.example.demo.Logica.Clases.DetallePedido;
+import com.example.demo.Logica.DataTypes.shared.DtCliente;
+import com.example.demo.Logica.DataTypes.shared.DtDetallePedido;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.shared.DtPedido;
+import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.summary.DtLocalResumenResponse;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoFacturaPdf;
@@ -19,10 +28,12 @@ import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -53,6 +65,8 @@ class PedidoServiceTest {
     private DetallePedidoRepositorio detallePedidoRepositorio;
     @Mock
     private PlatoRepositorio platoRepositorio;
+    @Mock
+    private PromocionRepositorio promocionRepositorio;
     @Mock
     private FacturaService facturaService;
     @Mock
@@ -74,6 +88,7 @@ class PedidoServiceTest {
                 localRepositorio,
                 detallePedidoRepositorio,
                 platoRepositorio,
+                promocionRepositorio,
                 facturaService,
                 pagoSimuladoService,
                 notificacionPedidoService,
@@ -224,6 +239,133 @@ class PedidoServiceTest {
         assertThat(historial.getFirst().getPagado()).isFalse();
         assertThat(historial.getFirst().getEstado()).isEqualTo(EstadoPedido.Pendiente);
         verify(pedidoRepositorio).listarHistorialPorCliente(cliente.getId(), null);
+    }
+
+    @Test
+    void realizarPedidoAplicaPromocionVigenteEnDetallesYTotal() {
+        Local local = Local.builder()
+                .id(10L)
+                .nombre("La Cocina")
+                .estaAbierto(true)
+                .build();
+        Cliente cliente = Cliente.builder()
+                .id(20L)
+                .email("ana@test.com")
+                .nombre("Ana")
+                .apellido("Perez")
+                .activo(true)
+                .build();
+        Plato plato = Plato.builder()
+                .id(30L)
+                .nombre("Milanesa")
+                .precio(100.0)
+                .disponible(true)
+                .local(local)
+                .build();
+        Promocion promocion = Promocion.builder()
+                .id(40L)
+                .descuento(25.0)
+                .fechaInicio(LocalDateTime.now().minusHours(1))
+                .fechaFin(LocalDateTime.now().plusHours(1))
+                .plato(plato)
+                .build();
+        DtPedidoConDetalles solicitud = DtPedidoConDetalles.builder()
+                .dtPedido(DtPedido.builder()
+                        .domicilioEntrega(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
+                        .medioDePago("EFECTIVO")
+                        .dtLocal(DtLocal.builder().id(10L).build())
+                        .dtCliente(DtCliente.builder().id(20L).build())
+                        .build())
+                .detalles(List.of(DtDetallePedido.builder()
+                        .cantidad(2)
+                        .dtPlato(DtPlato.builder().id(30L).build())
+                        .build()))
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+        when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(cliente));
+        when(platoRepositorio.buscarPorId(30L)).thenReturn(Optional.of(plato));
+        when(promocionRepositorio.buscarPorPlato(30L)).thenReturn(List.of(promocion));
+        doAnswer(invocation -> {
+            Pedido pedido = invocation.getArgument(0);
+            pedido.setId(99L);
+            return null;
+        }).when(pedidoRepositorio).guardar(any(Pedido.class));
+
+        Pedido pedido = pedidoService.realizarPedido(solicitud);
+
+        ArgumentCaptor<Pedido> pedidoCaptor = ArgumentCaptor.forClass(Pedido.class);
+        ArgumentCaptor<DetallePedido> detalleCaptor = ArgumentCaptor.forClass(DetallePedido.class);
+
+        verify(pedidoRepositorio).guardar(pedidoCaptor.capture());
+        verify(detallePedidoRepositorio).guardar(detalleCaptor.capture());
+        verify(notificacionPedidoService).notificarPedido(eq(pedido));
+
+        assertThat(pedido.getId()).isEqualTo(99L);
+        assertThat(pedido.getTotal()).isEqualTo(150.0);
+        assertThat(pedidoCaptor.getValue().getTotal()).isEqualTo(150.0);
+        assertThat(detalleCaptor.getValue().getPrecioUnitario()).isEqualTo(75.0);
+        assertThat(detalleCaptor.getValue().getSubtotal()).isEqualTo(150.0);
+    }
+
+    @Test
+    void realizarPedidoIgnoraPromocionFueraDeVigencia() {
+        Local local = Local.builder()
+                .id(10L)
+                .nombre("La Cocina")
+                .estaAbierto(true)
+                .build();
+        Cliente cliente = Cliente.builder()
+                .id(20L)
+                .email("ana@test.com")
+                .nombre("Ana")
+                .apellido("Perez")
+                .activo(true)
+                .build();
+        Plato plato = Plato.builder()
+                .id(30L)
+                .nombre("Milanesa")
+                .precio(100.0)
+                .disponible(true)
+                .local(local)
+                .build();
+        Promocion promocionVencida = Promocion.builder()
+                .id(40L)
+                .descuento(25.0)
+                .fechaInicio(LocalDateTime.now().minusDays(3))
+                .fechaFin(LocalDateTime.now().minusDays(1))
+                .plato(plato)
+                .build();
+        DtPedidoConDetalles solicitud = DtPedidoConDetalles.builder()
+                .dtPedido(DtPedido.builder()
+                        .domicilioEntrega(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
+                        .medioDePago("EFECTIVO")
+                        .dtLocal(DtLocal.builder().id(10L).build())
+                        .dtCliente(DtCliente.builder().id(20L).build())
+                        .build())
+                .detalles(List.of(DtDetallePedido.builder()
+                        .cantidad(2)
+                        .dtPlato(DtPlato.builder().id(30L).build())
+                        .build()))
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+        when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(cliente));
+        when(platoRepositorio.buscarPorId(30L)).thenReturn(Optional.of(plato));
+        when(promocionRepositorio.buscarPorPlato(30L)).thenReturn(List.of(promocionVencida));
+        doAnswer(invocation -> {
+            Pedido pedido = invocation.getArgument(0);
+            pedido.setId(100L);
+            return null;
+        }).when(pedidoRepositorio).guardar(any(Pedido.class));
+
+        pedidoService.realizarPedido(solicitud);
+
+        ArgumentCaptor<DetallePedido> detalleCaptor = ArgumentCaptor.forClass(DetallePedido.class);
+        verify(detallePedidoRepositorio).guardar(detalleCaptor.capture());
+
+        assertThat(detalleCaptor.getValue().getPrecioUnitario()).isEqualTo(100.0);
+        assertThat(detalleCaptor.getValue().getSubtotal()).isEqualTo(200.0);
     }
 
     private Pedido pedidoPendiente() {
