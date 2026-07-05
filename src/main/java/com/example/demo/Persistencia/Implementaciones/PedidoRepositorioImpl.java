@@ -125,6 +125,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
 
     @Override
     public List<PedidoListadoView> listarHistorialPorCliente(Long idCliente, DtPedidoListadoFiltro filtro) {
+        // Regla de producto: el cliente ve sus pedidos apenas se crean, incluso si el pago externo sigue pendiente.
         StringBuilder sql = new StringBuilder("""
                 SELECT
                     p.id,
@@ -144,7 +145,6 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 JOIN local l ON l.id = p.idlocal
                 LEFT JOIN detallepedido dp ON dp.idpedido = p.id
                 WHERE p.idcliente = ?
-                  AND (p.pagado = true OR UPPER(p.mediopago) = 'EFECTIVO')
                 """);
 
         List<Object> parametros = new ArrayList<>();

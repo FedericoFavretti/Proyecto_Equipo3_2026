@@ -5,12 +5,15 @@ import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.DataTypes.summary.DtLocalResumenResponse;
+import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoFacturaPdf;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.PagoRechazadoException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
+import com.example.demo.Persistencia.Implementaciones.PedidoListadoView;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
@@ -25,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -181,6 +185,45 @@ class PedidoServiceTest {
                 .hasMessage("Pedido no encontrado con id: 44");
 
         verifyNoInteractions(notificacionPedidoService, facturaService, pagoSimuladoService);
+    }
+
+    @Test
+    void buscarYListarHistorialPedidosPropiosIncluyePedidoPendienteDePagoDelCliente() {
+        Cliente cliente = pedidoPendiente().getCliente();
+        PedidoListadoView pedidoListadoView = PedidoListadoView.builder()
+                .id(88L)
+                .fecha(LocalDateTime.now())
+                .estado(EstadoPedido.Pendiente)
+                .total(450.0)
+                .localId(10L)
+                .localNombre("La Cocina")
+                .cantidadItems(2)
+                .pagado(false)
+                .build();
+        DtPedidoListadoResponse response = DtPedidoListadoResponse.builder()
+                .id(88L)
+                .estado(EstadoPedido.Pendiente)
+                .total(450.0)
+                .pagado(false)
+                .local(DtLocalResumenResponse.builder()
+                        .id(10L)
+                        .nombre("La Cocina")
+                        .build())
+                .build();
+
+        when(usuarioRepositorio.buscarPorEmail("ana@test.com")).thenReturn(Optional.of(cliente));
+        when(clienteRepositorio.buscarPorId(cliente.getId())).thenReturn(Optional.of(cliente));
+        when(pedidoRepositorio.listarHistorialPorCliente(cliente.getId(), null)).thenReturn(List.of(pedidoListadoView));
+        when(pedidoListadoMapper.toResponse(pedidoListadoView)).thenReturn(response);
+
+        List<DtPedidoListadoResponse> historial = pedidoService
+                .buscarYListarHistorialPedidosPropios("ana@test.com", null);
+
+        assertThat(historial).hasSize(1);
+        assertThat(historial.getFirst().getId()).isEqualTo(88L);
+        assertThat(historial.getFirst().getPagado()).isFalse();
+        assertThat(historial.getFirst().getEstado()).isEqualTo(EstadoPedido.Pendiente);
+        verify(pedidoRepositorio).listarHistorialPorCliente(cliente.getId(), null);
     }
 
     private Pedido pedidoPendiente() {
