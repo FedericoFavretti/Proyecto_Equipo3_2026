@@ -37,7 +37,10 @@ public class SecurityConfig {
                                 "/api/v1/clientes/google"
                         ).permitAll()
                         .requestMatchers("/api/v1/locales/solicitudes-habilitacion").permitAll()
-                        .requestMatchers("/pagos/webhook").permitAll()
+                        .requestMatchers(
+                                "/api/v1/pagos/webhook",
+                                "/pagos/webhook"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)
