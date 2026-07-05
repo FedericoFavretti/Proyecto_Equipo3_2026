@@ -11,9 +11,11 @@ import java.util.stream.Collectors;
 public class PlatoMapper {
 
     private final LocalMapper localMapper;
+    private final CategoriaMapper categoriaMapper;
 
-    public PlatoMapper(LocalMapper localMapper) {
+    public PlatoMapper(LocalMapper localMapper, CategoriaMapper categoriaMapper) {
         this.localMapper = localMapper;
+        this.categoriaMapper = categoriaMapper;
     }
 
     public Plato mapearPlatoDeDt(DtPlato dtPlato) {
@@ -21,7 +23,7 @@ public class PlatoMapper {
                 .id(dtPlato.getId())
                 .nombre(dtPlato.getNombre())
                 .descripcion(dtPlato.getDescripcion())
-                .categoria(dtPlato.getCategoria())
+                .categoria(categoriaMapper.mapearCategoriaDeDt(dtPlato.getDtCategoria()))
                 .precio(dtPlato.getPrecio())
                 .imagenes(dtPlato.getImagenes())
                 .disponible(dtPlato.getDisponible())
@@ -34,7 +36,7 @@ public class PlatoMapper {
                 .id(plato.getId())
                 .nombre(plato.getNombre())
                 .descripcion(plato.getDescripcion())
-                .categoria(plato.getCategoria())
+                .dtCategoria(categoriaMapper.mapearDtCategoriaDeClase(plato.getCategoria()))
                 .precio(plato.getPrecio())
                 .precioFinal(plato.getPrecio())
                 .tienePromocion(false)

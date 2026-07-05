@@ -1,9 +1,11 @@
 package com.example.demo.Logica.Interfaces;
 
+import com.example.demo.Logica.Clases.Categoria;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
+import com.example.demo.Logica.DataTypes.shared.DtCategoria;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.Clases.Promocion;
@@ -35,5 +37,8 @@ public interface iLocalController {
     ResponseEntity<List<DtPlato>> buscarPlatosDeLocal(@PathVariable("idLocal") Long idLocal);
     ResponseEntity<DtPromocionesLocalResponse> buscaPromocionesDeLocal(@PathVariable("idLocal") Long idLocal);
     ResponseEntity<DtLocalPerfilResponse> obtenerPerfilPublico(@PathVariable("idLocal") Long idLocal);
+    ResponseEntity<List<DtCategoria>> listarCategorias(@PathVariable Long idLocal);
+    ResponseEntity<Categoria> altaCategoria(@RequestBody DtCategoria dto);
+    ResponseEntity<Void> eliminarCategoria(@PathVariable Long idLocal, @PathVariable Long idCategoria);
 }
 

@@ -16,7 +16,7 @@ public class DtPlato {
     private Long id;
     private String nombre;
     private String descripcion;
-    private String categoria;
+    private DtCategoria dtCategoria;
     private Double precio;
     private Double precioFinal;
     private Boolean tienePromocion;

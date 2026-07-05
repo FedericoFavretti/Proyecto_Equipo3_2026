@@ -1,8 +1,10 @@
 package com.example.demo.Logica.Controllers;
 
+import com.example.demo.Logica.Clases.Categoria;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
+import com.example.demo.Logica.DataTypes.shared.DtCategoria;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
@@ -53,6 +55,25 @@ public class LocalController implements iLocalController {
         }
         Plato plato = localService.gestionarPlatoModificacion(idPlato, dtPlato);
         return ResponseEntity.ok(plato);
+    }
+
+    @PreAuthorize("hasAnyRole('Local','Cliente')")
+    @GetMapping("/{idLocal}/categorias")
+    public ResponseEntity<List<DtCategoria>> listarCategorias(@PathVariable Long idLocal) {
+        return ResponseEntity.ok(localService.listarCategoriasDeLocal(idLocal));
+    }
+
+    @PreAuthorize("hasRole('Local')")
+    @PostMapping("/categorias")
+    public ResponseEntity<Categoria> altaCategoria(@RequestBody DtCategoria dto) {
+        return ResponseEntity.ok(localService.altaCategoria(dto));
+    }
+
+    @PreAuthorize("hasRole('Local')")
+    @DeleteMapping("/{idLocal}/categorias/{idCategoria}")
+    public ResponseEntity<Void> eliminarCategoria(@PathVariable Long idLocal, @PathVariable Long idCategoria) {
+        localService.eliminarCategoria(idCategoria, idLocal);
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('Local')")

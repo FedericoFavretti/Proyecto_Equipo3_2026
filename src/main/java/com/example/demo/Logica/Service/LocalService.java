@@ -6,33 +6,33 @@ import java.util.regex.Pattern;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.example.demo.Logica.Clases.Local;
-import com.example.demo.Logica.Clases.Plato;
+import com.example.demo.Logica.Clases.*;
 import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
 import com.example.demo.Logica.DataTypes.response.DtPlatoEstadistica;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
+import com.example.demo.Logica.DataTypes.shared.DtCategoria;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Enums.PeriodoEstadisticasPreset;
+import com.example.demo.Logica.Exceptions.AccessDeniedException;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
+import com.example.demo.Logica.Mappers.CategoriaMapper;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Logica.Record.PlatoVendidoEstadisticaProjection;
 import com.example.demo.Persistencia.Repositorios.*;
-import com.example.demo.Logica.Clases.Promocion;
 import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
 import com.example.demo.Logica.Mappers.PromocionMapper;
 import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
 import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
 import com.example.demo.Logica.DataTypes.response.DtPromocionesLocalResponse;
-import com.example.demo.Logica.Clases.Cliente;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
@@ -89,6 +89,7 @@ public class LocalService {
     private static final String MENSAJE_PERIODO_INVALIDO =
             "La fechaDesde no puede ser posterior a fechaHasta.";
     private static final int LIMITE_PLATOS_MAS_PEDIDOS = 5;
+    private static final String MENSAJE_CATEGORIA_DE_OTRO_LOCAL = "La catagoria no pertenece a este local";
 
     private final LocalRepositorio localRepositorio;
     private final PlatoRepositorio platoRepositorio;
@@ -102,8 +103,10 @@ public class LocalService {
     private final PromocionMapper promocionMapper;
     private final ClienteRepositorio clienteRepositorio;
     private final CalificacionRepositorio calificacionRepositorio;
+    private final CategoriaRepositorio categoriaRepositorio;
+    private final CategoriaMapper categoriaMapper;
 
-    public LocalService(LocalRepositorio localRepositorio, PlatoRepositorio platoRepositorio, RegistroLocalNotificador registroLocalNotificador, UsuarioRepositorio usuarioRepositorio, PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper, PromocionRepositorio promocionRepositorio, PromocionMapper promocionMapper, ClienteRepositorio clienteRepositorio, CalificacionRepositorio calificacionRepositorio) {
+    public LocalService(LocalRepositorio localRepositorio, PlatoRepositorio platoRepositorio, RegistroLocalNotificador registroLocalNotificador, UsuarioRepositorio usuarioRepositorio, PedidoRepositorio pedidoRepositorio, PasswordEncoder passwordEncoder, LocalMapper localMapper, PlatoMapper platoMapper, PromocionRepositorio promocionRepositorio, PromocionMapper promocionMapper, ClienteRepositorio clienteRepositorio, CalificacionRepositorio calificacionRepositorio, CategoriaRepositorio categoriaRepositorio, CategoriaMapper categoriaMapper) {
         this.localRepositorio = localRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.registroLocalNotificador = registroLocalNotificador;
@@ -116,6 +119,8 @@ public class LocalService {
         this.promocionMapper = promocionMapper;
         this.clienteRepositorio = clienteRepositorio;
         this.calificacionRepositorio = calificacionRepositorio;
+        this.categoriaRepositorio = categoriaRepositorio;
+        this.categoriaMapper = categoriaMapper;
     }
 
     @Transactional
@@ -129,6 +134,7 @@ public class LocalService {
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
         validarLocalHabilitado(local);
+        validarCategoriaPerteneceAlLocal(dtPlato, local.getId());
         Plato plato = platoMapper.mapearPlatoDeDt(dtPlato);
         plato.setLocal(local);
         return platoRepositorio.guardar(plato);
@@ -150,6 +156,7 @@ public class LocalService {
                 .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
         validarLocalHabilitado(local);
         validarPlatoPerteneceAlLocal(platoExistente, local.getId());
+        validarCategoriaPerteneceAlLocal(dtPlato, local.getId());
 
         platoRepositorio.buscarPorNombre(dtPlato.getNombre())
                 .filter(plato -> !plato.getId().equals(idPlato))
@@ -211,6 +218,34 @@ public class LocalService {
 
         promocionRepositorio.actualizar(promocion);
         return promocion;
+    }
+
+    @Transactional
+    public List<DtCategoria> listarCategoriasDeLocal(Long idLocal) {
+        return categoriaMapper.mapearDtCategorias(categoriaRepositorio.listarPorLocal(idLocal));
+    }
+
+    @Transactional
+    public Categoria altaCategoria(DtCategoria dto) {
+        if (textoVacio(dto.getNombre()) || dto.getIdLocal() == null) {
+            throw new IllegalArgumentException("Debe indicar nombre de categoría y local.");
+        }
+        categoriaRepositorio.buscarPorNombreYLocal(dto.getNombre().trim(), dto.getIdLocal())
+                .ifPresent(c -> { throw new ResourceConflictException("La categoría ya existe para este local."); });
+
+        return categoriaRepositorio.guardar(
+                Categoria.builder().nombre(dto.getNombre().trim()).idLocal(dto.getIdLocal()).build()
+        );
+    }
+
+    @Transactional
+    public void eliminarCategoria(Long idCategoria, Long idLocal) {
+        Categoria categoria = categoriaRepositorio.buscarPorId(idCategoria)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria", idCategoria));
+        if (!categoria.getIdLocal().equals(idLocal)) {
+            throw new AccessDeniedException("La categoría no pertenece al local indicado.");
+        }
+        categoriaRepositorio.eliminar(idCategoria);
     }
 
     @Transactional
@@ -387,6 +422,18 @@ public class LocalService {
         }
     }
 
+    private void validarCategoriaPerteneceAlLocal(DtPlato dtPlato, Long idLocal) {
+        if (dtPlato.getDtCategoria() == null || dtPlato.getDtCategoria().getId() == null) {
+            return;
+        }
+
+        Categoria categoria = categoriaRepositorio.buscarPorId(dtPlato.getDtCategoria().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria", dtPlato.getDtCategoria().getId()));
+
+        if (categoria.getIdLocal() == null || !categoria.getIdLocal().equals(idLocal)) {
+            throw new BusinessRuleException(MENSAJE_CATEGORIA_DE_OTRO_LOCAL);
+        }
+    }
     private void validarDatosPlato(DtPlato dtPlato) {
         validarDatosPlatoModificacion(dtPlato);
         validarImagenesPlato(dtPlato.getImagenes());

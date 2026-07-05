@@ -3,6 +3,7 @@ package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
+import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,10 +19,12 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
     private final LocalRepositorio localRepositorio;
     private final JdbcTemplate jdbcTemplate;
+    private final CategoriaRepositorio categoriaRepositorio;
 
-    public PlatoRepositorioImpl(JdbcTemplate jdbcTemplate, LocalRepositorio localRepo) {
+    public PlatoRepositorioImpl(JdbcTemplate jdbcTemplate, LocalRepositorio localRepo, CategoriaRepositorio categoriaRepositorio) {
         this.localRepositorio = localRepo;
         this.jdbcTemplate = jdbcTemplate;
+        this.categoriaRepositorio = categoriaRepositorio;
     }
 
 
@@ -60,7 +63,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     public List<Plato> buscarConFiltros(DtFiltro filtro) {
         StringBuilder sql = new StringBuilder(
                 "SELECT p.id, p.nombre, p.descripcion, p.precio, " +
-                        "p.imagenes, p.disponible, p.idLocal, p.categoria FROM plato p WHERE 1=1"
+                        "p.imagenes, p.disponible, p.idLocal, p.idcategoria FROM plato p WHERE 1=1"
         );
         List<Object> params = new ArrayList<>();
 
@@ -115,7 +118,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO plato (nombre, descripcion, precio, imagenes, disponible, idLocal, categoria) " +
+                    "INSERT INTO plato (nombre, descripcion, precio, imagenes, disponible, idLocal, idcategoria) " +
                             "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     new String[]{"id"}
             );
@@ -125,7 +128,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
             ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
-            ps.setString(7, plato.getCategoria());
+            ps.setLong(7, plato.getCategoria().getId());
             return ps;
         }, idGenerado);
 
@@ -143,7 +146,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
                     "UPDATE plato SET nombre = ?, descripcion = ?, precio = ?, " +
-                            "imagenes = ?, disponible = ?, idLocal = ?, categoria = ? WHERE id = ?"
+                            "imagenes = ?, disponible = ?, idLocal = ?, idcategoria = ? WHERE id = ?"
             );
             ps.setString(1, plato.getNombre());
             ps.setString(2, plato.getDescripcion());
@@ -151,7 +154,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
             ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
-            ps.setString(7, plato.getCategoria());
+            ps.setLong(7, plato.getCategoria().getId());
             ps.setLong(8, plato.getId());
             return ps;
         });
@@ -165,11 +168,12 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     }
 
     private Plato mapearPlato(ResultSet rs) throws SQLException {
+
         return new Plato(
                 rs.getLong("id"),
                 rs.getString("nombre"),
                 rs.getString("descripcion"),
-                rs.getString("categoria"),
+                categoriaRepositorio.buscarPorId(rs.getLong("idcategoria")).orElseThrow(()->new RuntimeException("Categoria no encontrada.")),
                 rs.getDouble("precio"),
                 mapearImagenes(rs),
                 rs.getBoolean("disponible"),
