@@ -371,7 +371,11 @@ public class PedidoService {
     @Transactional
     public void procesarPagoConfirmado(String paymentId) {
         try {
+            LOGGER.info("Consultando pago en Mercado Pago. paymentId={}", paymentId);
             Payment payment = new PaymentClient().get(Long.parseLong(paymentId));
+            LOGGER.info("Respuesta de MP para paymentId={}: status={}, statusDetail={}, externalReference={}",
+                    paymentId, payment.getStatus(), payment.getStatusDetail(), payment.getExternalReference());
+
             if ("approved".equals(payment.getStatus())) {
                 Long pedidoId = Long.parseLong(payment.getExternalReference());
                 pedidoRepositorio.buscarPorId(pedidoId).ifPresentOrElse(pedido -> {
@@ -380,11 +384,25 @@ public class PedidoService {
                             pedidoRepositorio.marcarPagoAprobado(pedidoId);
                             pedido.setPagado(true);
                             notificacionPedidoService.notificarPedido(pedido);
+                            LOGGER.info("Pedido {} marcado como pagado.", pedidoId);
+                        } else {
+                            LOGGER.info("Pedido {} ya estaba marcado como pagado, se ignora.", pedidoId);
                         }
+                    } else {
+                        LOGGER.info("Pedido {} está cancelado, se ignora la confirmación de pago.", pedidoId);
                     }
                 }, () -> LOGGER.warn("Notificación de pago recibida para un pedido inexistente: {}", pedidoId));
+            } else {
+                LOGGER.info("Pago {} no está aprobado todavía (status={}), no se actualiza el pedido.",
+                        paymentId, payment.getStatus());
             }
-        } catch (MPException | MPApiException e) {
+        } catch (MPApiException e) {
+            LOGGER.error("Error de la API de Mercado Pago al consultar paymentId={}. Status HTTP: {} | Body: {}",
+                    paymentId, e.getApiResponse() != null ? e.getApiResponse().getStatusCode() : "N/A",
+                    e.getApiResponse() != null ? e.getApiResponse().getContent() : e.getMessage());
+            throw new ExternalServiceException(MENSAJE_ERROR_NOTIFICACION_PAGO, e);
+        } catch (MPException e) {
+            LOGGER.error("Error de conexión con Mercado Pago al consultar paymentId={}: {}", paymentId, e.getMessage(), e);
             throw new ExternalServiceException(MENSAJE_ERROR_NOTIFICACION_PAGO, e);
         }
     }
