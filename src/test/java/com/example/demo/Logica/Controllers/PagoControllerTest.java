@@ -4,11 +4,15 @@ import com.example.demo.Logica.Service.PedidoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,5 +47,31 @@ class PagoControllerTest {
                 .andExpect(status().isOk());
 
         verify(pedidoService, never()).procesarPagoConfirmado("12345");
+    }
+
+    @Test
+    void recibirNotificacionPostProcesaPagoCuandoLlegaEnBodyJson() throws Exception {
+        mockMvc.perform(post("/api/v1/pagos/webhook")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "type": "payment",
+                                  "data": {
+                                    "id": "67890"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        verify(pedidoService).procesarPagoConfirmado("67890");
+    }
+
+    @Test
+    void recibirNotificacionGetSinDatosSoloRespondeOk() throws Exception {
+        mockMvc.perform(get("/api/v1/pagos/webhook"))
+                .andExpect(status().isOk());
+
+        verify(pedidoService, never()).procesarPagoConfirmado(anyString());
+        verifyNoInteractions(pedidoService);
     }
 }
