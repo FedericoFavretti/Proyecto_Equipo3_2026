@@ -371,7 +371,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     @Override
     public void actualizar(Pedido pedido) {
         jdbcTemplate.update(
-                "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?, ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?, estado = ?, motivorechazo = ? WHERE id = ?",
+                "UPDATE pedido SET fecha = ?, tiempoestentrega = ?, total = ?, calle = ?, numero = ?, ciudad = ?, codigopostal = ?, mediopago = ?, pagosimulado = ?, pagado = ?, estado = ?, motivorechazo = ? WHERE id = ?",
                 java.sql.Timestamp.valueOf(pedido.getFecha()),
                 pedido.getTiempoEstEntrega() != null
                         ? Time.valueOf(LocalTime.MIDNIGHT.plusSeconds(pedido.getTiempoEstEntrega().getSeconds()))
@@ -383,6 +383,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 pedido.getDomicilioEntrega().getCodigoPostal(),
                 pedido.getMedioDePago(),
                 pedido.getPagoSimulado(),
+                pedido.getPagado(),
                 pedido.getEstado().name(),
                 pedido.getMotivoRechazo(),
                 pedido.getId()
