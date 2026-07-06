@@ -16,16 +16,18 @@ public class NotificacionMapper {
    }
 
     public Notificacion mapearNotificacionDeDt(DtNotificacion dtNotificacion){
-       return Notificacion.builder()
-               .id(dtNotificacion.getId())
-               .tipo(dtNotificacion.getTipo())
-               .mensaje(dtNotificacion.getMensaje())
-               .canal(dtNotificacion.getCanal())
-               .leida(dtNotificacion.getLeida())
-               .fecha(dtNotificacion.getFecha())
-               .reclamo(reclamoMapper.mapearReclamoDeDt(dtNotificacion.getDtReclamo()))
-               .pedido(pedidoMapper.mapearPedidoDeDt(dtNotificacion.getDtPedido()))
-               .build();
+        return Notificacion.builder()
+                .id(dtNotificacion.getId())
+                .tipo(dtNotificacion.getTipo())
+                .mensaje(dtNotificacion.getMensaje())
+                .canal(dtNotificacion.getCanal())
+                .leida(dtNotificacion.getLeida())
+                .fecha(dtNotificacion.getFecha())
+                .reclamo(reclamoMapper.mapearReclamoDeDt(dtNotificacion.getDtReclamo()))
+                .pedido(pedidoMapper.mapearPedidoDeDt(dtNotificacion.getDtPedido()))
+                .destinatarioTipo(dtNotificacion.getDestinatarioTipo())
+                .destinatarioId(dtNotificacion.getDestinatarioId())
+                .build();
     }
 
     public DtNotificacion mapearNotificacionDeClase(Notificacion notificacion){
@@ -38,6 +40,8 @@ public class NotificacionMapper {
                 .fecha(notificacion.getFecha())
                 .dtReclamo(reclamoMapper.mapearDtReclamoDeClase(notificacion.getReclamo()))
                 .dtPedido(pedidoMapper.mapearDtPedidoDeClase(notificacion.getPedido()))
+                .destinatarioTipo(notificacion.getDestinatarioTipo())
+                .destinatarioId(notificacion.getDestinatarioId())
                 .build();
     }
 }

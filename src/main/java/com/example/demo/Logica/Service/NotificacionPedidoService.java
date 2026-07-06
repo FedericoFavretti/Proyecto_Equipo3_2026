@@ -4,6 +4,7 @@ import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.Notificacion;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Enums.CanalNotificacion;
+import com.example.demo.Logica.Enums.TipoDestinatario;
 import com.example.demo.Logica.Enums.TipoNotificacion;
 import com.example.demo.Persistencia.Repositorios.NotificacionRepositorio;
 import org.slf4j.Logger;
@@ -33,10 +34,17 @@ public class NotificacionPedidoService {
                     pedido.getLocal().getEmail(),
                     "Se ah recibido un pedido",
                     "Se recibio el pedido #"+ pedido.getId()
-                    +" por el cliente "+pedido.getCliente().getNombre() +" "+  pedido.getCliente().getApellido()
-                    +"ingresa a la web para confirmar o rechazar el pedido. "
+                            +" por el cliente "+pedido.getCliente().getNombre() +" "+  pedido.getCliente().getApellido()
+                            +"ingresa a la web para confirmar o rechazar el pedido. "
                             +pedidiosUrl
 
+            );
+
+            guardarNotificacionWeb(
+                    "Recibiste un nuevo pedido #" + pedido.getId() + ".",
+                    pedido,
+                    TipoDestinatario.Local,
+                    pedido.getLocal() != null ? pedido.getLocal().getId() : null
             );
         }
     }
@@ -49,24 +57,39 @@ public class NotificacionPedidoService {
                     "Se cancelado el pedido #"+ pedido.getId()
                             +" por el cliente "+pedido.getCliente().getNombre() +" "+ pedido.getCliente().getApellido()
             );
+
+            guardarNotificacionWeb(
+                    "El cliente canceló el pedido #" + pedido.getId() + ".",
+                    pedido,
+                    TipoDestinatario.Local,
+                    pedido.getLocal() != null ? pedido.getLocal().getId() : null
+            );
         }
     }
 
     public void notificarConfirmacion(Pedido pedido, Factura factura) {
+        String mensaje = "Tu pedido #" + pedido.getId()
+                + " fue confirmado. Tiempo estimado: "
+                + pedido.getTiempoEstEntrega().toMinutes()
+                + " minutos. La factura "
+                + factura.getNumero()
+                + " se está preparando y te la enviaremos por correo apenas quede generada.";
+
         if (pedido.getCliente() != null && pedido.getCliente().getEmail() != null) {
             emailService.enviarCorreo(
                     pedido.getCliente().getEmail(),
                     "Pedido confirmado",
-                    "Tu pedido #" + pedido.getId()
-                            + " fue confirmado. Tiempo estimado: "
-                            + pedido.getTiempoEstEntrega().toMinutes()
-                            + " minutos. La factura "
-                            + factura.getNumero()
-                            + " se está preparando y te la enviaremos por correo apenas quede generada."
+                    mensaje
             );
         }
 
-        logger.info("Notificación web pendiente para pedido {}", pedido.getId());
+        guardarNotificacionWeb(
+                mensaje,
+                pedido,
+                TipoDestinatario.Cliente,
+                pedido.getCliente() != null ? pedido.getCliente().getId() : null
+        );
+
         logger.info("Notificación push pendiente para pedido {}", pedido.getId());
     }
 
@@ -80,6 +103,9 @@ public class NotificacionPedidoService {
                 .leida(false)
                 .fecha(LocalDateTime.now())
                 .pedido(factura.getPedido())
+                .destinatarioTipo(TipoDestinatario.Cliente)
+                .destinatarioId(factura.getPedido() != null && factura.getPedido().getCliente() != null
+                        ? factura.getPedido().getCliente().getId() : null)
                 .build());
 
         if (factura.getClienteEmailSnapshot() != null && !factura.getClienteEmailSnapshot().isBlank()) {
@@ -92,7 +118,6 @@ public class NotificacionPedidoService {
             );
         }
 
-        logger.info("Notificación web pendiente para factura {}", factura.getNumero());
         logger.info("Notificación push pendiente para factura {}", factura.getNumero());
     }
 
@@ -106,6 +131,8 @@ public class NotificacionPedidoService {
                 .leida(false)
                 .fecha(LocalDateTime.now())
                 .pedido(pedido)
+                .destinatarioTipo(TipoDestinatario.Cliente)
+                .destinatarioId(pedido.getCliente() != null ? pedido.getCliente().getId() : null)
                 .build());
 
         if (pedido.getCliente() != null && pedido.getCliente().getEmail() != null) {
@@ -116,7 +143,33 @@ public class NotificacionPedidoService {
             );
         }
 
-        logger.info("Notificación web pendiente para rechazo de pedido {}", pedido.getId());
+        guardarNotificacionWeb(
+                mensaje,
+                pedido,
+                TipoDestinatario.Cliente,
+                pedido.getCliente() != null ? pedido.getCliente().getId() : null
+        );
+
         logger.info("Notificación push pendiente para rechazo de pedido {}", pedido.getId());
+    }
+
+    private void guardarNotificacionWeb(String mensaje, Pedido pedido,
+                                        TipoDestinatario destinatarioTipo, Long destinatarioId) {
+        if (destinatarioId == null) {
+            logger.warn("No se pudo determinar el destinatario para la notificación web del pedido {}.",
+                    pedido.getId());
+            return;
+        }
+
+        notificacionRepositorio.guardar(Notificacion.builder()
+                .tipo(TipoNotificacion.Pedido)
+                .mensaje(mensaje)
+                .canal(CanalNotificacion.Web)
+                .leida(false)
+                .fecha(LocalDateTime.now())
+                .pedido(pedido)
+                .destinatarioTipo(destinatarioTipo)
+                .destinatarioId(destinatarioId)
+                .build());
     }
 }

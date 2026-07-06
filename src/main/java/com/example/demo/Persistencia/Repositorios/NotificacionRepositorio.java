@@ -1,6 +1,7 @@
 package com.example.demo.Persistencia.Repositorios;
 
 import com.example.demo.Logica.Clases.Notificacion;
+import com.example.demo.Logica.Enums.TipoDestinatario;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,4 +12,5 @@ public interface NotificacionRepositorio {
     void guardar(Notificacion notificacion);
     void actualizar(Notificacion notificacion);
     void eliminar(Long id);
+    List<Notificacion> listarPorDestinatario(TipoDestinatario destinatarioTipo, Long destinatarioId);
 }

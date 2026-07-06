@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Clases;
 import com.example.demo.Logica.Enums.CanalNotificacion;
 import com.example.demo.Logica.Enums.TipoNotificacion;
+import com.example.demo.Logica.Enums.TipoDestinatario;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,4 +21,6 @@ public class Notificacion {
     private LocalDateTime fecha;
     private Reclamo reclamo;
     private Pedido pedido;
+    private TipoDestinatario destinatarioTipo;
+    private Long destinatarioId;
 }
