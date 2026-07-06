@@ -19,6 +19,7 @@ public class DtPedidoListadoResponse {
     private Long id;
     private LocalDateTime fecha;
     private EstadoPedido estado;
+    private String estadoVisible;
     private Double total;
     private Duration tiempoEstEntrega;
     private DtClienteResumenResponse cliente;
@@ -26,4 +27,7 @@ public class DtPedidoListadoResponse {
     private Integer cantidadItems;
     private String motivoRechazo;
     private Boolean pagado;
+    private Boolean pagoPendiente;
+    private Boolean permiteReintentarPago;
+    private String mpInitPoint;
 }

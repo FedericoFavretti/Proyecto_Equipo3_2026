@@ -74,6 +74,8 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     p.tiempoestentrega,
                     p.motivorechazo,
                     p.pagado,
+                    p.mediopago,
+                    p.mp_init_point,
                     c.id AS cliente_id,
                     c.nombre AS cliente_nombre,
                     c.apellido AS cliente_apellido,
@@ -109,7 +111,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         sql.append("""
 
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
-                         p.motivorechazo, p.pagado, c.id, c.nombre, c.apellido
+                         p.motivorechazo, p.pagado, p.mediopago, p.mp_init_point, c.id, c.nombre, c.apellido
                 ORDER BY 
                 """);
         sql.append(resolverCampoOrden(filtro));
@@ -135,6 +137,8 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     p.tiempoestentrega,
                     p.motivorechazo,
                     p.pagado,
+                    p.mediopago,
+                    p.mp_init_point,
                     NULL::bigint AS cliente_id,
                     NULL::varchar AS cliente_nombre,
                     NULL::varchar AS cliente_apellido,
@@ -173,7 +177,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         sql.append("""
 
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
-                         p.motivorechazo, p.pagado, l.id, l.nombre
+                         p.motivorechazo, p.pagado, p.mediopago, p.mp_init_point, l.id, l.nombre
                 ORDER BY
                 """);
         sql.append(resolverCampoOrden(filtro));
@@ -491,6 +495,8 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 .cantidadItems(rs.getInt("cantidad_items"))
                 .motivoRechazo(rs.getString("motivorechazo"))
                 .pagado(rs.getBoolean("pagado"))
+                .medioDePago(rs.getString("mediopago"))
+                .mpInitPoint(rs.getString("mp_init_point"))
                 .build();
     }
 

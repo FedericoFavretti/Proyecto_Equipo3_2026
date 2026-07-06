@@ -3,17 +3,21 @@ package com.example.demo.Logica.Mappers;
 import com.example.demo.Logica.Clases.DetallePedido;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Plato;
-import com.example.demo.Logica.DataTypes.summary.DtClienteResumenResponse;
 import com.example.demo.Logica.DataTypes.response.DtDetallePedidoResponse;
-import com.example.demo.Logica.DataTypes.summary.DtLocalResumenResponse;
 import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
+import com.example.demo.Logica.DataTypes.summary.DtClienteResumenResponse;
+import com.example.demo.Logica.DataTypes.summary.DtLocalResumenResponse;
 import com.example.demo.Logica.DataTypes.summary.DtPlatoResumenResponse;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PedidoResponseMapper {
 
+    private static final String MEDIO_PAGO_EFECTIVO = "EFECTIVO";
+
     public DtPedidoResponse toResponse(Pedido pedido) {
+        boolean pagoPendiente = esPagoPendiente(pedido);
+
         return DtPedidoResponse.builder()
                 .id(pedido.getId())
                 .fecha(pedido.getFecha())
@@ -22,8 +26,12 @@ public class PedidoResponseMapper {
                 .domicilioEntrega(pedido.getDomicilioEntrega())
                 .medioDePago(pedido.getMedioDePago())
                 .pagoSimulado(pedido.getPagoSimulado())
+                .pagado(pedido.getPagado())
                 .estado(pedido.getEstado())
-                .mpInitPoint(pedido.getMpInitPoint()) // 👈 nuevo
+                .estadoVisible(pagoPendiente ? "Pendiente de pago" : pedido.getEstado().name())
+                .pagoPendiente(pagoPendiente)
+                .permiteReintentarPago(pagoPendiente)
+                .mpInitPoint(pedido.getMpInitPoint())
                 .local(pedido.getLocal() != null
                         ? DtLocalResumenResponse.builder()
                         .id(pedido.getLocal().getId())
@@ -38,6 +46,13 @@ public class PedidoResponseMapper {
                         .build()
                         : null)
                 .build();
+    }
+
+    private boolean esPagoPendiente(Pedido pedido) {
+        return pedido.getEstado() != null
+                && "Pendiente".equals(pedido.getEstado().name())
+                && !Boolean.TRUE.equals(pedido.getPagado())
+                && !MEDIO_PAGO_EFECTIVO.equalsIgnoreCase(pedido.getMedioDePago());
     }
 
     private DtDetallePedidoResponse toDetalleResponse(DetallePedido detalle) {
@@ -65,4 +80,3 @@ public class PedidoResponseMapper {
                 .build();
     }
 }
-

@@ -58,9 +58,22 @@ public class PedidoController implements iPedidoController {
 
     @PreAuthorize("hasRole('Cliente')")
     @PostMapping("/{idPedido}/cancelar")
-    public ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido) {
-        pedidoService.cancelarPedido(idPedido);
+    public ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido, Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        pedidoService.cancelarPedidoDeCliente(authentication.getName(), idPedido);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('Cliente')")
+    @PostMapping("/{idPedido}/reintentar-pago")
+    public ResponseEntity<DtPedidoResponse> reintentarPago(@PathVariable Long idPedido, Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Pedido pedido = pedidoService.reintentarPago(authentication.getName(), idPedido);
+        return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 
     @PreAuthorize("hasRole('Local')")

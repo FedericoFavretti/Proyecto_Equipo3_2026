@@ -63,6 +63,12 @@ public class PedidoService {
             "Debe seleccionar o escribir un motivo de rechazo antes de continuar.";
     private static final String MENSAJE_PEDIDO_NO_PENDIENTE =
             "El pedido no se encuentra en estado pendiente.";
+    private static final String MENSAJE_PEDIDO_AJENO =
+            "No tiene permisos para operar sobre un pedido de otro cliente.";
+    private static final String MENSAJE_REINTENTO_SOLO_MP_PENDIENTE =
+            "Solo se puede reintentar el pago de pedidos pendientes de Mercado Pago sin acreditar.";
+    private static final String MENSAJE_REINTENTO_SIN_DETALLES =
+            "No se pudo reintentar el pago porque el pedido no tiene detalles asociados.";
     private static final String MENSAJE_LOCAL_REQUERIDO = "Debe indicar el local del pedido.";
     private static final String MENSAJE_CLIENTE_REQUERIDO = "Debe indicar el cliente del pedido.";
     private static final String MENSAJE_FECHA_DESDE_INVALIDA =
@@ -303,6 +309,31 @@ public class PedidoService {
         notificacionPedidoService.notificarPedidoCancelado(pedido);
     }
 
+    @Transactional
+    public void cancelarPedidoDeCliente(String emailAutenticado, Long idPedido) {
+        Cliente cliente = obtenerClienteAutenticado(emailAutenticado);
+        Pedido pedido = obtenerPedidoPropio(cliente, idPedido);
+        cancelarPedidoInterno(pedido);
+    }
+
+    @Transactional
+    public Pedido reintentarPago(String emailAutenticado, Long idPedido) {
+        Cliente cliente = obtenerClienteAutenticado(emailAutenticado);
+        Pedido pedido = obtenerPedidoPropio(cliente, idPedido);
+
+        if (!esPedidoPendienteDePagoMercadoPago(pedido)) {
+            throw new BusinessRuleException(MENSAJE_REINTENTO_SOLO_MP_PENDIENTE);
+        }
+
+        List<DetallePedido> detalles = detallePedidoRepositorio.buscarPorPedido(idPedido);
+        if (detalles == null || detalles.isEmpty()) {
+            throw new BusinessRuleException(MENSAJE_REINTENTO_SIN_DETALLES);
+        }
+
+        crearPreferenciaPago(pedido, detalles);
+        return pedido;
+    }
+
     @Transactional(readOnly = true)
     public List<DtPedidoListadoResponse> listarPedidos(Long idLocal, DtPedidoListadoFiltro filtro) {
         localRepositorio.buscarPorId(idLocal)
@@ -513,5 +544,43 @@ public class PedidoService {
                 || filtro.getFechaDesde() != null
                 || filtro.getFechaHasta() != null
                 || filtro.getIdLocal() != null);
+    }
+
+    private Cliente obtenerClienteAutenticado(String emailAutenticado) {
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+        if (!(usuario instanceof Cliente cliente)) {
+            throw new IllegalStateException("Solo los clientes pueden operar sobre sus propios pedidos.");
+        }
+
+        return cliente;
+    }
+
+    private Pedido obtenerPedidoPropio(Cliente cliente, Long idPedido) {
+        Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", idPedido));
+
+        if (pedido.getCliente() == null || !cliente.getId().equals(pedido.getCliente().getId())) {
+            throw new BusinessRuleException(MENSAJE_PEDIDO_AJENO);
+        }
+
+        return pedido;
+    }
+
+    private void cancelarPedidoInterno(Pedido pedido) {
+        if (!pedido.getEstado().equals(EstadoPedido.Pendiente)) {
+            throw new BusinessRuleException(MENSAJE_PEDIDO_NO_PENDIENTE);
+        }
+        pedido.setEstado(EstadoPedido.Cancelado);
+        pedidoRepositorio.actualizar(pedido);
+        notificacionPedidoService.notificarPedidoCancelado(pedido);
+    }
+
+    private boolean esPedidoPendienteDePagoMercadoPago(Pedido pedido) {
+        return pedido.getEstado() == EstadoPedido.Pendiente
+                && !Boolean.TRUE.equals(pedido.getPagado())
+                && pedido.getMedioDePago() != null
+                && !MEDIO_PAGO_EFECTIVO.equalsIgnoreCase(pedido.getMedioDePago());
     }
 }
