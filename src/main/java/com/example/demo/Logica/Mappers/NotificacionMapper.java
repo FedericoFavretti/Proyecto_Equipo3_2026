@@ -23,8 +23,8 @@ public class NotificacionMapper {
                 .canal(dtNotificacion.getCanal())
                 .leida(dtNotificacion.getLeida())
                 .fecha(dtNotificacion.getFecha())
-                .reclamo(reclamoMapper.mapearReclamoDeDt(dtNotificacion.getDtReclamo()))
-                .pedido(pedidoMapper.mapearPedidoDeDt(dtNotificacion.getDtPedido()))
+                .reclamo(dtNotificacion.getDtReclamo() != null ? reclamoMapper.mapearReclamoDeDt(dtNotificacion.getDtReclamo()) : null)
+                .pedido(dtNotificacion.getDtPedido() != null ? pedidoMapper.mapearPedidoDeDt(dtNotificacion.getDtPedido()) : null)
                 .destinatarioTipo(dtNotificacion.getDestinatarioTipo())
                 .destinatarioId(dtNotificacion.getDestinatarioId())
                 .build();
@@ -38,8 +38,8 @@ public class NotificacionMapper {
                 .canal(notificacion.getCanal())
                 .leida(notificacion.getLeida())
                 .fecha(notificacion.getFecha())
-                .dtReclamo(reclamoMapper.mapearDtReclamoDeClase(notificacion.getReclamo()))
-                .dtPedido(pedidoMapper.mapearDtPedidoDeClase(notificacion.getPedido()))
+                .dtReclamo(notificacion.getReclamo() != null ? reclamoMapper.mapearDtReclamoDeClase(notificacion.getReclamo()) : null)
+                .dtPedido(notificacion.getPedido() != null ? pedidoMapper.mapearDtPedidoDeClase(notificacion.getPedido()) : null)
                 .destinatarioTipo(notificacion.getDestinatarioTipo())
                 .destinatarioId(notificacion.getDestinatarioId())
                 .build();
