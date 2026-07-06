@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Cliente;
+import com.example.demo.Logica.Clases.TokenActivacionCuenta;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
 import com.example.demo.Logica.DataTypes.request.DtGoogleAuthRequest;
@@ -25,14 +26,19 @@ import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
+import com.example.demo.Persistencia.Repositorios.TokenActivacionCuentaRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Utils.TokenSeguroUtils;
 import com.example.demo.jwt.JwtService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +70,7 @@ public class ClienteService {
             "No existe una cuenta de cliente asociada al correo %s. Regístrese con Google para continuar.";
     private static final String MENSAJE_DATOS_FALTANTES =
             "Los siguientes campos son requeridos: %s. Por favor, complételos para finalizar el registro.";
+    private static final String RUTA_ACTIVACION_CUENTA = "/activar-cuenta";
 
     @Value("${app.account.activation-frontend-base-url}")
     private String activationFrontendBaseUrl;
@@ -84,13 +91,13 @@ public class ClienteService {
     private final LocalMapper localMapper;
     private final TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio;
 
-
     public ClienteService(ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio,
                           PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio,
                           EmailService emailService, PasswordEncoder passwordEncoder, ClienteMapper clienteMapper,
                           PlatoMapper platoMapper, PromocionMapper promocionMapper, LocalRepositorio localRepositorio,
                           LocalMapper localMapper, JwtService jwtService, UserDetailsService userDetailsService,
-                          GoogleIdentityService googleIdentityService) {
+                          GoogleIdentityService googleIdentityService,
+                          TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio) {
         this.clienteRepositorio = clienteRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.promocionRepositorio = promocionRepositorio;
@@ -105,6 +112,7 @@ public class ClienteService {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.googleIdentityService = googleIdentityService;
+        this.tokenActivacionCuentaRepositorio = tokenActivacionCuentaRepositorio;
     }
 
     @Transactional
@@ -130,6 +138,7 @@ public class ClienteService {
         cliente.setPasswd(passwdCodificada);
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);
+
         String tokenPlano = TokenSeguroUtils.generar();
         TokenActivacionCuenta tokenActivacion = TokenActivacionCuenta.builder()
                 .idUsuario(cliente.getId())
@@ -157,7 +166,9 @@ public class ClienteService {
     public DtGoogleRegistroPendienteResponse iniciarRegistroConGoogle(DtGoogleAuthRequest request) {
         DtGoogleUserInfo datosGoogle = obtenerDatosGoogle(request);
         if (usuarioRepositorio.existeCorreo(datosGoogle.getEmail())) {
-            throw new ResourceConflictException(String.format(MENSAJE_CORREO_GOOGLE_EXISTENTE, datosGoogle.getEmail()));
+            throw new ResourceConflictException(
+                    String.format(MENSAJE_CORREO_GOOGLE_EXISTENTE, datosGoogle.getEmail())
+            );
         }
 
         return DtGoogleRegistroPendienteResponse.builder()
@@ -179,7 +190,9 @@ public class ClienteService {
             throw new BusinessRuleException(MENSAJE_TERMINOS_REQUERIDOS);
         }
         if (usuarioRepositorio.existeCorreo(datosGoogle.getEmail())) {
-            throw new ResourceConflictException(String.format(MENSAJE_CORREO_GOOGLE_EXISTENTE, datosGoogle.getEmail()));
+            throw new ResourceConflictException(
+                    String.format(MENSAJE_CORREO_GOOGLE_EXISTENTE, datosGoogle.getEmail())
+            );
         }
         if (clienteRepositorio.existeDocumento(request.getDocumento().trim())) {
             throw new ResourceConflictException(MENSAJE_DOCUMENTO_DUPLICADO);
