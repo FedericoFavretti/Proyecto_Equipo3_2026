@@ -55,8 +55,8 @@ public class ReclamoService {
         dtReclamo.setMontoReintegro(pedido.getTotal());
         dtReclamo.setFecha(LocalDateTime.now());
         Reclamo reclamo = reclamoMapper.mapearReclamoDeDt(dtReclamo);
-        notificarReclamoService.notificarReclamo(reclamo);
         reclamoRepositorio.guardar(reclamo);
+        notificarReclamoService.notificarReclamo(reclamo);
     }
 
     @Transactional
