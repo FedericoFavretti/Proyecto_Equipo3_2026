@@ -37,8 +37,8 @@ public class UsuarioController implements iUsuarioController {
     }
 
     @PostMapping("/activar")
-    public ResponseEntity<String> activarCuenta(@RequestParam String email) {
-        usuarioService.activarCuenta(email);
+    public ResponseEntity<String> activarCuenta(@RequestParam String token) {
+        usuarioService.activarCuenta(token);
         return ResponseEntity.ok("Cuenta activada correctamente.");
     }
 

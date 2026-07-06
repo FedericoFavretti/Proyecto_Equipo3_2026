@@ -24,12 +24,11 @@ public class EmailService {
         this.mailSenderProvider = mailSenderProvider;
     }
 
-    public void enviarMailDeActivacion(String email) {
+    public void enviarMailDeActivacion(String email, String link) {
         enviarCorreo(
                 email,
                 "Activá tu cuenta en Foodly",
-                "Hacé clic en el siguiente enlace para activar tu cuenta: "
-                        + activarCuenta + email
+                "Hacé clic en el siguiente enlace para activar tu cuenta (válido por 24hs): " + link
         );
     }
 

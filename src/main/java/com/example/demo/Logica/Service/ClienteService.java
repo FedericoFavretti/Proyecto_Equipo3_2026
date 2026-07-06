@@ -26,6 +26,11 @@ import com.example.demo.Logica.DataTypes.request.DtGoogleAuthRequest;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
 import com.example.demo.jwt.JwtService;
+import com.example.demo.Logica.Clases.TokenActivacionCuenta;
+import com.example.demo.Persistencia.Repositorios.TokenActivacionCuentaRepositorio;
+import com.example.demo.Utils.TokenSeguroUtils;
+import org.springframework.web.util.UriComponentsBuilder;
+import java.time.LocalDateTime;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -62,9 +67,13 @@ public class ClienteService {
     private static final String MENSAJE_DOCUMENTO_DUPLICADO =
             "El documento ya está asociado a una cuenta.";
     private static final String MENSAJE_FILTRO_NULO = "El filtro no puede ser nulo.";
+    private static final String RUTA_ACTIVACION_CUENTA = "/activar-cuenta";
 
     @Value("${google.client.id}")
     private String googleClientId;
+
+    @Value("${app.account.activation-frontend-base-url}")
+    private String activationFrontendBaseUrl;
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -79,13 +88,16 @@ public class ClienteService {
     private final PromocionMapper promocionMapper;
     private final LocalRepositorio localRepositorio;
     private final LocalMapper localMapper;
+    private final TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio;
+
 
 
     public ClienteService(ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio,
                           PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio,
                           EmailService emailService, PasswordEncoder passwordEncoder, ClienteMapper clienteMapper,
                           PlatoMapper platoMapper, PromocionMapper promocionMapper, LocalRepositorio localRepositorio,
-                          LocalMapper localMapper, JwtService jwtService, UserDetailsService userDetailsService) {
+                          LocalMapper localMapper, JwtService jwtService, UserDetailsService userDetailsService,
+                          TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio) {
         this.clienteRepositorio = clienteRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.promocionRepositorio = promocionRepositorio;
@@ -99,6 +111,7 @@ public class ClienteService {
         this.localMapper = localMapper;
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.tokenActivacionCuentaRepositorio = tokenActivacionCuentaRepositorio;
     }
 
 
@@ -125,7 +138,26 @@ public class ClienteService {
         cliente.setPasswd(passwdCodificada);
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);
-        emailService.enviarMailDeActivacion(cliente.getEmail());
+        String tokenPlano = TokenSeguroUtils.generar();
+        TokenActivacionCuenta tokenActivacion = TokenActivacionCuenta.builder()
+                .idUsuario(cliente.getId())
+                .tokenHash(TokenSeguroUtils.hashear(tokenPlano))
+                .fechaCreacion(LocalDateTime.now())
+                .fechaExpiracion(LocalDateTime.now().plusHours(24))
+                .fechaConsumo(null)
+                .usado(false)
+                .build();
+        tokenActivacionCuentaRepositorio.guardar(tokenActivacion);
+
+        String linkActivacion = UriComponentsBuilder.fromUriString(activationFrontendBaseUrl)
+                .replacePath(RUTA_ACTIVACION_CUENTA)
+                .replaceQuery(null)
+                .queryParam("token", tokenPlano)
+                .build()
+                .encode()
+                .toUriString();
+
+        emailService.enviarMailDeActivacion(cliente.getEmail(), linkActivacion);
         return cliente;
     }
 
