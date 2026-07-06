@@ -70,6 +70,13 @@ public class CalificacionController implements iCalificacionController {
     }
 
     @PreAuthorize("hasRole('Cliente')")
+    @GetMapping("/locales/{idLocal}/detalle")
+    public ResponseEntity<List<DtCalificacionDetalleClienteResponse>> consultarCalificacionDetalleDeLocalPorId(
+            @PathVariable("idLocal") Long idLocal) {
+        return ResponseEntity.ok(calificacionService.consultarCalificacionesDetalladasDelLocalPorId(idLocal));
+    }
+
+    @PreAuthorize("hasRole('Cliente')")
     @GetMapping("/locales/{idLocal}/mi-calificacion")
     public ResponseEntity<DtMiCalificacionLocalResponse> consultarMiCalificacionDeLocal(
             @PathVariable("idLocal") Long idLocal,

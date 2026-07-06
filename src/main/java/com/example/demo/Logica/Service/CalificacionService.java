@@ -135,6 +135,26 @@ public class CalificacionService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<DtCalificacionDetalleClienteResponse> consultarCalificacionesDetalladasDelLocalPorId(Long idLocal) {
+        Local local = localRepositorio.buscarPorId(idLocal)
+                .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
+
+        List<Calificacion> calificaciones = calificacionRepositorio.listarPorLocal(local.getId()).stream()
+                .filter(c -> c.getTipo() == TipoCalificacion.Cliente_a_local)
+                .toList();
+
+        return calificaciones.stream()
+                .map(c -> DtCalificacionDetalleClienteResponse.builder()
+                        .idCliente(c.getCliente() != null ? c.getCliente().getId() : null)
+                        .nombreCliente(nombreCompletoCliente(c.getCliente()))
+                        .puntaje(c.getPuntaje())
+                        .comentario(c.getComentario())
+                        .fecha(c.getFecha())
+                        .build())
+                .toList();
+    }
+
     private String nombreCompletoCliente(Cliente cliente) {
         if (cliente == null) {
             return "Cliente";

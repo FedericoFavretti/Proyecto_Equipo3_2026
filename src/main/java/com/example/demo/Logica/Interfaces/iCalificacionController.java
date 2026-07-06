@@ -20,4 +20,5 @@ public interface iCalificacionController {
     ResponseEntity<DtMiCalificacionLocalResponse> consultarMiCalificacionDeLocal(@PathVariable("idLocal") Long idLocal, Authentication authentication);
     ResponseEntity<List<DtCalificacionDetalleResponse>> consultarCalificacionDetalle(@PathVariable("idCliente") Long idCliente);
     ResponseEntity<List<DtCalificacionDetalleClienteResponse>> consultarCalificacionDetalleDelLocal(Authentication authentication);
+    ResponseEntity<List<DtCalificacionDetalleClienteResponse>> consultarCalificacionDetalleDeLocalPorId(@PathVariable("idLocal") Long idLocal);
 }
