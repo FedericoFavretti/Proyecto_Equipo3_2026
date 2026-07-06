@@ -1,5 +1,6 @@
 
 package com.example.demo.jwt;
+import com.example.demo.Logica.DataTypes.shared.DtGoogleUserInfo;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -117,6 +118,25 @@ public class JwtService {
                 .compact();
     }
 
+    public String generarTokenRegistroGoogle(DtGoogleUserInfo datosUsuario) {
+        Date issuedAt = new Date();
+        Date expiration = new Date(issuedAt.getTime() + 15 * 60 * 1000);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tipo", "REGISTRO_GOOGLE_PENDIENTE");
+        claims.put("nombre", datosUsuario.getNombre());
+        claims.put("apellido", datosUsuario.getApellido());
+        claims.put("foto", datosUsuario.getFoto());
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(datosUsuario.getEmail())
+                .issuedAt(issuedAt)
+                .expiration(expiration)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
     public String validarYObtenerCorreoRecuperacion(String token) {
         Claims claims;
         try {
@@ -132,6 +152,28 @@ public class JwtService {
         }
 
         return claims.getSubject();
+    }
+
+    public DtGoogleUserInfo validarYObtenerDatosRegistroGoogle(String token) {
+        Claims claims;
+        try {
+            claims = extractAllClaims(token);
+        } catch (ExpiredJwtException e) {
+            throw new IllegalArgumentException("El registro con Google expiró. Por favor, inicie nuevamente.");
+        } catch (JwtException e) {
+            throw new IllegalArgumentException("Token de registro Google inválido.");
+        }
+
+        if (!"REGISTRO_GOOGLE_PENDIENTE".equals(claims.get("tipo"))) {
+            throw new IllegalArgumentException("Token de registro Google inválido.");
+        }
+
+        return DtGoogleUserInfo.builder()
+                .email(claims.getSubject())
+                .nombre((String) claims.get("nombre"))
+                .apellido((String) claims.get("apellido"))
+                .foto((String) claims.get("foto"))
+                .build();
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails, LocalDateTime sesionesInvalidadasDesde) {
