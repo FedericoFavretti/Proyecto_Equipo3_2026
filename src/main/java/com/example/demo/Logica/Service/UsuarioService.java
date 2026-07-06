@@ -7,10 +7,13 @@ import com.example.demo.Logica.DataTypes.response.DtLoginResponseAdmin;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseLocal;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtUsuario;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
+import com.example.demo.Logica.Mappers.ClienteMapper;
+import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Persistencia.Repositorios.*;
 import com.example.demo.jwt.JwtService;
 import org.slf4j.Logger;
@@ -105,11 +108,13 @@ public class UsuarioService {
     private final AdministradorRepositorio administradorRepositorio;
     private final CalificacionRepositorio calificacionRepositorio;
     private final SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio;
+    private final ClienteMapper clienteMapper;
+    private final LocalMapper localMapper;
 
     @Autowired
     private TokenRecuperacionPasswdRepositorio tokenRecuperacionPasswdRepositorio;
 
-    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio, CalificacionRepositorio calificacionRepositorio, SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio) {
+    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio, CalificacionRepositorio calificacionRepositorio, SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio, ClienteMapper clienteMapper, LocalMapper localMapper) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
@@ -126,6 +131,8 @@ public class UsuarioService {
         this.administradorRepositorio = administradorRepositorio;
         this.calificacionRepositorio = calificacionRepositorio;
         this.solicitudCambioCorreoRepositorio = solicitudCambioCorreoRepositorio;
+        this.clienteMapper = clienteMapper;
+        this.localMapper = localMapper;
     }
 
     @Transactional
@@ -354,7 +361,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void editarDatosDeCuentaDeUsuario(String emailAutenticado, String authHeader, Map<String, String> datos, MultipartFile foto) {
+    public DtUsuario editarDatosDeCuentaDeUsuario(String emailAutenticado, String authHeader, Map<String, String> datos, MultipartFile foto) {
         if (emailAutenticado == null || emailAutenticado.isBlank()) {
             throw new AuthenticationCredentialsNotFoundException(MENSAJE_USUARIO_NO_AUTENTICADO);
         }
@@ -384,8 +391,14 @@ public class UsuarioService {
         if (credencialesActualizadas) {
             invalidarSesiones(usuario);
         }
-
         usuarioRepositorio.actualizar(usuario);
+        if (usuario instanceof Cliente cliente) {
+           return clienteMapper.mapearDtClienteDeClase(cliente);
+        } else if (usuario instanceof Local local) {
+            return localMapper.mapearDtLocalDeClase(local);
+        }else{
+            throw new ResourceNotFoundException("El tipo de usario es incorrecto");
+        }
     }
 
     @Transactional

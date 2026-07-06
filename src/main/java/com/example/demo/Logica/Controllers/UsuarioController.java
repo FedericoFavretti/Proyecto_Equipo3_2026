@@ -3,6 +3,7 @@ package com.example.demo.Logica.Controllers;
 import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
+import com.example.demo.Logica.DataTypes.shared.DtUsuario;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
 import jakarta.validation.Valid;
@@ -52,7 +53,7 @@ public class UsuarioController implements iUsuarioController {
 
     @PreAuthorize("isAuthenticated()")
     @PutMapping(value = "/perfil", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> editarDatosDeCuentaDeUsuario(
+    public ResponseEntity<DtUsuario> editarDatosDeCuentaDeUsuario(
             @RequestParam Map<String, String> datos,
             @RequestPart(value = "foto", required = false) MultipartFile foto,
             @RequestHeader("Authorization") String authHeader,
@@ -60,8 +61,8 @@ public class UsuarioController implements iUsuarioController {
         if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        usuarioService.editarDatosDeCuentaDeUsuario(authentication.getName(), authHeader, datos, foto);
-        return ResponseEntity.ok().build();
+
+        return ResponseEntity.ok(usuarioService.editarDatosDeCuentaDeUsuario(authentication.getName(), authHeader, datos, foto));
     }
 
     @PreAuthorize("isAuthenticated()")
