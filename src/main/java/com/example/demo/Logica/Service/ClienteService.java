@@ -1,55 +1,43 @@
 package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Cliente;
-import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
-import com.example.demo.Logica.DataTypes.shared.DtLocal;
-import com.example.demo.Logica.DataTypes.shared.DtPlato;
+import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
+import com.example.demo.Logica.DataTypes.request.DtGoogleAuthRequest;
+import com.example.demo.Logica.DataTypes.request.DtGoogleRegistroCompletarRequest;
 import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
+import com.example.demo.Logica.DataTypes.response.DtGoogleRegistroPendienteResponse;
+import com.example.demo.Logica.DataTypes.response.DtLocalBusquedaResponse;
+import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
+import com.example.demo.Logica.DataTypes.shared.DtCliente;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.DataTypes.shared.DtGoogleUserInfo;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Mappers.ClienteMapper;
+import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Logica.Mappers.PromocionMapper;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
+import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
-import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
-import com.example.demo.Logica.DataTypes.response.DtLocalBusquedaResponse;
-import com.example.demo.Logica.Mappers.LocalMapper;
-import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
-import com.example.demo.Logica.Clases.Calificacion;
-import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;
-import com.example.demo.Logica.DataTypes.request.DtGoogleAuthRequest;
-import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
-import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
+import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.jwt.JwtService;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.URI;
-import java.util.Collections;
-import java.util.Optional;
+
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ClienteService {
@@ -62,12 +50,24 @@ public class ClienteService {
     private static final String MENSAJE_DOCUMENTO_DUPLICADO =
             "El documento ya está asociado a una cuenta.";
     private static final String MENSAJE_FILTRO_NULO = "El filtro no puede ser nulo.";
-
-    @Value("${google.client.id}")
-    private String googleClientId;
+    private static final String MENSAJE_SIN_RESULTADOS =
+            "No se encontraron platos o promociones que coincidan con su búsqueda.";
+    private static final String MENSAJE_GOOGLE_TOKEN_REQUERIDO =
+            "La autenticación con Google requiere un token válido.";
+    private static final String MENSAJE_TOKEN_REGISTRO_REQUERIDO =
+            "El token de registro Google es obligatorio.";
+    private static final String MENSAJE_TERMINOS_REQUERIDOS =
+            "Debe aceptar términos y condiciones para finalizar el registro.";
+    private static final String MENSAJE_CORREO_GOOGLE_EXISTENTE =
+            "El correo %s ya está asociado a una cuenta existente. ¿Desea iniciar sesión en su lugar?";
+    private static final String MENSAJE_LOGIN_GOOGLE_SIN_CUENTA =
+            "No existe una cuenta de cliente asociada al correo %s. Regístrese con Google para continuar.";
+    private static final String MENSAJE_DATOS_FALTANTES =
+            "Los siguientes campos son requeridos: %s. Por favor, complételos para finalizar el registro.";
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final GoogleIdentityService googleIdentityService;
     private final ClienteRepositorio clienteRepositorio;
     private final PlatoRepositorio platoRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
@@ -80,12 +80,12 @@ public class ClienteService {
     private final LocalRepositorio localRepositorio;
     private final LocalMapper localMapper;
 
-
     public ClienteService(ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio,
                           PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio,
                           EmailService emailService, PasswordEncoder passwordEncoder, ClienteMapper clienteMapper,
                           PlatoMapper platoMapper, PromocionMapper promocionMapper, LocalRepositorio localRepositorio,
-                          LocalMapper localMapper, JwtService jwtService, UserDetailsService userDetailsService) {
+                          LocalMapper localMapper, JwtService jwtService, UserDetailsService userDetailsService,
+                          GoogleIdentityService googleIdentityService) {
         this.clienteRepositorio = clienteRepositorio;
         this.platoRepositorio = platoRepositorio;
         this.promocionRepositorio = promocionRepositorio;
@@ -99,8 +99,8 @@ public class ClienteService {
         this.localMapper = localMapper;
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.googleIdentityService = googleIdentityService;
     }
-
 
     @Transactional
     public Cliente registrarUsuario(DtCliente dtCliente) {
@@ -129,10 +129,65 @@ public class ClienteService {
         return cliente;
     }
 
+    @Transactional
+    public DtGoogleRegistroPendienteResponse iniciarRegistroConGoogle(DtGoogleAuthRequest request) {
+        DtGoogleUserInfo datosGoogle = obtenerDatosGoogle(request);
+        if (usuarioRepositorio.existeCorreo(datosGoogle.getEmail())) {
+            throw new ResourceConflictException(String.format(MENSAJE_CORREO_GOOGLE_EXISTENTE, datosGoogle.getEmail()));
+        }
+
+        return DtGoogleRegistroPendienteResponse.builder()
+                .tokenRegistro(jwtService.generarTokenRegistroGoogle(datosGoogle))
+                .email(datosGoogle.getEmail())
+                .nombre(datosGoogle.getNombre())
+                .apellido(datosGoogle.getApellido())
+                .foto(datosGoogle.getFoto())
+                .build();
+    }
 
     @Transactional
-    public Cliente registrarUsuarioGoogle(DtCliente dtCliente){
-        return null;
+    public DtLoginResponseCliente completarRegistroConGoogle(DtGoogleRegistroCompletarRequest request) {
+        validarSolicitudCompletarRegistro(request);
+        DtGoogleUserInfo datosGoogle = jwtService.validarYObtenerDatosRegistroGoogle(request.getTokenRegistro());
+        validarDatosComplementarios(request);
+
+        if (!Boolean.TRUE.equals(request.getAceptaTerminos())) {
+            throw new BusinessRuleException(MENSAJE_TERMINOS_REQUERIDOS);
+        }
+        if (usuarioRepositorio.existeCorreo(datosGoogle.getEmail())) {
+            throw new ResourceConflictException(String.format(MENSAJE_CORREO_GOOGLE_EXISTENTE, datosGoogle.getEmail()));
+        }
+        if (clienteRepositorio.existeDocumento(request.getDocumento().trim())) {
+            throw new ResourceConflictException(MENSAJE_DOCUMENTO_DUPLICADO);
+        }
+
+        Cliente cliente = Cliente.builder()
+                .email(datosGoogle.getEmail())
+                .passwd(passwordEncoder.encode("GOOGLEAUTH-" + UUID.randomUUID()))
+                .foto(request.getFoto())
+                .estado(EstadoCuenta.Activo)
+                .tipo(TIPO_USUARIO_CLIENTE)
+                .documento(request.getDocumento().trim())
+                .nombre(datosGoogle.getNombre())
+                .apellido(datosGoogle.getApellido())
+                .direccion(request.getDireccion())
+                .calificacionGlobal(0.0)
+                .activo(true)
+                .build();
+
+        usuarioRepositorio.guardar(cliente);
+        clienteRepositorio.guardar(cliente);
+
+        return construirRespuestaLogin(cliente);
+    }
+
+    @Transactional
+    public DtLoginResponseCliente loginConGoogle(DtGoogleAuthRequest request) {
+        DtGoogleUserInfo datosGoogle = obtenerDatosGoogle(request);
+        Cliente cliente = clienteRepositorio.buscarPorEmail(datosGoogle.getEmail())
+                .orElseThrow(() -> new BusinessRuleException(
+                        String.format(MENSAJE_LOGIN_GOOGLE_SIN_CUENTA, datosGoogle.getEmail())));
+        return construirRespuestaLogin(cliente);
     }
 
     @Transactional
@@ -151,6 +206,9 @@ public class ClienteService {
                 .map(promocionMapper::mapearDtPromocionDeClase)
                 .collect(Collectors.toList());
 
+        if (platos.isEmpty() && promociones.isEmpty()) {
+            throw new IllegalArgumentException(MENSAJE_SIN_RESULTADOS);
+        }
 
         Map<Long, DtPromocion> promoPorPlato = promociones.stream()
                 .collect(Collectors.toMap(
@@ -185,6 +243,72 @@ public class ClienteService {
                 .toList();
     }
 
+    private DtGoogleUserInfo obtenerDatosGoogle(DtGoogleAuthRequest request) {
+        if (request == null || request.getIdToken() == null || request.getIdToken().isBlank()) {
+            throw new BusinessRuleException(MENSAJE_GOOGLE_TOKEN_REQUERIDO);
+        }
+        return googleIdentityService.obtenerDatosUsuario(request.getIdToken());
+    }
+
+    private void validarSolicitudCompletarRegistro(DtGoogleRegistroCompletarRequest request) {
+        if (request == null || request.getTokenRegistro() == null || request.getTokenRegistro().isBlank()) {
+            throw new BusinessRuleException(MENSAJE_TOKEN_REGISTRO_REQUERIDO);
+        }
+    }
+
+    private void validarDatosComplementarios(DtGoogleRegistroCompletarRequest request) {
+        List<String> faltantes = new ArrayList<>();
+
+        if (request.getDocumento() == null || request.getDocumento().isBlank()) {
+            faltantes.add("documento");
+        }
+
+        DtDireccion direccion = request.getDireccion();
+        if (direccion == null) {
+            faltantes.add("dirección");
+        } else {
+            if (direccion.getCalle() == null || direccion.getCalle().isBlank()) {
+                faltantes.add("dirección.calle");
+            }
+            if (direccion.getNumero() == null || direccion.getNumero().isBlank()) {
+                faltantes.add("dirección.numero");
+            }
+            if (direccion.getCiudad() == null || direccion.getCiudad().isBlank()) {
+                faltantes.add("dirección.ciudad");
+            }
+            if (direccion.getCodigoPostal() == null || direccion.getCodigoPostal().isBlank()) {
+                faltantes.add("dirección.codigoPostal");
+            }
+        }
+
+        if (request.getFoto() == null || request.getFoto().isBlank()) {
+            faltantes.add("foto de perfil");
+        }
+
+        if (!faltantes.isEmpty()) {
+            throw new BusinessRuleException(String.format(MENSAJE_DATOS_FALTANTES, String.join(", ", faltantes)));
+        }
+    }
+
+    private DtLoginResponseCliente construirRespuestaLogin(Cliente cliente) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(cliente.getEmail());
+        String token = jwtService.generateToken(userDetails);
+        if (cliente.getCalificacionGlobal() == null) {
+            cliente.setCalificacionGlobal(0.0);
+        }
+        return DtLoginResponseCliente.builder()
+                .id(cliente.getId())
+                .token(token)
+                .tipo(cliente.getTipo())
+                .email(cliente.getEmail())
+                .nombre(cliente.getNombre())
+                .apellido(cliente.getApellido())
+                .direccion(cliente.getDireccion())
+                .foto(cliente.getFoto())
+                .calificacionGlobal(cliente.getCalificacionGlobal())
+                .build();
+    }
+
     private void validarFiltroLocal(DtFiltroLocal filtro) {
         if (filtro == null) {
             return;
@@ -208,84 +332,6 @@ public class ClienteService {
                 throw new IllegalArgumentException("La dirección de orden no es válida.");
             }
         }
-    }
-
-    @Transactional
-    public DtLoginResponse registrarOLoguearConGoogle(DtGoogleAuthRequest request) {
-        String email, nombre, apellido, foto;
-        try {
-            String url = "https://www.googleapis.com/oauth2/v3/userinfo";
-            HttpClient httpClient = HttpClient.newHttpClient();
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Authorization", "Bearer " + request.getIdToken())
-                    .GET()
-                    .build();
-            HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            if (httpResponse.statusCode() != 200) {
-                throw new BusinessRuleException("Token de Google inválido.");
-            }
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode json = mapper.readTree(httpResponse.body());
-            email = json.get("email").asText();
-            nombre = json.has("given_name") ? json.get("given_name").asText() : "Usuario";
-            apellido = json.has("family_name") ? json.get("family_name").asText() : "";
-            foto = json.has("picture") ? json.get("picture").asText() : null;
-        } catch (BusinessRuleException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new BusinessRuleException("Error al verificar el token de Google.");
-        }
-
-        if (usuarioRepositorio.existeCorreo(email)) {
-            if (Boolean.TRUE.equals(request.getEsRegistro())) {
-                throw new BusinessRuleException("Ya existe una cuenta registrada con este email. Iniciá sesión en su lugar.");
-            }
-            Cliente clienteExistente = clienteRepositorio.buscarPorEmail(email)
-                    .orElseThrow(() -> new BusinessRuleException("La cuenta existe pero no es de tipo cliente."));
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            String token = jwtService.generateToken(userDetails);
-            return DtLoginResponseCliente.builder()
-                    .id(clienteExistente.getId())
-                    .token(token)
-                    .tipo(clienteExistente.getTipo())
-                    .email(clienteExistente.getEmail())
-                    .nombre(clienteExistente.getNombre())
-                    .apellido(clienteExistente.getApellido())
-                    .direccion(clienteExistente.getDireccion())
-                    .foto(clienteExistente.getFoto())
-                    .calificacionGlobal(clienteExistente.getCalificacionGlobal())
-                    .build();
-        }
-
-        Cliente cliente = new Cliente();
-        cliente.setEmail(email);
-        cliente.setNombre(nombre);
-        cliente.setApellido(apellido);
-        cliente.setFoto(foto);
-        cliente.setDocumento(request.getDocumento() != null ?
-                request.getDocumento() : "GOOG" + System.currentTimeMillis());
-        cliente.setDireccion(request.getDireccion());
-        cliente.setEstado(EstadoCuenta.Activo);
-        cliente.setActivo(true);
-        cliente.setTipo(TIPO_USUARIO_CLIENTE);
-        cliente.setPasswd(passwordEncoder.encode("GOOGLEAUTH" + System.currentTimeMillis()));
-        usuarioRepositorio.guardar(cliente);
-        clienteRepositorio.guardar(cliente);
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-        String token = jwtService.generateToken(userDetails);
-        return DtLoginResponseCliente.builder()
-                .id(cliente.getId())
-                .token(token)
-                .tipo(cliente.getTipo())
-                .email(cliente.getEmail())
-                .nombre(cliente.getNombre())
-                .apellido(cliente.getApellido())
-                .direccion(cliente.getDireccion())
-                .foto(cliente.getFoto())
-                .calificacionGlobal(cliente.getCalificacionGlobal())
-                .build();
     }
 
     private boolean cumpleRequisitosPasswd(String passwd) {
