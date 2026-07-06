@@ -14,8 +14,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
-    @Value("${app.account.activation-url}")
-    private String activarCuenta;
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
