@@ -8,7 +8,10 @@ import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -42,14 +45,22 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
 
     @Override
     public void guardar(Reclamo reclamo) {
-        jdbcTemplate.update("INSERT INTO Reclamo (motivo, tipoCompensacion, montoReintegro, fecha, idPedido, estado) VALUES (?, ?, ?, ?, ?, ?)",
-                reclamo.getMotivo(),
-                reclamo.getTipoCompensacion(),
-                reclamo.getMontoReintegro(),
-                reclamo.getFecha(),
-                reclamo.getPedido().getId(),
-                reclamo.getEstado().name()
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO Reclamo (motivo, tipoCompensacion, montoReintegro, fecha, idPedido, estado) VALUES (?, ?, ?, ?, ?, ?)",
+                    new String[]{"id"}
+            );
+            ps.setString(1, reclamo.getMotivo());
+            ps.setString(2, reclamo.getTipoCompensacion());
+            ps.setDouble(3, reclamo.getMontoReintegro());
+            ps.setTimestamp(4, java.sql.Timestamp.valueOf(reclamo.getFecha()));
+            ps.setLong(5, reclamo.getPedido().getId());
+            ps.setString(6, reclamo.getEstado().name());
+            return ps;
+        }, keyHolder);
+
+        reclamo.setId(keyHolder.getKey().longValue());
     }
 
     @Override
