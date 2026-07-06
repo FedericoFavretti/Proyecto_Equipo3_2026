@@ -28,4 +28,6 @@ public class PedidoListadoView {
     private Integer cantidadItems;
     private String motivoRechazo;
     private Boolean pagado;
+    private String medioDePago;
+    private String mpInitPoint;
 }

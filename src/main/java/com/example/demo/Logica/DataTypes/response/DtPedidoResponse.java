@@ -27,6 +27,9 @@ public class DtPedidoResponse {
     private Boolean pagoSimulado;
     private Boolean pagado;
     private EstadoPedido estado;
+    private String estadoVisible;
+    private Boolean pagoPendiente;
+    private Boolean permiteReintentarPago;
     private DtLocalResumenResponse local;
     private DtClienteResumenResponse cliente;
     private List<DtDetallePedidoResponse> detalles;

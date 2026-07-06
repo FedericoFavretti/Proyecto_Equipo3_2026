@@ -17,7 +17,8 @@ public interface iPedidoController {
     ResponseEntity<DtPedidoResponse> confirmarPedido(@PathVariable Long idPedido, @RequestBody DtConfirmarPedidoRequest request);
     ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido, @RequestBody DtRechazarPedidoRequest request);
     ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles);
-    ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido);
+    ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido, Authentication authentication);
+    ResponseEntity<DtPedidoResponse> reintentarPago(@PathVariable Long idPedido, Authentication authentication);
     ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro);
     ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(Authentication authentication, DtPedidoListadoFiltro dtPedidoListadoFiltro);
 }
