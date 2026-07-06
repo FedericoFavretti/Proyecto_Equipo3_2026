@@ -16,6 +16,8 @@ import com.example.demo.Logica.Mappers.ClienteMapper;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Persistencia.Repositorios.*;
 import com.example.demo.jwt.JwtService;
+import com.example.demo.Logica.Clases.TokenActivacionCuenta;
+import com.example.demo.Utils.TokenSeguroUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +85,8 @@ public class UsuarioService {
             "No se pudo invalidar la sesión actual.";
     private static final String MENSAJE_LINK_RECUPERACION_INVALIDO =
             "El enlace de recuperación ha expirado. Por favor, solicite uno nuevo.";
+    private static final String MENSAJE_LINK_ACTIVACION_INVALIDO =
+            "El enlace de activación no es válido o ha expirado. Por favor, solicite uno nuevo.";
     private static final String MENSAJE_PASSWD_INVALIDA =
             "La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.";
     private static final String MENSAJE_PASSWD_NO_COINCIDE =
@@ -110,11 +114,12 @@ public class UsuarioService {
     private final SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio;
     private final ClienteMapper clienteMapper;
     private final LocalMapper localMapper;
+    private final TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio;
 
     @Autowired
     private TokenRecuperacionPasswdRepositorio tokenRecuperacionPasswdRepositorio;
 
-    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio, CalificacionRepositorio calificacionRepositorio, SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio, ClienteMapper clienteMapper, LocalMapper localMapper) {
+    public UsuarioService(UsuarioRepositorio usuarioRepositorio, ClienteRepositorio clienteRepositorio, PedidoRepositorio pedidoRepositorio, ReclamoRepositorio reclamoRepositorio, EmailService emailService, AuthenticationManager authenticationManager, JwtService jwtService, UserDetailsService userDetailsService, TokenBlacklistRepositorio tokenBlacklistRepositorio, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, CodigoVerificacionRepositorio codigoVerificacionRepositorio, LocalRepositorio localRepositorio, AdministradorRepositorio administradorRepositorio, CalificacionRepositorio calificacionRepositorio, SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio, ClienteMapper clienteMapper, LocalMapper localMapper, TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.clienteRepositorio = clienteRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
@@ -133,6 +138,7 @@ public class UsuarioService {
         this.solicitudCambioCorreoRepositorio = solicitudCambioCorreoRepositorio;
         this.clienteMapper = clienteMapper;
         this.localMapper = localMapper;
+        this.tokenActivacionCuentaRepositorio = tokenActivacionCuentaRepositorio;
     }
 
     @Transactional
@@ -197,14 +203,28 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void activarCuenta(String email) {
-        Usuario usuario = usuarioRepositorio.buscarPorEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", email));
-        usuarioRepositorio.activarCuenta(usuario.getId());
+    public void activarCuenta(String token) {
+        if (token == null || token.isBlank()) {
+            throw new BusinessRuleException(MENSAJE_LINK_ACTIVACION_INVALIDO);
+        }
+
+        TokenActivacionCuenta tokenActivacion = tokenActivacionCuentaRepositorio
+                .buscarVigentePorTokenHash(TokenSeguroUtils.hashear(token))
+                .orElseThrow(() -> new BusinessRuleException(MENSAJE_LINK_ACTIVACION_INVALIDO));
+
+        if (Boolean.TRUE.equals(tokenActivacion.getUsado())
+                || LocalDateTime.now().isAfter(tokenActivacion.getFechaExpiracion())) {
+            throw new BusinessRuleException(MENSAJE_LINK_ACTIVACION_INVALIDO);
+        }
+
+        Long idUsuario = tokenActivacion.getIdUsuario();
+        usuarioRepositorio.activarCuenta(idUsuario);
         clienteRepositorio.actualizar(
-                clienteRepositorio.buscarPorId(usuario.getId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Cliente", email))
+                clienteRepositorio.buscarPorId(idUsuario)
+                        .orElseThrow(() -> new ResourceNotFoundException("Cliente", idUsuario))
         );
+
+        tokenActivacionCuentaRepositorio.marcarComoUsado(tokenActivacion.getId(), LocalDateTime.now());
     }
 
     @Transactional
