@@ -65,6 +65,9 @@ public class ClienteService {
     private static final String MENSAJE_DATOS_FALTANTES =
             "Los siguientes campos son requeridos: %s. Por favor, complételos para finalizar el registro.";
 
+    @Value("${app.account.activation-frontend-base-url}")
+    private String activationFrontendBaseUrl;
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final GoogleIdentityService googleIdentityService;
@@ -79,6 +82,8 @@ public class ClienteService {
     private final PromocionMapper promocionMapper;
     private final LocalRepositorio localRepositorio;
     private final LocalMapper localMapper;
+    private final TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio;
+
 
     public ClienteService(ClienteRepositorio clienteRepositorio, PlatoRepositorio platoRepositorio,
                           PromocionRepositorio promocionRepositorio, UsuarioRepositorio usuarioRepositorio,
@@ -125,7 +130,26 @@ public class ClienteService {
         cliente.setPasswd(passwdCodificada);
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);
-        emailService.enviarMailDeActivacion(cliente.getEmail());
+        String tokenPlano = TokenSeguroUtils.generar();
+        TokenActivacionCuenta tokenActivacion = TokenActivacionCuenta.builder()
+                .idUsuario(cliente.getId())
+                .tokenHash(TokenSeguroUtils.hashear(tokenPlano))
+                .fechaCreacion(LocalDateTime.now())
+                .fechaExpiracion(LocalDateTime.now().plusHours(24))
+                .fechaConsumo(null)
+                .usado(false)
+                .build();
+        tokenActivacionCuentaRepositorio.guardar(tokenActivacion);
+
+        String linkActivacion = UriComponentsBuilder.fromUriString(activationFrontendBaseUrl)
+                .replacePath(RUTA_ACTIVACION_CUENTA)
+                .replaceQuery(null)
+                .queryParam("token", tokenPlano)
+                .build()
+                .encode()
+                .toUriString();
+
+        emailService.enviarMailDeActivacion(cliente.getEmail(), linkActivacion);
         return cliente;
     }
 
