@@ -55,6 +55,8 @@ import java.util.Map;
 public class ClienteService {
     private static final String TIPO_USUARIO_CLIENTE = "cliente";
     private static final String MENSAJE_PASSWORD_OBLIGATORIA = "La contraseña es obligatoria.";
+    private static final String MENSAJE_PASSWD_INVALIDA =
+            "La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.";
     private static final String MENSAJE_CORREO_DUPLICADO =
             "El correo ya está asociado a una cuenta. ¿Desea iniciar sesión?";
     private static final String MENSAJE_DOCUMENTO_DUPLICADO =
@@ -104,6 +106,9 @@ public class ClienteService {
     public Cliente registrarUsuario(DtCliente dtCliente) {
         if (dtCliente == null || dtCliente.getPasswd() == null || dtCliente.getPasswd().isBlank()) {
             throw new BusinessRuleException(MENSAJE_PASSWORD_OBLIGATORIA);
+        }
+        if (!cumpleRequisitosPasswd(dtCliente.getPasswd())) {
+            throw new BusinessRuleException(MENSAJE_PASSWD_INVALIDA);
         }
         dtCliente.setActivo(false);
         dtCliente.setEstadoCuenta(EstadoCuenta.Pendiente);
@@ -281,5 +286,14 @@ public class ClienteService {
                 .foto(cliente.getFoto())
                 .calificacionGlobal(cliente.getCalificacionGlobal())
                 .build();
+    }
+
+    private boolean cumpleRequisitosPasswd(String passwd) {
+        if (passwd == null || passwd.length() < 8) {
+            return false;
+        }
+        boolean tieneMayuscula = passwd.chars().anyMatch(Character::isUpperCase);
+        boolean tieneNumero = passwd.chars().anyMatch(Character::isDigit);
+        return tieneMayuscula && tieneNumero;
     }
 }
