@@ -1,4 +1,4 @@
-﻿package com.example.demo.Logica.DataTypes.request;
+package com.example.demo.Logica.DataTypes.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
