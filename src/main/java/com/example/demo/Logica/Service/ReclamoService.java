@@ -5,8 +5,11 @@ import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.shared.DtReclamo;
+import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Enums.EstadoReclamo;
+import com.example.demo.Logica.Exceptions.AccessDeniedException;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.PedidoMapper;
 import com.example.demo.Logica.Mappers.ReclamoMapper;
@@ -24,6 +27,12 @@ public class ReclamoService {
     private static final String MENSAJE_FILTRO_REQUERIDO =
             "Debe ingresar algun filtro para obtener los reclamos.";
     private static final String DATOS_INCOMPLETOS = "Debe completar todos los datos.";
+    private static final String MENSAJE_PEDIDO_NO_RECLAMABLE =
+            "Solo se pueden realizar reclamos sobre pedidos confirmados o entregados.";
+    private static final String MENSAJE_RECLAMO_DUPLICADO =
+            "Ya existe un reclamo para este pedido.";
+    private static final String MENSAJE_PEDIDO_AJENO =
+            "No puede realizar reclamos sobre pedidos que no le pertenecen.";
 
     private final ReclamoRepositorio reclamoRepositorio;
     private final PedidoRepositorio pedidoRepositorio;
@@ -40,16 +49,26 @@ public class ReclamoService {
     }
 
     @Transactional
-    public void reclamar(DtReclamo dtReclamo){
+    public void reclamar(String emailAutenticado, DtReclamo dtReclamo){
         if (dtReclamo == null) {
             throw new BusinessRuleException(DATOS_INCOMPLETOS);
+        }
+        if (emailAutenticado == null || emailAutenticado.isBlank()) {
+            throw new AccessDeniedException(MENSAJE_PEDIDO_AJENO);
         }
         if (dtReclamo.getMotivo() == null || dtReclamo.getMotivo().isBlank()) {
             throw new BusinessRuleException(MENSAJE_MOTIVO_REQUERIDO);
         }
+        if (dtReclamo.getDtPedido() == null || dtReclamo.getDtPedido().getId() == null) {
+            throw new BusinessRuleException(DATOS_INCOMPLETOS);
+        }
         dtReclamo.setEstado(EstadoReclamo.Pendiente);
         Pedido pedido = pedidoRepositorio.buscarPorId(dtReclamo.getDtPedido().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", dtReclamo.getDtPedido().getId()));
+        validarPedidoReclamable(emailAutenticado, pedido);
+        if (reclamoRepositorio.buscarReclamoPorPedido(pedido.getId()).isPresent()) {
+            throw new ResourceConflictException(MENSAJE_RECLAMO_DUPLICADO);
+        }
         DtPedido dtPedido = pedidoMapper.mapearDtPedidoDeClase(pedido);
         dtReclamo.setDtPedido(dtPedido);
         dtReclamo.setMontoReintegro(pedido.getTotal());
@@ -57,6 +76,17 @@ public class ReclamoService {
         Reclamo reclamo = reclamoMapper.mapearReclamoDeDt(dtReclamo);
         reclamoRepositorio.guardar(reclamo);
         notificarReclamoService.notificarReclamo(reclamo);
+    }
+
+    private void validarPedidoReclamable(String emailAutenticado, Pedido pedido) {
+        if (pedido.getCliente() == null || pedido.getCliente().getEmail() == null
+                || !pedido.getCliente().getEmail().equalsIgnoreCase(emailAutenticado)) {
+            throw new AccessDeniedException(MENSAJE_PEDIDO_AJENO);
+        }
+
+        if (pedido.getEstado() != EstadoPedido.Confirmado && pedido.getEstado() != EstadoPedido.Entregado) {
+            throw new BusinessRuleException(MENSAJE_PEDIDO_NO_RECLAMABLE);
+        }
     }
 
     @Transactional
@@ -89,7 +119,7 @@ public class ReclamoService {
 
         if (pedido.getCliente() == null || pedido.getCliente().getEmail() == null
                 || !pedido.getCliente().getEmail().equalsIgnoreCase(emailAutenticado)) {
-            throw new BusinessRuleException("El pedido no pertenece al usuario autenticado.");
+            throw new AccessDeniedException("El pedido no pertenece al usuario autenticado.");
         }
 
         return reclamoRepositorio.buscarReclamoPorPedido(idPedido)

@@ -1,6 +1,8 @@
 package com.example.demo.Logica.Controllers;
 
+import com.example.demo.Logica.Exceptions.AccessDeniedException;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,16 @@ class RestExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     ResponseEntity<Map<String, Object>> handleConflict(IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ResourceConflictException.class)
+    ResponseEntity<Map<String, Object>> handleResourceConflict(ResourceConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
