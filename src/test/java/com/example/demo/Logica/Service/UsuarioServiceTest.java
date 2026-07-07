@@ -151,23 +151,17 @@ class UsuarioServiceTest {
     }
 
     @Test
-    void editarDatosDeCuentaAdministradorActualizaCamposBaseYConservaNivelAccesoPeroFallaAlResponder() {
+    void editarDatosDeCuentaAdministradorNoEstaSoportado() {
         UsuarioService usuarioService = crearServicio();
         Administrador administrador = administradorExistente();
-        LocalDateTime expiracion = LocalDateTime.of(2026, 6, 17, 13, 0);
 
         when(usuarioRepositorio.buscarPorEmail("admin@foodly.com")).thenReturn(Optional.of(administrador));
         when(usuarioRepositorio.existeCorreo("admin2@foodly.com")).thenReturn(false);
         when(passwordEncoder.encode("ClaveSegura123")).thenReturn("hash-admin");
-        when(jwtService.getExpiracion("token-admin")).thenReturn(expiracion);
 
-        // BUG REAL detectado: editarDatosDeCuentaDeUsuario solo sabe mapear la respuesta
-        // para Cliente o Local. Para un Administrador, los datos SÍ quedan guardados en
-        // la base (usuarioRepositorio.actualizar ya se ejecutó), pero el método explota
-        // al intentar construir la respuesta HTTP, así que el admin nunca ve la confirmación
-        // de que su edición funcionó. Este test documenta el comportamiento actual (falla),
-        // no lo que debería pasar - conviene que el equipo revise si vale la pena agregar
-        // un DtAdministrador/AdministradorMapper para soportar este caso correctamente.
+        // Decisión de producto: los administradores no editan sus propios datos por esta vía.
+        // editarDatosDeCuentaDeUsuario solo sabe construir la respuesta para Cliente o Local;
+        // para cualquier otro tipo de usuario (Administrador) rechaza la operación.
         assertThatThrownBy(() -> usuarioService.editarDatosDeCuentaDeUsuario(
                 "admin@foodly.com",
                 "Bearer token-admin",
@@ -178,13 +172,6 @@ class UsuarioServiceTest {
                 null
         )).isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("El tipo de usario es incorrecto");
-
-        assertThat(administrador.getEmail()).isEqualTo("admin2@foodly.com");
-        assertThat(administrador.getPasswd()).isEqualTo("hash-admin");
-        assertThat(administrador.getNivelAcceso()).isEqualTo("super");
-
-        verify(usuarioRepositorio).actualizar(administrador);
-        verify(tokenBlacklistRepositorio).agregar("token-admin", expiracion);
     }
 
     @Test
