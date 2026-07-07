@@ -114,7 +114,7 @@ class CalificacionServiceTest {
         Local local = local();
         DtCalificacion solicitud = DtCalificacion.builder()
                 .puntaje(4)
-                .comentario("Mejoró")
+                .comentario("Mejorï¿½")
                 .dtLocal(DtLocal.builder().id(10L).build())
                 .build();
         Calificacion existente = Calificacion.builder()
@@ -138,7 +138,7 @@ class CalificacionServiceTest {
         verify(calificacionRepositorio).actualizar(existente);
         verify(calificacionRepositorio, never()).guardar(org.mockito.ArgumentMatchers.any());
         assertThat(existente.getPuntaje()).isEqualTo(4);
-        assertThat(existente.getComentario()).isEqualTo("Mejoró");
+        assertThat(existente.getComentario()).isEqualTo("Mejorï¿½");
         verify(localRepositorio).actualizar(local);
     }
 
@@ -184,6 +184,97 @@ class CalificacionServiceTest {
         assertThat(respuesta.getComentario()).isEqualTo("Excelente");
     }
 
+    @Test
+    void calificarLocalAClienteCreaNuevaCalificacionCuandoNoExiste() {
+        Local localAutenticado = local();
+        Cliente clienteACalificar = cliente();
+        DtCalificacion solicitud = DtCalificacion.builder()
+                .puntaje(5)
+                .comentario("Cliente puntual y respetuoso")
+                .dtCliente(DtCliente.builder().id(20L).build())
+                .build();
+        Calificacion calificacionMapeada = Calificacion.builder()
+                .puntaje(5)
+                .comentario("Cliente puntual y respetuoso")
+                .tipo(TipoCalificacion.Local_a_cliente)
+                .cliente(clienteACalificar)
+                .local(localAutenticado)
+                .build();
+
+        when(usuarioRepositorio.buscarPorEmail("local@test.com")).thenReturn(Optional.of(localAutenticado));
+        when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(clienteACalificar));
+        when(pedidoRepositorio.existePedidoDeClienteEnLocal(20L, 10L)).thenReturn(true);
+        when(calificacionRepositorio.buscarCalificacionLocalACliente(20L, 10L)).thenReturn(Optional.empty());
+        when(calificacionMapper.mapearCalificacionDeDt(solicitud)).thenReturn(calificacionMapeada);
+        when(calificacionRepositorio.listarPorCliente(20L)).thenReturn(List.of(calificacionMapeada));
+
+        calificacionService.calificar(solicitud, "local@test.com");
+
+        verify(calificacionRepositorio).guardar(calificacionMapeada);
+        verify(calificacionRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any());
+        verify(clienteRepositorio).actualizar(clienteACalificar);
+        assertThat(clienteACalificar.getCalificacionGlobal()).isEqualTo(5.0);
+    }
+
+    @Test
+    void calificarLocalAClienteActualizaCalificacionExistente() {
+        Local localAutenticado = local();
+        Cliente clienteACalificar = cliente();
+        DtCalificacion solicitud = DtCalificacion.builder()
+                .puntaje(2)
+                .comentario("No estaba en el domicilio indicado")
+                .dtCliente(DtCliente.builder().id(20L).build())
+                .build();
+        Calificacion existente = Calificacion.builder()
+                .id(77L)
+                .puntaje(5)
+                .comentario("Todo bien la primera vez")
+                .fecha(LocalDateTime.now().minusDays(10))
+                .tipo(TipoCalificacion.Local_a_cliente)
+                .cliente(clienteACalificar)
+                .local(localAutenticado)
+                .build();
+
+        when(usuarioRepositorio.buscarPorEmail("local@test.com")).thenReturn(Optional.of(localAutenticado));
+        when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(clienteACalificar));
+        when(pedidoRepositorio.existePedidoDeClienteEnLocal(20L, 10L)).thenReturn(true);
+        when(calificacionRepositorio.buscarCalificacionLocalACliente(20L, 10L)).thenReturn(Optional.of(existente));
+        when(calificacionRepositorio.listarPorCliente(20L)).thenReturn(List.of(existente));
+
+        // Nota para testing: el documento de CU-L13 permite editar la calificaciÃ³n, pero
+        // CU-CL10 (el equivalente cuando quien califica es el cliente) todavÃ­a dice en su
+        // precondiciÃ³n "no debe haberlo calificado ya" - contradice lo que hace este mismo
+        // upsert en la prÃ¡ctica. Este test documenta el comportamiento real (permite editar).
+        calificacionService.calificar(solicitud, "local@test.com");
+
+        verify(calificacionRepositorio).actualizar(existente);
+        verify(calificacionRepositorio, never()).guardar(org.mockito.ArgumentMatchers.any());
+        assertThat(existente.getPuntaje()).isEqualTo(2);
+        assertThat(existente.getComentario()).isEqualTo("No estaba en el domicilio indicado");
+        verify(clienteRepositorio).actualizar(clienteACalificar);
+    }
+
+    @Test
+    void calificarLocalAClienteRechazaSinPedidosPrevios() {
+        Local localAutenticado = local();
+        Cliente clienteACalificar = cliente();
+        DtCalificacion solicitud = DtCalificacion.builder()
+                .puntaje(3)
+                .dtCliente(DtCliente.builder().id(20L).build())
+                .build();
+
+        when(usuarioRepositorio.buscarPorEmail("local@test.com")).thenReturn(Optional.of(localAutenticado));
+        when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(clienteACalificar));
+        when(pedidoRepositorio.existePedidoDeClienteEnLocal(20L, 10L)).thenReturn(false);
+
+        assertThatThrownBy(() -> calificacionService.calificar(solicitud, "local@test.com"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Solo puede calificar a clientes que hayan realizado al menos un pedido en su local.");
+
+        verify(calificacionRepositorio, never()).guardar(org.mockito.ArgumentMatchers.any());
+        verify(calificacionRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any());
+    }
+
     private Local local() {
         return Local.builder()
                 .id(10L)
@@ -198,7 +289,7 @@ class CalificacionServiceTest {
                 .id(20L)
                 .email("cliente@test.com")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("Pï¿½rez")
                 .calificacionGlobal(0.0)
                 .build();
     }

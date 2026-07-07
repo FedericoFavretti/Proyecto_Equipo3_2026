@@ -36,15 +36,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
@@ -77,6 +84,8 @@ class PedidoServiceTest {
     private PedidoListadoMapper pedidoListadoMapper;
     @Mock
     private UsuarioRepositorio usuarioRepositorio;
+    @Mock
+    private RestTemplate restTemplate;
 
     private PedidoService pedidoService;
 
@@ -95,6 +104,14 @@ class PedidoServiceTest {
                 pedidoListadoMapper,
                 usuarioRepositorio
         );
+        // "restTemplate" es @Autowired por campo (no por constructor), así que en un test
+        // unitario hay que inyectarlo a mano para poder simular la llamada a Mercado Pago.
+        ReflectionTestUtils.setField(pedidoService, "restTemplate", restTemplate);
+        ReflectionTestUtils.setField(pedidoService, "backUrlSuccess", "https://foodly.com/pago-ok");
+        ReflectionTestUtils.setField(pedidoService, "backUrlFailure", "https://foodly.com/pago-error");
+        ReflectionTestUtils.setField(pedidoService, "backUrlPending", "https://foodly.com/pago-pendiente");
+        ReflectionTestUtils.setField(pedidoService, "webhookUrl", "https://foodly.com/webhook/mp");
+        ReflectionTestUtils.setField(pedidoService, "mpAccessToken", "token-de-prueba");
     }
 
     @Test
@@ -366,6 +383,244 @@ class PedidoServiceTest {
 
         assertThat(detalleCaptor.getValue().getPrecioUnitario()).isEqualTo(100.0);
         assertThat(detalleCaptor.getValue().getSubtotal()).isEqualTo(200.0);
+    }
+
+    @Test
+    void realizarPedidoConMercadoPagoGeneraPreferenciaYNoNotificaAlLocalTodavia() {
+        Local local = Local.builder()
+                .id(10L)
+                .nombre("La Cocina")
+                .estaAbierto(true)
+                .build();
+        Cliente cliente = Cliente.builder()
+                .id(20L)
+                .email("ana@test.com")
+                .nombre("Ana")
+                .apellido("Perez")
+                .activo(true)
+                .build();
+        Plato plato = Plato.builder()
+                .id(30L)
+                .nombre("Milanesa")
+                .precio(100.0)
+                .disponible(true)
+                .local(local)
+                .build();
+        DtPedidoConDetalles solicitud = DtPedidoConDetalles.builder()
+                .dtPedido(DtPedido.builder()
+                        .domicilioEntrega(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
+                        .medioDePago("Mercado Pago")
+                        .dtLocal(DtLocal.builder().id(10L).build())
+                        .dtCliente(DtCliente.builder().id(20L).build())
+                        .build())
+                .detalles(List.of(DtDetallePedido.builder()
+                        .cantidad(1)
+                        .dtPlato(DtPlato.builder().id(30L).build())
+                        .build()))
+                .build();
+        Map<String, Object> respuestaMp = Map.of(
+                "id", "PREF-123",
+                "init_point", "https://mercadopago.com/checkout/PREF-123"
+        );
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+        when(clienteRepositorio.buscarPorId(20L)).thenReturn(Optional.of(cliente));
+        when(platoRepositorio.buscarPorId(30L)).thenReturn(Optional.of(plato));
+        when(promocionRepositorio.buscarPorPlato(30L)).thenReturn(List.of());
+        doAnswer(invocation -> {
+            Pedido pedido = invocation.getArgument(0);
+            pedido.setId(101L);
+            return null;
+        }).when(pedidoRepositorio).guardar(any(Pedido.class));
+        when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(Map.class)))
+                .thenReturn(new ResponseEntity<>(respuestaMp, HttpStatus.OK));
+
+        Pedido pedido = pedidoService.realizarPedido(solicitud);
+
+        assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.Pendiente);
+        assertThat(pedido.getMpPreferenciaId()).isEqualTo("PREF-123");
+        assertThat(pedido.getMpInitPoint()).isEqualTo("https://mercadopago.com/checkout/PREF-123");
+        verify(pedidoRepositorio).actualizarDatosMp(101L, "PREF-123", "https://mercadopago.com/checkout/PREF-123");
+        // A diferencia del pago en efectivo, con Mercado Pago el local todavía NO se notifica:
+        // recién se entera cuando procesarPagoConfirmado confirme el pago por webhook.
+        verifyNoInteractions(notificacionPedidoService);
+    }
+
+    @Test
+    void reintentarPagoGeneraNuevaPreferenciaCuandoPedidoPendienteSinAcreditar() {
+        Cliente cliente = Cliente.builder().id(20L).email("ana@test.com").activo(true).build();
+        Pedido pedido = Pedido.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .pagado(false)
+                .medioDePago("Mercado Pago")
+                .cliente(cliente)
+                .build();
+        DetallePedido detalle = DetallePedido.builder()
+                .id(1L)
+                .cantidad(1)
+                .precioUnitario(100.0)
+                .subtotal(100.0)
+                .plato(Plato.builder().id(30L).nombre("Milanesa").build())
+                .pedido(pedido)
+                .build();
+        Map<String, Object> respuestaMp = Map.of(
+                "id", "PREF-456",
+                "init_point", "https://mercadopago.com/checkout/PREF-456"
+        );
+
+        when(usuarioRepositorio.buscarPorEmail("ana@test.com")).thenReturn(Optional.of(cliente));
+        when(pedidoRepositorio.buscarPorId(77L)).thenReturn(Optional.of(pedido));
+        when(detallePedidoRepositorio.buscarPorPedido(77L)).thenReturn(List.of(detalle));
+        when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(Map.class)))
+                .thenReturn(new ResponseEntity<>(respuestaMp, HttpStatus.OK));
+
+        Pedido resultado = pedidoService.reintentarPago("ana@test.com", 77L);
+
+        assertThat(resultado.getMpPreferenciaId()).isEqualTo("PREF-456");
+        assertThat(resultado.getMpInitPoint()).isEqualTo("https://mercadopago.com/checkout/PREF-456");
+        verify(pedidoRepositorio).actualizarDatosMp(77L, "PREF-456", "https://mercadopago.com/checkout/PREF-456");
+    }
+
+    @Test
+    void reintentarPagoRechazaSiElPedidoNoEsPropio() {
+        Cliente cliente = Cliente.builder().id(20L).email("ana@test.com").activo(true).build();
+        Cliente otroCliente = Cliente.builder().id(99L).email("otro@test.com").activo(true).build();
+        Pedido pedidoAjeno = Pedido.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .pagado(false)
+                .medioDePago("Mercado Pago")
+                .cliente(otroCliente)
+                .build();
+
+        when(usuarioRepositorio.buscarPorEmail("ana@test.com")).thenReturn(Optional.of(cliente));
+        when(pedidoRepositorio.buscarPorId(77L)).thenReturn(Optional.of(pedidoAjeno));
+
+        assertThatThrownBy(() -> pedidoService.reintentarPago("ana@test.com", 77L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("No tiene permisos para operar sobre un pedido de otro cliente.");
+
+        verifyNoInteractions(restTemplate, detallePedidoRepositorio);
+    }
+
+    @Test
+    void reintentarPagoRechazaSiElPedidoEsEnEfectivo() {
+        Cliente cliente = Cliente.builder().id(20L).email("ana@test.com").activo(true).build();
+        Pedido pedidoEfectivo = Pedido.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .pagado(false)
+                .medioDePago("EFECTIVO")
+                .cliente(cliente)
+                .build();
+
+        when(usuarioRepositorio.buscarPorEmail("ana@test.com")).thenReturn(Optional.of(cliente));
+        when(pedidoRepositorio.buscarPorId(77L)).thenReturn(Optional.of(pedidoEfectivo));
+
+        assertThatThrownBy(() -> pedidoService.reintentarPago("ana@test.com", 77L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Solo se puede reintentar el pago de pedidos pendientes de Mercado Pago sin acreditar.");
+
+        verifyNoInteractions(restTemplate, detallePedidoRepositorio);
+    }
+
+    @Test
+    void reintentarPagoRechazaSiElPedidoYaFuePagado() {
+        Cliente cliente = Cliente.builder().id(20L).email("ana@test.com").activo(true).build();
+        Pedido pedidoPagado = Pedido.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .pagado(true)
+                .medioDePago("Mercado Pago")
+                .cliente(cliente)
+                .build();
+
+        when(usuarioRepositorio.buscarPorEmail("ana@test.com")).thenReturn(Optional.of(cliente));
+        when(pedidoRepositorio.buscarPorId(77L)).thenReturn(Optional.of(pedidoPagado));
+
+        assertThatThrownBy(() -> pedidoService.reintentarPago("ana@test.com", 77L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Solo se puede reintentar el pago de pedidos pendientes de Mercado Pago sin acreditar.");
+
+        verifyNoInteractions(restTemplate, detallePedidoRepositorio);
+    }
+
+    @Test
+    void reintentarPagoRechazaSiElPedidoNoTieneDetallesAsociados() {
+        Cliente cliente = Cliente.builder().id(20L).email("ana@test.com").activo(true).build();
+        Pedido pedido = Pedido.builder()
+                .id(77L)
+                .estado(EstadoPedido.Pendiente)
+                .pagado(false)
+                .medioDePago("Mercado Pago")
+                .cliente(cliente)
+                .build();
+
+        when(usuarioRepositorio.buscarPorEmail("ana@test.com")).thenReturn(Optional.of(cliente));
+        when(pedidoRepositorio.buscarPorId(77L)).thenReturn(Optional.of(pedido));
+        when(detallePedidoRepositorio.buscarPorPedido(77L)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> pedidoService.reintentarPago("ana@test.com", 77L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("No se pudo reintentar el pago porque el pedido no tiene detalles asociados.");
+
+        verifyNoInteractions(restTemplate);
+    }
+
+    @Test
+    void marcarPedidosComoEntregadosActualizaLosPedidosVencidos() {
+        Pedido pedidoVencido1 = Pedido.builder().id(1L).estado(EstadoPedido.Confirmado).build();
+        Pedido pedidoVencido2 = Pedido.builder().id(2L).estado(EstadoPedido.Confirmado).build();
+        when(pedidoRepositorio.buscarEnCaminoVencidos(any(LocalDateTime.class)))
+                .thenReturn(List.of(pedidoVencido1, pedidoVencido2));
+
+        pedidoService.marcarPedidosComoEntregados();
+
+        assertThat(pedidoVencido1.getEstado()).isEqualTo(EstadoPedido.Entregado);
+        assertThat(pedidoVencido2.getEstado()).isEqualTo(EstadoPedido.Entregado);
+        verify(pedidoRepositorio).actualizar(pedidoVencido1);
+        verify(pedidoRepositorio).actualizar(pedidoVencido2);
+        // El marcado automático no envía ninguna notificación, a ninguna de las partes.
+        verifyNoInteractions(notificacionPedidoService);
+    }
+
+    @Test
+    void marcarPedidosComoEntregadosNoHaceNadaSiNoHayPedidosVencidos() {
+        when(pedidoRepositorio.buscarEnCaminoVencidos(any(LocalDateTime.class))).thenReturn(List.of());
+
+        pedidoService.marcarPedidosComoEntregados();
+
+        verify(pedidoRepositorio, never()).actualizar(any(Pedido.class));
+    }
+
+    @Test
+    void cancelarPedidosMercadoPagoAbandonadosCancelaSinNotificarANadie() {
+        Pedido pedidoAbandonado = Pedido.builder()
+                .id(55L)
+                .estado(EstadoPedido.Pendiente)
+                .medioDePago("Mercado Pago")
+                .pagado(false)
+                .build();
+        when(pedidoRepositorio.buscarPendientesMercadoPagoVencidos(any(LocalDateTime.class)))
+                .thenReturn(List.of(pedidoAbandonado));
+
+        pedidoService.cancelarPedidosMercadoPagoAbandonados();
+
+        assertThat(pedidoAbandonado.getEstado()).isEqualTo(EstadoPedido.Cancelado);
+        verify(pedidoRepositorio).actualizar(pedidoAbandonado);
+        // A diferencia de cancelarPedidoDeCliente (cancelación manual), acá no se notifica
+        // al local: nunca llegó a enterarse de que el pedido existía.
+        verifyNoInteractions(notificacionPedidoService);
+    }
+
+    @Test
+    void cancelarPedidosMercadoPagoAbandonadosNoHaceNadaSiNoHayPedidosVencidos() {
+        when(pedidoRepositorio.buscarPendientesMercadoPagoVencidos(any(LocalDateTime.class))).thenReturn(List.of());
+
+        pedidoService.cancelarPedidosMercadoPagoAbandonados();
+
+        verify(pedidoRepositorio, never()).actualizar(any(Pedido.class));
     }
 
     private Pedido pedidoPendiente() {

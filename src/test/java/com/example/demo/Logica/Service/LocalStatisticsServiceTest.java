@@ -76,7 +76,7 @@ class LocalStatisticsServiceTest {
     @BeforeEach
     void setUp() {
         LocalMapper localMapper = new LocalMapper();
-        PlatoMapper platoMapper = new PlatoMapper(localMapper);
+        PlatoMapper platoMapper = new PlatoMapper(localMapper, categoriaMapper);
         localService = new LocalService(
                 localRepositorio,
                 platoRepositorio,
@@ -212,7 +212,7 @@ class LocalStatisticsServiceTest {
                 .nombre("Milanesa al pan")
                 .descripcion("Clasica")
                 .precio(350.0)
-                .imagenes(List.of("milanesa.jpg"))
+                .imagen("milanesa.jpg")
                 .disponible(true)
                 .local(local)
                 .build();

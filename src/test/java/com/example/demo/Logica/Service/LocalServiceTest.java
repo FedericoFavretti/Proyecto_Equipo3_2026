@@ -85,7 +85,7 @@ class LocalServiceTest {
     @BeforeEach
     void setUp() {
         localMapper = new LocalMapper();
-        platoMapper = new PlatoMapper(localMapper);
+        platoMapper = new PlatoMapper(localMapper, categoriaMapper);
         localService = new LocalService(
                 localRepositorio,
                 platoRepositorio,
@@ -150,7 +150,7 @@ class LocalServiceTest {
     @Test
     void altaPlatoRechazaImagenInvalida() {
         DtPlato solicitud = platoValido();
-        solicitud.setImagenes(List.of("milanesa.gif"));
+        solicitud.setImagen("milanesa.gif");
 
         assertThatThrownBy(() -> localService.altaPlato(solicitud))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -179,7 +179,7 @@ class LocalServiceTest {
         solicitud.setNombre("Milanesa completa");
         solicitud.setDescripcion("Milanesa con fritas");
         solicitud.setPrecio(420.0);
-        solicitud.setImagenes(List.of("milanesa2.jpg"));
+        solicitud.setImagen("milanesa2.jpg");
 
         Local local = localHabilitado(false);
         Plato existente = platoExistente(local);
@@ -195,7 +195,7 @@ class LocalServiceTest {
         assertThat(actualizado.getNombre()).isEqualTo("Milanesa completa");
         assertThat(actualizado.getDescripcion()).isEqualTo("Milanesa con fritas");
         assertThat(actualizado.getPrecio()).isEqualTo(420.0);
-        assertThat(actualizado.getImagenes()).containsExactly("milanesa2.jpg");
+        assertThat(actualizado.getImagen()).isEqualTo("milanesa2.jpg");
         assertThat(actualizado.getLocal()).isSameAs(local);
         verify(platoRepositorio).actualizar(actualizado);
     }
@@ -233,7 +233,7 @@ class LocalServiceTest {
     void gestionarPlatoModificacionConservaImagenesActualesCuandoNoLlegaNuevaImagen() {
         DtPlato solicitud = platoValido();
         solicitud.setDescripcion("Milanesa con cheddar");
-        solicitud.setImagenes(null);
+        solicitud.setImagen(null);
 
         Local local = localHabilitado(false);
         Plato existente = platoExistente(local);
@@ -246,14 +246,14 @@ class LocalServiceTest {
         Plato actualizado = localService.gestionarPlatoModificacion(20L, solicitud);
 
         assertThat(actualizado.getDescripcion()).isEqualTo("Milanesa con cheddar");
-        assertThat(actualizado.getImagenes()).containsExactly("milanesa.jpg");
+        assertThat(actualizado.getImagen()).isEqualTo("milanesa.jpg");
         verify(platoRepositorio).actualizar(actualizado);
     }
 
     @Test
     void gestionarPlatoModificacionRechazaCuandoNoQuedanImagenes() {
         DtPlato solicitud = platoValido();
-        solicitud.setImagenes(null);
+        solicitud.setImagen(null);
 
         Local local = localHabilitado(false);
         Plato existente = platoExistenteSinImagenes(local);
@@ -547,7 +547,7 @@ class LocalServiceTest {
                 .nombre("Milanesa al pan")
                 .descripcion("Milanesa con lechuga y tomate")
                 .precio(350.0)
-                .imagenes(List.of("milanesa.jpg"))
+                .imagen("milanesa.jpg")
                 .disponible(true)
                 .dtLocal(dtLocal)
                 .build();
@@ -579,7 +579,7 @@ class LocalServiceTest {
                 .nombre("Milanesa al pan")
                 .descripcion("Milanesa con lechuga y tomate")
                 .precio(350.0)
-                .imagenes(List.of("milanesa.jpg"))
+                .imagen("milanesa.jpg")
                 .disponible(true)
                 .local(local)
                 .build();
@@ -587,7 +587,7 @@ class LocalServiceTest {
 
     private Plato platoExistenteSinImagenes(Local local) {
         Plato plato = platoExistente(local);
-        plato.setImagenes(List.of());
+        plato.setImagen(null);
         return plato;
     }
 }
