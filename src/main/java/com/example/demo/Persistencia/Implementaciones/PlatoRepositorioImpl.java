@@ -1,6 +1,7 @@
 package com.example.demo.Persistencia.Implementaciones;
 
 
+import com.example.demo.Logica.Clases.Categoria;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
@@ -118,7 +119,11 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
             ps.setString(4, plato.getImagen());
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
-            ps.setLong(7, plato.getCategoria().getId());
+            if (plato.getCategoria() != null && plato.getCategoria().getId() != null) {
+                ps.setLong(7, plato.getCategoria().getId());
+            } else {
+                ps.setNull(7, Types.BIGINT);
+            }
             return ps;
         }, idGenerado);
 
@@ -144,7 +149,11 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
             ps.setString(4, plato.getImagen());
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
-            ps.setLong(7, plato.getCategoria().getId());
+            if (plato.getCategoria() != null && plato.getCategoria().getId() != null) {
+                ps.setLong(7, plato.getCategoria().getId());
+            } else {
+                ps.setNull(7, Types.BIGINT);
+            }
             ps.setLong(8, plato.getId());
             return ps;
         });
@@ -159,11 +168,18 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
     private Plato mapearPlato(ResultSet rs) throws SQLException {
 
+        Long idCategoria = rs.getLong("idcategoria");
+        Categoria categoria = null;
+        if (!rs.wasNull()) {
+            categoria = categoriaRepositorio.buscarPorId(idCategoria)
+                    .orElse(null);
+        }
+
         return new Plato(
                 rs.getLong("id"),
                 rs.getString("nombre"),
                 rs.getString("descripcion"),
-                categoriaRepositorio.buscarPorId(rs.getLong("idcategoria")).orElseThrow(()->new RuntimeException("Categoria no encontrada.")),
+                categoria,
                 rs.getDouble("precio"),
                 rs.getString("imagen"),
                 rs.getBoolean("disponible"),
