@@ -3,11 +3,13 @@ package com.example.demo.Logica.Controllers;
 import com.example.demo.Logica.DataTypes.summary.DtLocalResumenResponse;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Mappers.PedidoResponseMapper;
 import com.example.demo.Logica.Service.PedidoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -53,7 +55,8 @@ class PedidoControllerTest {
         when(pedidoService.buscarYListarHistorialPedidosPropios(any(), any()))
                 .thenReturn(List.of(response));
 
-        mockMvc.perform(get("/api/v1/pedidos/clientes/20")
+        mockMvc.perform(get("/api/v1/pedidos/mi-historial")
+                        .principal(new UsernamePasswordAuthenticationToken("ana@test.com", "token", List.of()))
                         .param("estado", "Confirmado")
                         .param("idLocal", "10"))
                 .andExpect(status().isOk())
@@ -66,9 +69,10 @@ class PedidoControllerTest {
     @Test
     void buscarYListarHistorialPedidosPropiosRespondeBadRequestSinPedidos() throws Exception {
         when(pedidoService.buscarYListarHistorialPedidosPropios(any(), any()))
-                .thenThrow(new IllegalArgumentException("Aún no ha realizado ningún pedido. ¡Explore los locales disponibles y realice su primer pedido!"));
+                .thenThrow(new BusinessRuleException("Aún no ha realizado ningún pedido. ¡Explore los locales disponibles y realice su primer pedido!"));
 
-        mockMvc.perform(get("/api/v1/pedidos/clientes/20"))
+        mockMvc.perform(get("/api/v1/pedidos/mi-historial")
+                        .principal(new UsernamePasswordAuthenticationToken("ana@test.com", "token", List.of())))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Aún no ha realizado ningún pedido. ¡Explore los locales disponibles y realice su primer pedido!"));
     }

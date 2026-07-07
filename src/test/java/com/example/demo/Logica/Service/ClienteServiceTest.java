@@ -381,6 +381,7 @@ class ClienteServiceTest {
         DtPromocion dtPromocion = DtPromocion.builder()
                 .id(20L)
                 .descripcion("2x1")
+                .descuento(25.0)
                 .dtPlato(dtPlato)
                 .build();
 

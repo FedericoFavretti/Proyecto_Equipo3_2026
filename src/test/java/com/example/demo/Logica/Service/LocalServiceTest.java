@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.demo.Logica.Clases.Promocion;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ResourceConflictException;
+import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
@@ -129,7 +132,7 @@ class LocalServiceTest {
         solicitud.setNombre(" ");
 
         assertThatThrownBy(() -> localService.altaPlato(solicitud))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El nombre del plato es obligatorio.");
 
         verifyNoInteractions(localRepositorio, platoRepositorio);
@@ -141,7 +144,7 @@ class LocalServiceTest {
         solicitud.setPrecio(0.0);
 
         assertThatThrownBy(() -> localService.altaPlato(solicitud))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El precio debe ser un valor numerico mayor a cero.");
 
         verifyNoInteractions(localRepositorio, platoRepositorio);
@@ -153,7 +156,7 @@ class LocalServiceTest {
         solicitud.setImagen("milanesa.gif");
 
         assertThatThrownBy(() -> localService.altaPlato(solicitud))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Solo se aceptan imagenes JPG o PNG.");
 
         verifyNoInteractions(localRepositorio, platoRepositorio);
@@ -167,7 +170,7 @@ class LocalServiceTest {
         when(platoRepositorio.buscarPorNombre("Milanesa al pan")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> localService.altaPlato(solicitud))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El local debe estar habilitado para realizar esta operacion.");
 
         verify(platoRepositorio, never()).guardar(org.mockito.ArgumentMatchers.any(Plato.class));
@@ -205,8 +208,8 @@ class LocalServiceTest {
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> localService.gestionarPlatoModificacion(20L, platoValido()))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Plato no encontrado");
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Plato no encontrado con id: 20");
 
         verify(localRepositorio, never()).buscarPorId(10L);
         verify(platoRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any(Plato.class));
@@ -257,12 +260,10 @@ class LocalServiceTest {
 
         Local local = localHabilitado(false);
         Plato existente = platoExistenteSinImagenes(local);
-        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(existente));
-        when(platoRepositorio.buscarPorNombre("Milanesa al pan")).thenReturn(Optional.of(existente));
 
         assertThatThrownBy(() -> localService.gestionarPlatoModificacion(20L, solicitud))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Debe completar todos los datos del plato.");
 
         verify(platoRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any(Plato.class));
@@ -279,7 +280,7 @@ class LocalServiceTest {
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(existente));
 
         assertThatThrownBy(() -> localService.gestionarPlatoModificacion(20L, solicitud))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El plato no pertenece al local indicado.");
 
         verify(platoRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any(Plato.class));
@@ -305,8 +306,8 @@ class LocalServiceTest {
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> localService.gestionarPlatoBaja(20L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Plato no encontrado");
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Plato no encontrado con id: 20");
 
         verify(platoRepositorio, never()).actualizar(org.mockito.ArgumentMatchers.any(Plato.class));
         verify(platoRepositorio, never()).eliminar(20L);
@@ -419,7 +420,7 @@ class LocalServiceTest {
                 .build();
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Los siguientes campos son requeridos: email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes. Por favor, completelos antes de enviar.");
 
         verifyNoInteractions(localRepositorio, usuarioRepositorio, registroLocalNotificador);
@@ -431,7 +432,7 @@ class LocalServiceTest {
         solicitud.setEmail("correo-invalido");
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El correo electronico ingresado no tiene un formato valido.");
 
         verifyNoInteractions(localRepositorio, usuarioRepositorio, registroLocalNotificador);
@@ -443,7 +444,7 @@ class LocalServiceTest {
         solicitud.setImagenes(List.of("fachada.gif"));
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Solo se aceptan imagenes en formato JPG o PNG de hasta 10 MB cada una.");
 
         verifyNoInteractions(localRepositorio, usuarioRepositorio, registroLocalNotificador);
@@ -455,7 +456,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorNombre("La Cocina")).thenReturn(Optional.of(localHabilitado(false)));
 
         assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceConflictException.class)
                 .hasMessage("El nombre del local ya se encuentra registrado.");
 
         verify(localRepositorio).buscarPorNombre("La Cocina");
@@ -480,7 +481,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
 
         assertThatThrownBy(() -> localService.registrarApertura(10L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El local ya se encuentra registrado como abierto para el dia de hoy.");
 
         verify(localRepositorio, never()).actualizar(local);
@@ -506,7 +507,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
 
         assertThatThrownBy(() -> localService.regitrarCierre(10L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El local ya se encuentra registrado como cerrado.");
 
         verify(localRepositorio, never()).actualizar(local);
@@ -520,7 +521,7 @@ class LocalServiceTest {
         when(pedidoRepositorio.existePedidoPendientePorLocal(10L)).thenReturn(true);
 
         assertThatThrownBy(() -> localService.regitrarCierre(10L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El local no puede cerrarse porque tiene pedidos pendientes de confirmacion.");
 
         verify(localRepositorio, never()).actualizar(local);

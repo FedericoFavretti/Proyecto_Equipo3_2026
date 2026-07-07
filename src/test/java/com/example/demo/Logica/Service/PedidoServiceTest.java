@@ -629,7 +629,7 @@ class PedidoServiceTest {
                 .fecha(LocalDateTime.now())
                 .total(450.0)
                 .domicilioEntrega(new DtDireccion("Av. Italia", "1234", "Montevideo", "11600"))
-                .medioDePago("Tarjeta")
+                .medioDePago("EFECTIVO")
                 .pagoSimulado(false)
                 .pagado(false)
                 .estado(EstadoPedido.Pendiente)

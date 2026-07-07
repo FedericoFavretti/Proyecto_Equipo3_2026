@@ -8,6 +8,8 @@ import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
+import com.example.demo.Logica.Exceptions.BusinessRuleException;
+import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.junit.jupiter.api.Test;
@@ -94,7 +96,7 @@ class AdminServiceTest {
         AdminService adminService = crearServicio();
 
         assertThatThrownBy(() -> adminService.resolverSolicitud(new DtResolverSolicitudLocalRequest(10L, EstadoLocal.Pendiente)))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El estado objetivo debe ser Habilitado o Rechazado.");
 
         verifyNoInteractions(localRepositorio, usuarioRepositorio, registroLocalNotificador);
@@ -105,7 +107,7 @@ class AdminServiceTest {
         AdminService adminService = crearServicio();
 
         assertThatThrownBy(() -> adminService.resolverSolicitud(null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Debe indicar el estado objetivo de la solicitud.");
 
         verifyNoInteractions(localRepositorio, usuarioRepositorio, registroLocalNotificador);
@@ -117,8 +119,8 @@ class AdminServiceTest {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> adminService.resolverSolicitud(new DtResolverSolicitudLocalRequest(10L, EstadoLocal.Habilitado)))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Local no encontrado");
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Local no encontrado con id: 10");
 
         verify(localRepositorio).buscarPorId(10L);
         verify(usuarioRepositorio, never()).actualizarEstado(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any());
@@ -133,7 +135,7 @@ class AdminServiceTest {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
 
         assertThatThrownBy(() -> adminService.resolverSolicitud(new DtResolverSolicitudLocalRequest(10L, EstadoLocal.Rechazado)))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Solo se pueden resolver solicitudes en estado Pendiente.");
 
         verify(localRepositorio).buscarPorId(10L);

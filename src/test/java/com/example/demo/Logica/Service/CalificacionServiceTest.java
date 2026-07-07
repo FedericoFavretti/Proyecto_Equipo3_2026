@@ -76,6 +76,7 @@ class CalificacionServiceTest {
     void consultarCalificacionGlobalDelLocalRetornaResumenYActualizaCache() {
         Local local = local();
         when(usuarioRepositorio.buscarPorEmail("local@test.com")).thenReturn(Optional.of(local));
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
         when(calificacionRepositorio.listarPorLocal(10L)).thenReturn(List.of(
                 calificacionClienteALocal(5),
                 calificacionClienteALocal(4),

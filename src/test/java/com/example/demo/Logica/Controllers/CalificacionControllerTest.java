@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Mockito.when;
@@ -41,7 +42,7 @@ class CalificacionControllerTest {
                 ));
 
         mockMvc.perform(get("/api/v1/calificaciones/local/mi-calificacion")
-                        .principal(new UsernamePasswordAuthenticationToken("local@test.com", "token")))
+                        .principal(new UsernamePasswordAuthenticationToken("local@test.com", "token", List.of())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.calificacionGlobal").value(4.5))
                 .andExpect(jsonPath("$.totalValoraciones").value(2))
@@ -61,7 +62,7 @@ class CalificacionControllerTest {
                 .thenReturn(null);
 
         mockMvc.perform(get("/api/v1/calificaciones/locales/10/mi-calificacion")
-                        .principal(new UsernamePasswordAuthenticationToken("cliente@test.com", "token")))
+                        .principal(new UsernamePasswordAuthenticationToken("cliente@test.com", "token", List.of())))
                 .andExpect(status().isNoContent());
     }
 
@@ -76,7 +77,7 @@ class CalificacionControllerTest {
                         .build());
 
         mockMvc.perform(get("/api/v1/calificaciones/locales/10/mi-calificacion")
-                        .principal(new UsernamePasswordAuthenticationToken("cliente@test.com", "token")))
+                        .principal(new UsernamePasswordAuthenticationToken("cliente@test.com", "token", List.of())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(8))
                 .andExpect(jsonPath("$.puntaje").value(5))
