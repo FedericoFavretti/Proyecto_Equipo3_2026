@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Controllers;
 
-import com.example.demo.Logica.Service.PedidoService;
+import com.example.demo.Logica.DataTypes.request.DtMercadoPagoWebhookRequest;
+import com.example.demo.Logica.Service.MercadoPagoWebhookService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -8,49 +9,45 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class PagoControllerTest {
 
-    private PedidoService pedidoService;
+    private MercadoPagoWebhookService mercadoPagoWebhookService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        pedidoService = Mockito.mock(PedidoService.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new PagoController(pedidoService))
+        mercadoPagoWebhookService = Mockito.mock(MercadoPagoWebhookService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new PagoController(mercadoPagoWebhookService))
                 .setControllerAdvice(new RestExceptionHandler())
                 .build();
     }
 
     @Test
-    void recibirNotificacionProcesaPagoCuandoEsWebhookDePayment() throws Exception {
+    void recibirNotificacionPostDelegaAlServicioDeWebhookConLosQueryParams() throws Exception {
         mockMvc.perform(post("/api/v1/pagos/webhook")
                         .param("type", "payment")
                         .param("data.id", "12345"))
                 .andExpect(status().isOk());
 
-        verify(pedidoService).procesarPagoConfirmado("12345");
+        verify(mercadoPagoWebhookService).procesarWebhook(
+                isNull(),
+                eq("payment"),
+                isNull(),
+                eq("12345"),
+                isNull()
+        );
     }
 
     @Test
-    void recibirNotificacionIgnoraEventosQueNoSonPayment() throws Exception {
-        mockMvc.perform(post("/api/v1/pagos/webhook")
-                        .param("type", "merchant_order")
-                        .param("data.id", "12345"))
-                .andExpect(status().isOk());
-
-        verify(pedidoService, never()).procesarPagoConfirmado("12345");
-    }
-
-    @Test
-    void recibirNotificacionPostProcesaPagoCuandoLlegaEnBodyJson() throws Exception {
+    void recibirNotificacionPostConBodyJsonDelegaElBodyCompleto() throws Exception {
         mockMvc.perform(post("/api/v1/pagos/webhook")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -63,15 +60,45 @@ class PagoControllerTest {
                                 """))
                 .andExpect(status().isOk());
 
-        verify(pedidoService).procesarPagoConfirmado("67890");
+        verify(mercadoPagoWebhookService).procesarWebhook(
+                any(DtMercadoPagoWebhookRequest.class),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull()
+        );
     }
 
     @Test
-    void recibirNotificacionGetSinDatosSoloRespondeOk() throws Exception {
+    void recibirNotificacionGetDelegaAlServicioDeWebhookConBodyNulo() throws Exception {
+        mockMvc.perform(get("/api/v1/pagos/webhook")
+                        .param("type", "payment")
+                        .param("data.id", "12345"))
+                .andExpect(status().isOk());
+
+        // El endpoint GET no recibe body (Mercado Pago solo lo manda en el POST real),
+        // pero igual delega en el servicio: es el servicio quien decide si el evento
+        // es válido o no, el controller ya no filtra nada.
+        verify(mercadoPagoWebhookService).procesarWebhook(
+                isNull(),
+                eq("payment"),
+                isNull(),
+                eq("12345"),
+                isNull()
+        );
+    }
+
+    @Test
+    void recibirNotificacionGetSinDatosIgualDelegaAlServicioConTodoNulo() throws Exception {
         mockMvc.perform(get("/api/v1/pagos/webhook"))
                 .andExpect(status().isOk());
 
-        verify(pedidoService, never()).procesarPagoConfirmado(anyString());
-        verifyNoInteractions(pedidoService);
+        verify(mercadoPagoWebhookService).procesarWebhook(
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull()
+        );
     }
 }
