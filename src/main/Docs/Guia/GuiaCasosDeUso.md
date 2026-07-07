@@ -590,17 +590,21 @@ Reglas generales para TODOS los casos de uso:
 
 
 - **Actor**: Cliente.
-- **Precondición**: pedido `Confirmado` y sin reclamo previo para ese pedido.
+- **Precondición**: pedido `Confirmado` o `Entregado`, perteneciente al cliente autenticado y sin reclamo previo para ese pedido.
 - **Implementar**:
-  1. Acceder al historial y seleccionar pedido confirmado.
+  1. Acceder al historial y seleccionar pedido confirmado o entregado.
   2. Acción `Realizar Reclamo`.
   3. Capturar motivo.
   4. Capturar tipo de compensación solicitada.
   5. Validar campos obligatorios.
-  6. Registrar reclamo `Pendiente`.
-  7. Notificar al local por correo y web.
+  6. Validar que el pedido pertenezca al cliente autenticado.
+  7. Validar que no exista un reclamo previo para ese pedido.
+  8. Registrar reclamo `Pendiente`.
+  9. Notificar al local por correo y web.
 - **Alternativos obligatorios**:
   - Motivo vacío: `Debe describir el motivo del reclamo antes de enviarlo.`
+  - Pedido inválido para reclamo: `Solo se pueden realizar reclamos sobre pedidos confirmados o entregados.`
+  - Pedido ajeno: `No puede realizar reclamos sobre pedidos que no le pertenecen.`
   - Reclamo duplicado: `Ya ha presentado un reclamo para este pedido. No es posible presentar más de un reclamo por pedido.`
 - **Postcondición**: reclamo `Pendiente` y local notificado.
 

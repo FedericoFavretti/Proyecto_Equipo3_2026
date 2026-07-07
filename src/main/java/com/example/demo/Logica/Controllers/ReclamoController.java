@@ -26,8 +26,11 @@ public class ReclamoController implements iReclamoController {
 
     @PreAuthorize("hasRole('Cliente')")
     @PostMapping("/realizar_reclamo")
-    public ResponseEntity<Void>  reclamar(@RequestBody DtReclamo dtReclamo) {
-        reclamoService.reclamar(dtReclamo);
+    public ResponseEntity<Void>  reclamar(Authentication authentication, @RequestBody DtReclamo dtReclamo) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        reclamoService.reclamar(authentication.getName(), dtReclamo);
         return ResponseEntity.ok().build();
     }
 

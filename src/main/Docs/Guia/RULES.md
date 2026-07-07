@@ -303,7 +303,7 @@ Nota: el caso de uso CU-L02 menciona categoria, pero el modelo de dominio visibl
 - Un pedido debe tener fecha, estado, domicilio de entrega, total, cliente y local.
 - Un detalle de pedido debe referenciar un plato que pertenezca al local del pedido.
 - Una factura debe estar asociada a un pedido del cliente al que se emite.
-- Un reclamo solo puede existir para un pedido confirmado y del cliente que reclama.
+- Un reclamo solo puede existir para un pedido confirmado o entregado y del cliente que reclama.
 - Solo se puede calificar si existió al menos un pedido entre cliente y local.
 - El puntaje de una calificación debe estar entre 1 y 5 inclusive.
 - La fecha de fin de una promoción no puede ser anterior a su fecha de inicio.

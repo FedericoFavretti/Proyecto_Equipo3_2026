@@ -116,7 +116,7 @@ Tutor: Ing. Fernando Arrieta
     Al ser confirmado un pedido, el sistema emite automáticamente una factura en
     formato PDF, que contiene el número de comprobante, el monto total y el enlace al
     archivo generado.
-    Si un cliente queda insatisfecho con un pedido confirmado, puede abrir un Reclamo ,
+Si un cliente queda insatisfecho con un pedido confirmado o entregado, puede abrir un Reclamo ,
     especificando el motivo, el tipo de compensación solicitada (reintegro u otra) y el
     monto a devolver. El reclamo atravesando estados propios: pendiente, en proceso y
     solucionado.
@@ -155,7 +155,7 @@ Tutor: Ing. Fernando Arrieta
     ● No hay dos notificaciones con el mismo id.
     2.2. Restricciones circulares................................................................................................
     ● Un reclamo debe estar asociado a un pedido que haya sido previamente
-    confirmado y que pertenezca al cliente que realiza el reclamo.
+confirmado o entregado y que pertenezca al cliente que realiza el reclamo.
     ● Una calificación de un cliente a un local solo puede existir si ese cliente
     realizó al menos un pedido a ese local.
     ● Una calificación de un local a un cliente solo puede existir si ese cliente
