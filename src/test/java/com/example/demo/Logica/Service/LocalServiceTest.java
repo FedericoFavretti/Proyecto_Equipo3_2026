@@ -32,12 +32,14 @@ import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
+import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Logica.Mappers.CategoriaMapper;
 import org.mockito.Mockito;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -69,6 +71,10 @@ class LocalServiceTest {
     private ClienteRepositorio clienteRepositorio;
     @Mock
     private CalificacionRepositorio calificacionRepositorio;
+    @Mock
+    private CategoriaRepositorio categoriaRepositorio;
+    @Mock
+    private CategoriaMapper categoriaMapper;
 
     private LocalService localService;
 
@@ -92,8 +98,10 @@ class LocalServiceTest {
                 promocionRepositorio,
                 promocionMapper,
                 clienteRepositorio,
-                calificacionRepositorio
-                );
+                calificacionRepositorio,
+                categoriaRepositorio,
+                categoriaMapper
+        );
     }
 
     @Test

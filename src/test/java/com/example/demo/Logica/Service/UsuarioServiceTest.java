@@ -14,8 +14,12 @@ import com.example.demo.Persistencia.Repositorios.CodigoVerificacionRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
+import com.example.demo.Persistencia.Repositorios.SolicitudCambioCorreoRepositorio;
+import com.example.demo.Persistencia.Repositorios.TokenActivacionCuentaRepositorio;
 import com.example.demo.Persistencia.Repositorios.TokenBlacklistRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Logica.Mappers.ClienteMapper;
+import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.jwt.JwtService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,6 +75,14 @@ class UsuarioServiceTest {
     private AdministradorRepositorio administradorRepositorio;
     @Mock
     private CalificacionRepositorio calificacionRepositorio;
+    @Mock
+    private SolicitudCambioCorreoRepositorio solicitudCambioCorreoRepositorio;
+    @Mock
+    private ClienteMapper clienteMapper;
+    @Mock
+    private LocalMapper localMapper;
+    @Mock
+    private TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio;
 
     @Test
     void editarDatosDeCuentaClienteActualizaCamposPermitidosYRevocaTokenSiCambianCredenciales() {
@@ -281,7 +293,11 @@ class UsuarioServiceTest {
                 codigoVerificacionRepositorio,
                 localRepositorio,
                 administradorRepositorio,
-                calificacionRepositorio
+                calificacionRepositorio,
+                solicitudCambioCorreoRepositorio,
+                clienteMapper,
+                localMapper,
+                tokenActivacionCuentaRepositorio
         );
     }
 

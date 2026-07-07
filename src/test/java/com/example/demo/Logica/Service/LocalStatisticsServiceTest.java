@@ -13,12 +13,15 @@ import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Logica.Mappers.PromocionMapper;
 import com.example.demo.Logica.Record.PlatoVendidoEstadisticaProjection;
+import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
+import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Logica.Mappers.CategoriaMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,6 +64,12 @@ class LocalStatisticsServiceTest {
     private PromocionMapper promocionMapper;
     @Mock
     private ClienteRepositorio clienteRepositorio;
+    @Mock
+    private CalificacionRepositorio calificacionRepositorio;
+    @Mock
+    private CategoriaRepositorio categoriaRepositorio;
+    @Mock
+    private CategoriaMapper categoriaMapper;
 
     private LocalService localService;
 
@@ -79,7 +88,10 @@ class LocalStatisticsServiceTest {
                 platoMapper,
                 promocionRepositorio,
                 promocionMapper,
-                clienteRepositorio
+                clienteRepositorio,
+                calificacionRepositorio,
+                categoriaRepositorio,
+                categoriaMapper
         );
     }
 

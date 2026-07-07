@@ -26,6 +26,7 @@ import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
+import com.example.demo.Persistencia.Repositorios.TokenActivacionCuentaRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.jwt.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -95,6 +97,9 @@ class ClienteServiceTest {
     private GoogleIdentityService googleIdentityService;
 
     @Mock
+    private TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio;
+
+    @Mock
     private UserDetails userDetails;
 
     private ClienteService clienteService;
@@ -115,8 +120,12 @@ class ClienteServiceTest {
                 localMapper,
                 jwtService,
                 userDetailsService,
-                googleIdentityService
+                googleIdentityService,
+                tokenActivacionCuentaRepositorio
         );
+        // "activationFrontendBaseUrl" es un campo @Value que Spring solo inyecta
+        // en tiempo de ejecución real; en un test unitario hay que setearlo a mano.
+        ReflectionTestUtils.setField(clienteService, "activationFrontendBaseUrl", "https://foodly.com.uy");
     }
 
     private DtCliente dtClienteConPasswd(String passwd) {

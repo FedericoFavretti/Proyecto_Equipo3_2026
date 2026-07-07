@@ -7,6 +7,7 @@ import com.example.demo.Logica.DataTypes.response.DtSolicitudLocalPendienteRespo
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
+import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,12 @@ class AdminServiceTest {
 
     @Mock
     private RegistroLocalNotificador registroLocalNotificador;
+
+    @Mock
+    private ClienteRepositorio clienteRepositorio;
+
+    @Mock
+    private UsuarioService usuarioService;
 
     @Test
     void listarSolicitudesPendientesDevuelveResumenSolicitudes() {
@@ -135,7 +142,8 @@ class AdminServiceTest {
     }
 
     private AdminService crearServicio() {
-        return new AdminService(localRepositorio, usuarioRepositorio, registroLocalNotificador);
+        return new AdminService(localRepositorio, usuarioRepositorio, registroLocalNotificador,
+                clienteRepositorio, usuarioService);
     }
 
     private Local localPendiente(Long id) {
