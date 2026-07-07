@@ -33,18 +33,14 @@ public class PedidoController implements iPedidoController {
 
     @PreAuthorize("hasRole('Local')")
     @PostMapping("/{idPedido}/confirmar")
-    public ResponseEntity<DtPedidoResponse> confirmarPedido(
-            @PathVariable Long idPedido,
-            @RequestBody DtConfirmarPedidoRequest request) {
+    public ResponseEntity<DtPedidoResponse> confirmarPedido(@PathVariable Long idPedido, @RequestBody DtConfirmarPedidoRequest request) {
         Pedido pedido = pedidoService.confirmarPedido(idPedido, request.getTiempoEstimadoEntregaMinutos());
         return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 
     @PreAuthorize("hasRole('Local')")
     @PostMapping("/{idPedido}/rechazar")
-    public ResponseEntity<Void> rechazarPedido(
-            @PathVariable Long idPedido,
-            @RequestBody DtRechazarPedidoRequest request) {
+    public ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido, @RequestBody DtRechazarPedidoRequest request) {
         pedidoService.rechazarPedido(idPedido, request.getMotivo());
         return ResponseEntity.ok().build();
     }

@@ -25,7 +25,7 @@ public class PlatoMapper {
                 .descripcion(dtPlato.getDescripcion())
                 .categoria(categoriaMapper.mapearCategoriaDeDt(dtPlato.getDtCategoria()))
                 .precio(dtPlato.getPrecio())
-                .imagenes(dtPlato.getImagenes())
+                .imagen(dtPlato.getImagen())
                 .disponible(dtPlato.getDisponible())
                 .local(localMapper.mapearLocalDeDt(dtPlato.getDtLocal()))
                 .build();
@@ -40,7 +40,7 @@ public class PlatoMapper {
                 .precio(plato.getPrecio())
                 .precioFinal(plato.getPrecio())
                 .tienePromocion(false)
-                .imagenes(plato.getImagenes())
+                .imagen(plato.getImagen())
                 .disponible(plato.getDisponible())
                 .dtLocal(localMapper.mapearDtLocalDeClase(plato.getLocal()))
                 .build();

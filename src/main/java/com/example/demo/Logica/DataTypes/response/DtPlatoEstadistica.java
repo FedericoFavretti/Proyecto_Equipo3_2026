@@ -14,7 +14,7 @@ import java.util.List;
 public class DtPlatoEstadistica {
     private Long id;
     private String nombre;
-    private List<String> imagenes;
+    private String imagen;
     private Integer cantidadVendida;
     private Double montoVendido;
 }

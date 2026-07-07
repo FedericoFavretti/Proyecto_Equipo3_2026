@@ -39,19 +39,17 @@ public class LocalController implements iLocalController {
 
     @PreAuthorize("hasRole('Local')")
     @PostMapping(value = "/platos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Plato> gestionarPlatoAlta(@RequestPart("datos") DtPlato dtPlato, @RequestPart("imagenes") List<MultipartFile> imagenes) {
-        List<String> urls = cloudinaryService.subirImagenes(imagenes);
-        dtPlato.setImagenes(urls);
+    public ResponseEntity<Plato> gestionarPlatoAlta(@RequestPart("datos") DtPlato dtPlato, @RequestPart("imagen") MultipartFile imagen) {
+        dtPlato.setImagen(cloudinaryService.subirImagen(imagen));
         Plato plato = localService.altaPlato(dtPlato);
         return ResponseEntity.ok(plato);
     }
 
     @PreAuthorize("hasRole('Local')")
     @PutMapping(value = "/platos/{idPlato}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Plato> gestionarPlatoModificacion(@PathVariable("idPlato") Long idPlato, @RequestPart("datos") DtPlato dtPlato, @RequestPart(value = "imagenes", required = false) List<MultipartFile> imagenes) {
-        if (imagenes != null && !imagenes.isEmpty()) {
-            List<String> urls = cloudinaryService.subirImagenes(imagenes);
-            dtPlato.setImagenes(urls);
+    public ResponseEntity<Plato> gestionarPlatoModificacion(@PathVariable("idPlato") Long idPlato, @RequestPart("datos") DtPlato dtPlato, @RequestPart(value = "imagen", required = false) MultipartFile imagen) {
+        if (imagen != null && !imagen.isEmpty()) {
+          dtPlato.setImagen(cloudinaryService.subirImagen(imagen));
         }
         Plato plato = localService.gestionarPlatoModificacion(idPlato, dtPlato);
         return ResponseEntity.ok(plato);

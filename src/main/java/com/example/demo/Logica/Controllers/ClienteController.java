@@ -51,9 +51,7 @@ public class ClienteController implements iClienteController {
     }
 
     @PostMapping(value = "/google/registro/completar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<DtLoginResponseCliente> completarRegistroConGoogle(
-            @RequestPart("datos") DtGoogleRegistroCompletarRequest datos,
-            @RequestPart("foto") MultipartFile foto) {
+    public ResponseEntity<DtLoginResponseCliente> completarRegistroConGoogle(@RequestPart("datos") DtGoogleRegistroCompletarRequest datos, @RequestPart("foto") MultipartFile foto) {
         datos.setFoto(cloudinaryService.subirImagen(foto));
         return ResponseEntity.ok(clienteService.completarRegistroConGoogle(datos));
     }

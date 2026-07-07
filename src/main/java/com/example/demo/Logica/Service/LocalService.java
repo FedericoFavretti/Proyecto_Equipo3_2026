@@ -147,10 +147,10 @@ public class LocalService {
         Plato platoExistente = platoRepositorio.buscarPorId(idPlato)
                 .orElseThrow(() -> new ResourceNotFoundException("Plato", idPlato));
 
-        if (listaVacia(dtPlato.getImagenes())) {
-            dtPlato.setImagenes(platoExistente.getImagenes());
+        if (listaVacia(dtPlato.getImagen())) {
+            dtPlato.setImagen(platoExistente.getImagen());
         }
-        validarImagenesPlato(dtPlato.getImagenes());
+        validarImagenesPlato(dtPlato.getImagen());
 
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
@@ -436,7 +436,7 @@ public class LocalService {
     }
     private void validarDatosPlato(DtPlato dtPlato) {
         validarDatosPlatoModificacion(dtPlato);
-        validarImagenesPlato(dtPlato.getImagenes());
+        validarImagenesPlato(dtPlato.getImagen());
     }
 
     private void validarDatosPlatoModificacion(DtPlato dtPlato) {
@@ -457,12 +457,12 @@ public class LocalService {
         }
     }
 
-    private void validarImagenesPlato(List<String> imagenes) {
-        if (listaVacia(imagenes)) {
+    private void validarImagenesPlato(String imagen) {
+        if (listaVacia(imagen)) {
             throw new BusinessRuleException(MENSAJE_DATOS_PLATO_INCOMPLETOS);
         }
 
-        if (imagenes.stream().anyMatch(this::imagenPlatoNoPermitida)) {
+        if (imagenPlatoNoPermitida(imagen)) {
             throw new BusinessRuleException(MENSAJE_IMAGEN_PLATO_INVALIDA);
         }
     }
@@ -475,8 +475,8 @@ public class LocalService {
         return precio == null || precio <= 0;
     }
 
-    private boolean listaVacia(List<?> lista) {
-        return lista == null || lista.isEmpty();
+    private boolean listaVacia(String imagen) {
+        return imagen == null || imagen.isEmpty();
     }
 
     private boolean imagenPlatoNoPermitida(String imagen) {
@@ -594,7 +594,7 @@ public class LocalService {
         return DtPlatoEstadistica.builder()
                 .id(plato.getId())
                 .nombre(plato.getNombre())
-                .imagenes(plato.getImagenes())
+                .imagen(plato.getImagen())
                 .cantidadVendida(projection.cantidadTotal())
                 .montoVendido(projection.montoTotal())
                 .build();

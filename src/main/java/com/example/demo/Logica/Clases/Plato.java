@@ -15,7 +15,7 @@ public class Plato {
     private String descripcion;
     private Categoria categoria;
     private Double precio;
-    private List<String> imagenes;
+    private String imagen;
     private Boolean disponible;
     private Local local;
 }

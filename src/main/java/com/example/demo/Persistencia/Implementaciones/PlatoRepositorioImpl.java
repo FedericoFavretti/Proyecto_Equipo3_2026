@@ -27,16 +27,6 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         this.categoriaRepositorio = categoriaRepositorio;
     }
 
-
-    private List<String> mapearImagenes(ResultSet rs) throws SQLException {
-        Array array = rs.getArray("imagenes");
-        if (array == null) {
-            return new ArrayList<>();
-        }
-        return Arrays.asList((String[]) array.getArray());
-    }
-
-
     @Override
     public List<Plato> listarTodos() {
         return jdbcTemplate.query("SELECT * FROM plato",
@@ -63,7 +53,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     public List<Plato> buscarConFiltros(DtFiltro filtro) {
         StringBuilder sql = new StringBuilder(
                 "SELECT p.id, p.nombre, p.descripcion, p.precio, " +
-                        "p.imagenes, p.disponible, p.idLocal, p.idcategoria FROM plato p WHERE 1=1"
+                        "p.imagen, p.disponible, p.idLocal, p.idcategoria FROM plato p WHERE 1=1"
         );
         List<Object> params = new ArrayList<>();
 
@@ -118,14 +108,14 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO plato (nombre, descripcion, precio, imagenes, disponible, idLocal, idcategoria) " +
+                    "INSERT INTO plato (nombre, descripcion, precio, imagen, disponible, idLocal, idcategoria) " +
                             "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     new String[]{"id"}
             );
             ps.setString(1, plato.getNombre());
             ps.setString(2, plato.getDescripcion());
             ps.setDouble(3, plato.getPrecio());
-            ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
+            ps.setString(4, plato.getImagen());
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
             ps.setLong(7, plato.getCategoria().getId());
@@ -146,12 +136,12 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
                     "UPDATE plato SET nombre = ?, descripcion = ?, precio = ?, " +
-                            "imagenes = ?, disponible = ?, idLocal = ?, idcategoria = ? WHERE id = ?"
+                            "imagen = ?, disponible = ?, idLocal = ?, idcategoria = ? WHERE id = ?"
             );
             ps.setString(1, plato.getNombre());
             ps.setString(2, plato.getDescripcion());
             ps.setDouble(3, plato.getPrecio());
-            ps.setArray(4, connection.createArrayOf("varchar", plato.getImagenes().toArray()));
+            ps.setString(4, plato.getImagen());
             ps.setBoolean(5, plato.getDisponible());
             ps.setLong(6, plato.getLocal().getId());
             ps.setLong(7, plato.getCategoria().getId());
@@ -175,7 +165,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
                 rs.getString("descripcion"),
                 categoriaRepositorio.buscarPorId(rs.getLong("idcategoria")).orElseThrow(()->new RuntimeException("Categoria no encontrada.")),
                 rs.getDouble("precio"),
-                mapearImagenes(rs),
+                rs.getString("imagen"),
                 rs.getBoolean("disponible"),
                 localRepositorio.buscarPorId(rs.getLong("idLocal"))
                         .orElseThrow(() -> new RuntimeException("Local no encontrado"))

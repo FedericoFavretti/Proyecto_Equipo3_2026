@@ -20,7 +20,7 @@ public class DtPlato {
     private Double precio;
     private Double precioFinal;
     private Boolean tienePromocion;
-    private List<String> imagenes;
+    private String imagen;
     private Boolean disponible;
     private DtLocal dtLocal;
 }

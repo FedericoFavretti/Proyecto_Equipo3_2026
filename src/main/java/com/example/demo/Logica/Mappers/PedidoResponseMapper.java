@@ -75,7 +75,7 @@ public class PedidoResponseMapper {
                 .nombre(plato.getNombre())
                 .descripcion(plato.getDescripcion())
                 .precio(plato.getPrecio())
-                .imagenes(plato.getImagenes())
+                .imagen(plato.getImagen())
                 .disponible(plato.getDisponible())
                 .build();
     }

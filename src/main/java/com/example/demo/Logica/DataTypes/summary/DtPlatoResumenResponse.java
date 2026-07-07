@@ -16,7 +16,7 @@ public class DtPlatoResumenResponse {
     private String nombre;
     private String descripcion;
     private Double precio;
-    private List<String> imagenes;
+    private String imagen;
     private Boolean disponible;
 }
 
