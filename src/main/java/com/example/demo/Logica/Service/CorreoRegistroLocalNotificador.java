@@ -1,3 +1,5 @@
+
+
 package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;
@@ -5,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -58,6 +61,10 @@ public class CorreoRegistroLocalNotificador implements RegistroLocalNotificador 
         mensaje.setSubject(asunto);
         mensaje.setText(cuerpo);
 
-        mailSender.send(mensaje);
+        try {
+            mailSender.send(mensaje);
+        } catch (MailException e) {
+            logger.error("No se pudo enviar el correo '{}' a {}: {}", asunto, destinatario, e.getMessage());
+        }
     }
 }
