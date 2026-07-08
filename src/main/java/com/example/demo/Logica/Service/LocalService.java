@@ -53,7 +53,7 @@ public class LocalService {
     private static final Pattern FORMATO_EMAIL =
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
     private static final String MENSAJE_CAMPOS_REQUERIDOS =
-            "Los siguientes campos son requeridos: %s. Por favor, completelos antes de enviar.";
+            "Los siguientes campos son requeridos. Por favor, completelos antes de enviar.";
     private static final String MENSAJE_EMAIL_INVALIDO =
             "El correo electronico ingresado no tiene un formato valido.";
     private static final String MENSAJE_IMAGEN_INVALIDA =
@@ -268,9 +268,7 @@ public class LocalService {
         dtLocal.setCalificacionGlobal(0.0);
         validarSolicitudRegistroLocal(dtLocal);
 
-        if (localRepositorio.buscarPorNombre(dtLocal.getNombre()).isPresent()) {
-            throw new ResourceConflictException(MENSAJE_NOMBRE_LOCAL_DUPLICADO);
-        }
+        localRepositorio.buscarPorNombre(dtLocal.getNombre()).orElseThrow(()->new ResourceConflictException(MENSAJE_NOMBRE_LOCAL_DUPLICADO));
 
         dtLocal.setPasswd(passwordEncoder.encode(dtLocal.getPasswd()));
         Local local = localMapper.mapearLocalDeDt(dtLocal);
@@ -510,7 +508,7 @@ public class LocalService {
         if (dtLocal == null) {
             throw new BusinessRuleException(String.format(
                     MENSAJE_CAMPOS_REQUERIDOS,
-                    "email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
+                    "Completar: email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
         }
         if (!FORMATO_EMAIL.matcher(dtLocal.getEmail()).matches()) {
             throw new BusinessRuleException(MENSAJE_EMAIL_INVALIDO);
