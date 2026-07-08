@@ -130,7 +130,8 @@ public class LocalService {
 
     @Transactional
     public Plato altaPlato(DtPlato dtPlato) {
-        validarDatosPlato(dtPlato);
+        validarDatosPlatoModificacion(dtPlato);
+        validarImagenesPlato(dtPlato.getImagen());
 
         platoRepositorio.buscarPorNombre(dtPlato.getNombre()).orElseThrow(()->new ResourceConflictException(MENSAJE_PLATO_YA_EXISTE));
 
@@ -442,10 +443,6 @@ public class LocalService {
         if (categoria.getIdLocal() == null || !categoria.getIdLocal().equals(idLocal)) {
             throw new BusinessRuleException(MENSAJE_CATEGORIA_DE_OTRO_LOCAL);
         }
-    }
-    private void validarDatosPlato(DtPlato dtPlato) {
-        validarDatosPlatoModificacion(dtPlato);
-        validarImagenesPlato(dtPlato.getImagen());
     }
 
     private void validarDatosPlatoModificacion(DtPlato dtPlato) {
