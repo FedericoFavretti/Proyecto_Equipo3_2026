@@ -1,6 +1,7 @@
 package com.example.demo.Logica.Controllers;
 import com.example.demo.Logica.DataTypes.response.DtPromocionesLocalResponse;
 import com.example.demo.Logica.DataTypes.response.DtPlatoEstadistica;
+import com.example.demo.Logica.DataTypes.response.DtVentaMensualEstadistica;
 import com.example.demo.Logica.Enums.PeriodoEstadisticasPreset;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.Service.LocalService;
@@ -64,6 +65,12 @@ class LocalControllerTest {
                                         .cantidadVendida(4)
                                         .montoVendido(1400.0)
                                         .build()))
+                        .ventasMensuales(List.of(
+                                DtVentaMensualEstadistica.builder()
+                                        .anio(2026)
+                                        .mes(6)
+                                        .montoVendido(1500.0)
+                                        .build()))
                         .build());
 
         mockMvc.perform(get("/api/v1/locales/estadisticas/10")
@@ -75,7 +82,10 @@ class LocalControllerTest {
                 .andExpect(jsonPath("$.platosMasPedido[0].id").value(20))
                 .andExpect(jsonPath("$.platosMasPedido[0].nombre").value("Milanesa al pan"))
                 .andExpect(jsonPath("$.platosMasPedido[0].cantidadVendida").value(4))
-                .andExpect(jsonPath("$.ventasPorPlato[0].montoVendido").value(1400.0));
+                .andExpect(jsonPath("$.ventasPorPlato[0].montoVendido").value(1400.0))
+                .andExpect(jsonPath("$.ventasMensuales[0].anio").value(2026))
+                .andExpect(jsonPath("$.ventasMensuales[0].mes").value(6))
+                .andExpect(jsonPath("$.ventasMensuales[0].montoVendido").value(1500.0));
 
         ArgumentCaptor<DtEstadisticasLocalFiltro> captor = ArgumentCaptor.forClass(DtEstadisticasLocalFiltro.class);
         verify(localService).obtenerEstadisticasLocal(eq(10L), captor.capture());
@@ -93,6 +103,12 @@ class LocalControllerTest {
                         .ventasConfirmadas(850.0)
                         .platosMasPedido(List.of())
                         .ventasPorPlato(List.of())
+                        .ventasMensuales(List.of(
+                                DtVentaMensualEstadistica.builder()
+                                        .anio(2026)
+                                        .mes(6)
+                                        .montoVendido(850.0)
+                                        .build()))
                         .build());
 
         mockMvc.perform(get("/api/v1/locales/estadisticas/10")
@@ -101,7 +117,10 @@ class LocalControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ventasConfirmadas").value(850.0))
                 .andExpect(jsonPath("$.fechaDesde").value("2026-06-01"))
-                .andExpect(jsonPath("$.fechaHasta").value("2026-06-15"));
+                .andExpect(jsonPath("$.fechaHasta").value("2026-06-15"))
+                .andExpect(jsonPath("$.ventasMensuales[0].anio").value(2026))
+                .andExpect(jsonPath("$.ventasMensuales[0].mes").value(6))
+                .andExpect(jsonPath("$.ventasMensuales[0].montoVendido").value(850.0));
 
         ArgumentCaptor<DtEstadisticasLocalFiltro> captor = ArgumentCaptor.forClass(DtEstadisticasLocalFiltro.class);
         verify(localService).obtenerEstadisticasLocal(eq(10L), captor.capture());

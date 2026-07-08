@@ -2,14 +2,18 @@ package com.example.demo.Logica.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.stream.Collectors;
 
 import com.example.demo.Logica.Clases.*;
 import com.example.demo.Logica.DataTypes.request.DtEstadisticasLocalFiltro;
 import com.example.demo.Logica.DataTypes.response.DtPlatoEstadistica;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
+import com.example.demo.Logica.DataTypes.response.DtVentaMensualEstadistica;
 import com.example.demo.Logica.DataTypes.shared.DtCategoria;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
@@ -26,6 +30,7 @@ import com.example.demo.Logica.Mappers.CategoriaMapper;
 import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Logica.Record.PlatoVendidoEstadisticaProjection;
+import com.example.demo.Logica.Record.VentaMensualEstadisticaProjection;
 import com.example.demo.Persistencia.Repositorios.*;
 import com.example.demo.Logica.DataTypes.request.DtPromocionRequest;
 import com.example.demo.Logica.Mappers.PromocionMapper;
@@ -328,11 +333,19 @@ public class LocalService {
                 idLocal,
                 rangoPeriodo.fechaDesdeInclusive(),
                 rangoPeriodo.fechaHastaExclusiva());
+        List<DtVentaMensualEstadistica> ventasMensuales = completarVentasMensuales(
+                pedidoRepositorio.obtenerVentasMensualesEnPeriodo(
+                        idLocal,
+                        rangoPeriodo.fechaDesdeInclusive(),
+                        rangoPeriodo.fechaHastaExclusiva()),
+                rangoPeriodo.fechaDesde(),
+                rangoPeriodo.fechaHasta());
         return DtEstadisticasLocal.builder()
                 .fechaDesde(rangoPeriodo.fechaDesde())
                 .fechaHasta(rangoPeriodo.fechaHasta())
                 .platosMasPedido(platosMasPedido)
                 .ventasPorPlato(ventasPorPlato)
+                .ventasMensuales(ventasMensuales)
                 .ventasConfirmadas(ventasConfirmadas)
                 .build();
     }
@@ -598,6 +611,31 @@ public class LocalService {
                 .cantidadVendida(projection.cantidadTotal())
                 .montoVendido(projection.montoTotal())
                 .build();
+    }
+
+    private List<DtVentaMensualEstadistica> completarVentasMensuales(List<VentaMensualEstadisticaProjection> ventasMensualesAgrupadas,
+                                                                     LocalDate fechaDesde,
+                                                                     LocalDate fechaHasta) {
+        Map<YearMonth, Double> montosPorMes = ventasMensualesAgrupadas.stream()
+                .collect(Collectors.toMap(
+                        venta -> YearMonth.of(venta.anio(), venta.mes()),
+                        VentaMensualEstadisticaProjection::montoVendido
+                ));
+
+        List<DtVentaMensualEstadistica> resultado = new ArrayList<>();
+        YearMonth mesActual = YearMonth.from(fechaDesde);
+        YearMonth ultimoMes = YearMonth.from(fechaHasta);
+
+        while (!mesActual.isAfter(ultimoMes)) {
+            resultado.add(DtVentaMensualEstadistica.builder()
+                    .anio(mesActual.getYear())
+                    .mes(mesActual.getMonthValue())
+                    .montoVendido(montosPorMes.getOrDefault(mesActual, 0.0))
+                    .build());
+            mesActual = mesActual.plusMonths(1);
+        }
+
+        return resultado;
     }
 
     private RangoPeriodo resolverRangoPeriodo(DtEstadisticasLocalFiltro filtro) {
