@@ -41,7 +41,7 @@ public class LocalController implements iLocalController {
     @PostMapping(value = "/platos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Plato> gestionarPlatoAlta(@RequestPart("datos") DtPlato dtPlato, @RequestPart("imagen") MultipartFile imagen) {
         dtPlato.setImagen(cloudinaryService.subirImagen(imagen));
-        Plato plato = localService.altaPlato(dtPlato);
+        Plato plato = localService.gestionarPlatoAlta(dtPlato);
         return ResponseEntity.ok(plato);
     }
 

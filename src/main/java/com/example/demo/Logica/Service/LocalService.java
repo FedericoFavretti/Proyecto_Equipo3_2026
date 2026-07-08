@@ -129,7 +129,7 @@ public class LocalService {
     }
 
     @Transactional
-    public Plato altaPlato(DtPlato dtPlato) {
+    public Plato gestionarPlatoAlta(DtPlato dtPlato) {
         validarDatosPlatoModificacion(dtPlato);
         validarImagenesPlato(dtPlato.getImagen());
 

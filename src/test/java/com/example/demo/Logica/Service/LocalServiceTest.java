@@ -116,7 +116,7 @@ class LocalServiceTest {
         when(platoRepositorio.guardar(org.mockito.ArgumentMatchers.any(Plato.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Plato platoGuardado = localService.altaPlato(solicitud);
+        Plato platoGuardado = localService.gestionarPlatoAlta(solicitud);
 
         assertThat(platoGuardado.getNombre()).isEqualTo("Milanesa al pan");
         assertThat(platoGuardado.getDescripcion()).isEqualTo("Milanesa con lechuga y tomate");
@@ -131,7 +131,7 @@ class LocalServiceTest {
         DtPlato solicitud = platoValido();
         solicitud.setNombre(" ");
 
-        assertThatThrownBy(() -> localService.altaPlato(solicitud))
+        assertThatThrownBy(() -> localService.gestionarPlatoAlta(solicitud))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El nombre del plato es obligatorio.");
 
@@ -143,7 +143,7 @@ class LocalServiceTest {
         DtPlato solicitud = platoValido();
         solicitud.setPrecio(0.0);
 
-        assertThatThrownBy(() -> localService.altaPlato(solicitud))
+        assertThatThrownBy(() -> localService.gestionarPlatoAlta(solicitud))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El precio debe ser un valor numerico mayor a cero.");
 
@@ -155,7 +155,7 @@ class LocalServiceTest {
         DtPlato solicitud = platoValido();
         solicitud.setImagen("milanesa.gif");
 
-        assertThatThrownBy(() -> localService.altaPlato(solicitud))
+        assertThatThrownBy(() -> localService.gestionarPlatoAlta(solicitud))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Solo se aceptan imagenes JPG o PNG.");
 
@@ -169,7 +169,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
         when(platoRepositorio.buscarPorNombre("Milanesa al pan")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> localService.altaPlato(solicitud))
+        assertThatThrownBy(() -> localService.gestionarPlatoAlta(solicitud))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El local debe estar habilitado para realizar esta operacion.");
 
