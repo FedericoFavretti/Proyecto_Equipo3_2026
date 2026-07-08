@@ -486,9 +486,6 @@ public class LocalService {
     }
 
     private boolean imagenPlatoNoPermitida(String imagen) {
-        if (imagen == null || imagen.isBlank()) {
-            return true;
-        }
         String nombreNormalizado = imagen.strip().toLowerCase();
         int queryIndex = nombreNormalizado.indexOf('?');
         if (queryIndex >= 0) {
