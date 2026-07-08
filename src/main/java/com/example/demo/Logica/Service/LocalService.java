@@ -132,9 +132,7 @@ public class LocalService {
     public Plato altaPlato(DtPlato dtPlato) {
         validarDatosPlato(dtPlato);
 
-        if (platoRepositorio.buscarPorNombre(dtPlato.getNombre()).isPresent()) {
-            throw new ResourceConflictException(MENSAJE_PLATO_YA_EXISTE);
-        }
+        platoRepositorio.buscarPorNombre(dtPlato.getNombre()).orElseThrow(()->new ResourceConflictException(MENSAJE_PLATO_YA_EXISTE));
 
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
