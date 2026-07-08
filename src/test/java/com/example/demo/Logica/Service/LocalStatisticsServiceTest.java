@@ -13,6 +13,7 @@ import com.example.demo.Logica.Mappers.LocalMapper;
 import com.example.demo.Logica.Mappers.PlatoMapper;
 import com.example.demo.Logica.Mappers.PromocionMapper;
 import com.example.demo.Logica.Record.PlatoVendidoEstadisticaProjection;
+import com.example.demo.Logica.Record.VentaMensualEstadisticaProjection;
 import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
 import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
@@ -114,6 +115,10 @@ class LocalStatisticsServiceTest {
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(plato));
         when(pedidoRepositorio.obtenerVentasParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(2450.0);
+        when(pedidoRepositorio.obtenerVentasMensualesEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(
+                        new VentaMensualEstadisticaProjection(2026, 6, 2450.0)
+                ));
 
         DtEstadisticasLocal resultado = localService.obtenerEstadisticasLocal(10L, filtro);
 
@@ -128,6 +133,10 @@ class LocalStatisticsServiceTest {
         assertThat(resultado.getVentasPorPlato()).hasSize(1);
         assertThat(resultado.getVentasPorPlato().get(0).getCantidadVendida()).isEqualTo(7);
         assertThat(resultado.getVentasPorPlato().get(0).getMontoVendido()).isEqualTo(2450.0);
+        assertThat(resultado.getVentasMensuales()).hasSize(1);
+        assertThat(resultado.getVentasMensuales().get(0).getAnio()).isEqualTo(2026);
+        assertThat(resultado.getVentasMensuales().get(0).getMes()).isEqualTo(6);
+        assertThat(resultado.getVentasMensuales().get(0).getMontoVendido()).isEqualTo(2450.0);
 
         ArgumentCaptor<LocalDateTime> desdeCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
         ArgumentCaptor<LocalDateTime> hastaCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
@@ -152,12 +161,53 @@ class LocalStatisticsServiceTest {
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(plato));
         when(pedidoRepositorio.obtenerVentasParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(600.0);
+        when(pedidoRepositorio.obtenerVentasMensualesEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(new VentaMensualEstadisticaProjection(LocalDate.now().getYear(), LocalDate.now().getMonthValue(), 600.0)));
 
         DtEstadisticasLocal resultado = localService.obtenerEstadisticasLocal(10L, null);
 
         LocalDate hoy = LocalDate.now();
         assertThat(resultado.getFechaDesde()).isEqualTo(hoy.withDayOfMonth(1));
         assertThat(resultado.getFechaHasta()).isEqualTo(hoy);
+    }
+
+    @Test
+    void obtenerEstadisticasLocalCompletaMesesSinVentasEnLaSerieMensual() {
+        Local local = localHabilitado();
+        Plato plato = plato(local);
+        DtEstadisticasLocalFiltro filtro = DtEstadisticasLocalFiltro.builder()
+                .fechaDesde(LocalDate.of(2026, 5, 1))
+                .fechaHasta(LocalDate.of(2026, 7, 31))
+                .build();
+
+        when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
+        when(pedidoRepositorio.existePedidoValidoParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(true);
+        when(pedidoRepositorio.obtenerPlatosMasPedidosEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class), eq(5)))
+                .thenReturn(List.of(new PlatoVendidoEstadisticaProjection(20L, 10, 3000.0)));
+        when(pedidoRepositorio.obtenerVentasPorPlatoEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(new PlatoVendidoEstadisticaProjection(20L, 10, 3000.0)));
+        when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(plato));
+        when(pedidoRepositorio.obtenerVentasParaEstadisticasEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(3000.0);
+        when(pedidoRepositorio.obtenerVentasMensualesEnPeriodo(eq(10L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(
+                        new VentaMensualEstadisticaProjection(2026, 5, 1200.0),
+                        new VentaMensualEstadisticaProjection(2026, 7, 1800.0)
+                ));
+
+        DtEstadisticasLocal resultado = localService.obtenerEstadisticasLocal(10L, filtro);
+
+        assertThat(resultado.getVentasMensuales()).hasSize(3);
+        assertThat(resultado.getVentasMensuales().get(0).getAnio()).isEqualTo(2026);
+        assertThat(resultado.getVentasMensuales().get(0).getMes()).isEqualTo(5);
+        assertThat(resultado.getVentasMensuales().get(0).getMontoVendido()).isEqualTo(1200.0);
+        assertThat(resultado.getVentasMensuales().get(1).getAnio()).isEqualTo(2026);
+        assertThat(resultado.getVentasMensuales().get(1).getMes()).isEqualTo(6);
+        assertThat(resultado.getVentasMensuales().get(1).getMontoVendido()).isEqualTo(0.0);
+        assertThat(resultado.getVentasMensuales().get(2).getAnio()).isEqualTo(2026);
+        assertThat(resultado.getVentasMensuales().get(2).getMes()).isEqualTo(7);
+        assertThat(resultado.getVentasMensuales().get(2).getMontoVendido()).isEqualTo(1800.0);
     }
 
     @Test

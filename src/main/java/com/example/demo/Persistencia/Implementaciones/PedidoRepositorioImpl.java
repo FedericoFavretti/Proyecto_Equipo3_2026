@@ -5,6 +5,7 @@ import com.example.demo.Logica.DataTypes.request.DtPedidoListadoFiltro;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Record.PlatoVendidoEstadisticaProjection;
+import com.example.demo.Logica.Record.VentaMensualEstadisticaProjection;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
@@ -334,6 +335,32 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 Timestamp.valueOf(fechaDesdeInclusive),
                 Timestamp.valueOf(fechaHastaExclusiva)
         );
+    }
+
+    @Override
+    public List<VentaMensualEstadisticaProjection> obtenerVentasMensualesEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
+        String sql = """
+        SELECT EXTRACT(YEAR FROM p.fecha)::int AS anio,
+               EXTRACT(MONTH FROM p.fecha)::int AS mes,
+               COALESCE(SUM(p.total), 0) AS monto_vendido
+        FROM pedido p
+        WHERE p.idlocal = ?
+          AND p.estado IN (?, ?)
+          AND p.fecha >= ?
+          AND p.fecha < ?
+        GROUP BY EXTRACT(YEAR FROM p.fecha), EXTRACT(MONTH FROM p.fecha)
+        ORDER BY anio ASC, mes ASC
+        """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new VentaMensualEstadisticaProjection(
+                        rs.getInt("anio"),
+                        rs.getInt("mes"),
+                        rs.getDouble("monto_vendido")
+                ), idLocal,
+                EstadoPedido.Confirmado.name(),
+                EstadoPedido.Entregado.name(),
+                Timestamp.valueOf(fechaDesdeInclusive),
+                Timestamp.valueOf(fechaHastaExclusiva));
     }
 
     @Override

@@ -15,5 +15,6 @@ public class DtEstadisticasLocal {
     private LocalDate fechaHasta;
     private List<DtPlatoEstadistica> platosMasPedido;
     private List<DtPlatoEstadistica> ventasPorPlato;
+    private List<DtVentaMensualEstadistica> ventasMensuales;
     private Double ventasConfirmadas;
 }
