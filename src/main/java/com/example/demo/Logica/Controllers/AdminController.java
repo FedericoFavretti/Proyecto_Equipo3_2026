@@ -31,9 +31,6 @@ public class AdminController implements iAdminController {
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/solicitudes-locales/resolver_solicitud")
     public ResponseEntity<Void> resolverSolicitud(@RequestBody DtResolverSolicitudLocalRequest request) {
-        if (request == null || request.getEstadoObjetivo() == null) {
-            throw new IllegalArgumentException("Debe indicar el estado objetivo de la solicitud.");
-        }
         adminService.resolverSolicitud(request);
         return ResponseEntity.ok().build();
     }

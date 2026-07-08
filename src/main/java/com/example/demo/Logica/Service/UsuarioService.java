@@ -151,8 +151,7 @@ public class UsuarioService {
             throw new ResourceNotFoundException("Usuario no activado o bloqueado.");
         }
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(dtLoginRequest.getEmail(), dtLoginRequest.getPasswd()));
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dtLoginRequest.getEmail(), dtLoginRequest.getPasswd()));
 
         String token = jwtService.generateToken(user);
 

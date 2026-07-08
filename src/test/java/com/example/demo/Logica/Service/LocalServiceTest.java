@@ -368,7 +368,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorNombre("La Cocina")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("123456")).thenReturn("encoded-123456");
 
-        localService.solicitarRegistroComoLocalHabilitado(solicitud);
+        localService.solicitarHabilitacion(solicitud);
 
         ArgumentCaptor<Local> localCaptor = ArgumentCaptor.forClass(Local.class);
         verify(usuarioRepositorio).guardar(localCaptor.capture());
@@ -399,7 +399,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorNombre("La Cocina")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("123456")).thenReturn("encoded-123456");
 
-        localService.solicitarRegistroComoLocalHabilitado(solicitud);
+        localService.solicitarHabilitacion(solicitud);
 
         ArgumentCaptor<Local> localCaptor = ArgumentCaptor.forClass(Local.class);
         verify(localRepositorio).guardar(localCaptor.capture());
@@ -419,7 +419,7 @@ class LocalServiceTest {
                 .imagenes(List.of())
                 .build();
 
-        assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
+        assertThatThrownBy(() -> localService.solicitarHabilitacion(solicitud))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Los siguientes campos son requeridos: email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes. Por favor, completelos antes de enviar.");
 
@@ -431,7 +431,7 @@ class LocalServiceTest {
         DtLocal solicitud = solicitudValida();
         solicitud.setEmail("correo-invalido");
 
-        assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
+        assertThatThrownBy(() -> localService.solicitarHabilitacion(solicitud))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El correo electronico ingresado no tiene un formato valido.");
 
@@ -443,7 +443,7 @@ class LocalServiceTest {
         DtLocal solicitud = solicitudValida();
         solicitud.setImagenes(List.of("fachada.gif"));
 
-        assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
+        assertThatThrownBy(() -> localService.solicitarHabilitacion(solicitud))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Solo se aceptan imagenes en formato JPG o PNG de hasta 10 MB cada una.");
 
@@ -455,7 +455,7 @@ class LocalServiceTest {
         DtLocal solicitud = solicitudValida();
         when(localRepositorio.buscarPorNombre("La Cocina")).thenReturn(Optional.of(localHabilitado(false)));
 
-        assertThatThrownBy(() -> localService.solicitarRegistroComoLocalHabilitado(solicitud))
+        assertThatThrownBy(() -> localService.solicitarHabilitacion(solicitud))
                 .isInstanceOf(ResourceConflictException.class)
                 .hasMessage("El nombre del local ya se encuentra registrado.");
 

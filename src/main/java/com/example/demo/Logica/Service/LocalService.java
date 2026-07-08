@@ -260,7 +260,7 @@ public class LocalService {
     }
 
     @Transactional
-    public void solicitarRegistroComoLocalHabilitado(DtLocal dtLocal) {
+    public void solicitarHabilitacion(DtLocal dtLocal) {
         dtLocal.setEstadoCuenta(EstadoCuenta.Pendiente);
         dtLocal.setEstadoLocal(EstadoLocal.Pendiente);
         dtLocal.setTipo(TIPO_USUARIO_LOCAL);

@@ -109,7 +109,7 @@ public class LocalController implements iLocalController {
         String logoLocal = cloudinaryService.subirImagen(logo);
         dtLocal.setFoto(logoLocal);
         dtLocal.setImagenes(urls);
-        localService.solicitarRegistroComoLocalHabilitado(dtLocal);
+        localService.solicitarHabilitacion(dtLocal);
         return ResponseEntity.ok().build();
     }
 
