@@ -434,7 +434,7 @@ public class LocalService {
 
     private void validarCategoriaPerteneceAlLocal(DtPlato dtPlato, Long idLocal) {
         if (dtPlato.getDtCategoria() == null || dtPlato.getDtCategoria().getId() == null) {
-            return;
+            throw new BusinessRuleException("Debe agregar una categoria.");
         }
 
         Categoria categoria = categoriaRepositorio.buscarPorId(dtPlato.getDtCategoria().getId())
