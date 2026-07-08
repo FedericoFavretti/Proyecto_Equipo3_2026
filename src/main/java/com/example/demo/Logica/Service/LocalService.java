@@ -133,7 +133,9 @@ public class LocalService {
         validarDatosPlatoModificacion(dtPlato);
         validarImagenesPlato(dtPlato.getImagen());
 
-        platoRepositorio.buscarPorNombre(dtPlato.getNombre()).orElseThrow(()->new ResourceConflictException(MENSAJE_PLATO_YA_EXISTE));
+        if(platoRepositorio.buscarPorNombre(dtPlato.getNombre()).isPresent()) {
+            throw new ResourceConflictException(MENSAJE_PLATO_YA_EXISTE);
+        }
 
         Local local = localRepositorio.buscarPorId(dtPlato.getDtLocal().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Local", dtPlato.getDtLocal().getId()));
@@ -267,7 +269,9 @@ public class LocalService {
         dtLocal.setCalificacionGlobal(0.0);
         validarSolicitudRegistroLocal(dtLocal);
 
-        localRepositorio.buscarPorNombre(dtLocal.getNombre()).orElseThrow(()->new ResourceConflictException(MENSAJE_NOMBRE_LOCAL_DUPLICADO));
+        if (localRepositorio.buscarPorNombre(dtLocal.getNombre()).isPresent()) {
+            throw new ResourceConflictException(MENSAJE_NOMBRE_LOCAL_DUPLICADO);
+        }
 
         dtLocal.setPasswd(passwordEncoder.encode(dtLocal.getPasswd()));
         Local local = localMapper.mapearLocalDeDt(dtLocal);
@@ -486,6 +490,9 @@ public class LocalService {
     }
 
     private boolean imagenPlatoNoPermitida(String imagen) {
+        if (imagen == null || imagen.isBlank()) {
+            return true;
+        }
         String nombreNormalizado = imagen.strip().toLowerCase();
         int queryIndex = nombreNormalizado.indexOf('?');
         if (queryIndex >= 0) {
