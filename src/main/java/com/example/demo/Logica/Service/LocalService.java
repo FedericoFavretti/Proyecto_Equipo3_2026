@@ -507,44 +507,14 @@ public class LocalService {
     }
 
     private void validarSolicitudRegistroLocal(DtLocal dtLocal) {
-        List<String> camposFaltantes = new ArrayList<>();
-
         if (dtLocal == null) {
             throw new BusinessRuleException(String.format(
                     MENSAJE_CAMPOS_REQUERIDOS,
                     "email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
         }
-
-        agregarSiVacio(camposFaltantes, "email", dtLocal.getEmail());
-        agregarSiVacio(camposFaltantes, "passwd", dtLocal.getPasswd());
-        agregarSiVacio(camposFaltantes, "nombre", dtLocal.getNombre());
-
-        if (dtLocal.getDireccion() == null) {
-            camposFaltantes.add("calle");
-            camposFaltantes.add("numero");
-            camposFaltantes.add("ciudad");
-            camposFaltantes.add("codigoPostal");
-        } else {
-            agregarSiVacio(camposFaltantes, "calle", dtLocal.getDireccion().getCalle());
-            agregarSiVacio(camposFaltantes, "numero", dtLocal.getDireccion().getNumero());
-            agregarSiVacio(camposFaltantes, "ciudad", dtLocal.getDireccion().getCiudad());
-            agregarSiVacio(camposFaltantes, "codigoPostal", dtLocal.getDireccion().getCodigoPostal());
-        }
-
-        agregarSiVacio(camposFaltantes, "descripcion", dtLocal.getDescripcion());
-        if (dtLocal.getImagenes() == null || dtLocal.getImagenes().isEmpty()) {
-            camposFaltantes.add("imagenes");
-        }
-
-        if (!camposFaltantes.isEmpty()) {
-            throw new BusinessRuleException(
-                    String.format(MENSAJE_CAMPOS_REQUERIDOS, String.join(", ", camposFaltantes)));
-        }
-
         if (!FORMATO_EMAIL.matcher(dtLocal.getEmail()).matches()) {
             throw new BusinessRuleException(MENSAJE_EMAIL_INVALIDO);
         }
-
         if (dtLocal.getImagenes().stream().anyMatch(this::imagenNoPermitida)) {
             throw new BusinessRuleException(MENSAJE_IMAGEN_INVALIDA);
         }
