@@ -3,14 +3,10 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.FacturaDetalle;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 
@@ -18,7 +14,7 @@ import java.util.Locale;
 public class FacturaPdfGeneratorService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private static final String LOGO_CLASSPATH = "pdf/foodly-logo.png";
+    private static final String LOGO_URL = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783563076/foodly_sycini.png";
 
     public byte[] generarFacturaPdf(Factura factura, List<FacturaDetalle> detalles) {
         String html = construirHtmlFactura(factura, detalles);
@@ -148,7 +144,7 @@ public class FacturaPdfGeneratorService {
                     <table>
                         <tr>
                             <td style="width:45%;">
-                                <img class="logo-img" src="data:image/png;base64,{{LOGO_BASE64}}" />
+                                <img class="logo-img" src="{{LOGO_URL}}" />
                                 <span class="logo-texto">Foodly</span>
                                 <div class="tagline">Miles de sabores.<br/>Un solo lugar.</div>
                             </td>
@@ -241,7 +237,7 @@ public class FacturaPdfGeneratorService {
                 """;
 
         return plantilla
-                .replace("{{LOGO_BASE64}}", cargarLogoBase64())
+                .replace("{{LOGO_URL}}", LOGO_URL)
                 .replace("{{NUMERO}}", escapeHtml(valorSeguro(factura.getNumero())))
                 .replace("{{FECHA_PEDIDO}}", fechaPedido)
                 .replace("{{FECHA_EMISION}}", fechaEmision)
@@ -256,14 +252,6 @@ public class FacturaPdfGeneratorService {
                 .replace("{{SUBTOTAL}}", formatoMoneda(subtotal))
                 .replace("{{ENVIO}}", formatoMoneda(envio))
                 .replace("{{TOTAL}}", formatoMoneda(total));
-    }
-
-    private String cargarLogoBase64() {
-        try (InputStream in = new ClassPathResource(LOGO_CLASSPATH).getInputStream()) {
-            return Base64.getEncoder().encodeToString(in.readAllBytes());
-        } catch (IOException e) {
-            return "";
-        }
     }
 
     private String formatoMoneda(Double valor) {
