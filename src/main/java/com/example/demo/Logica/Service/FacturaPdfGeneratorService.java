@@ -15,6 +15,11 @@ public class FacturaPdfGeneratorService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String LOGO_URL = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783563076/foodly_sycini.png";
+    private static final String SITIO_WEB = "https://frontend-proyecto-foodly-test.up.railway.app/";
+    private static final String ICONO_PEDIDO = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565191/WhatsApp_Image_2026-07-08_at_11.44.02_PM_busy9b.jpg";
+    private static final String ICONO_CLIENTE = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565201/WhatsApp_Image_2026-07-08_at_11.44.02_PM_1_a0zrqh.jpg";
+    private static final String ICONO_DIRECCION = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565209/WhatsApp_Image_2026-07-08_at_11.44.03_PM_qsds2s.jpg";
+    private static final String ICONO_MEDIO_PAGO = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565217/WhatsApp_Image_2026-07-08_at_11.44.03_PM_1_fyjam2.jpg";
 
     public byte[] generarFacturaPdf(Factura factura, List<FacturaDetalle> detalles) {
         String html = construirHtmlFactura(factura, detalles);
@@ -96,7 +101,8 @@ public class FacturaPdfGeneratorService {
                     .caja-info td { padding: 18px 14px; }
                     .celda-info { width: 25%; border-right: 1px solid #f0dfcd; }
                     .celda-info:last-child { border-right: none; }
-                    .circulo-icono { display: block; width: 28px; height: 28px; background: #e2edfb; border-radius: 50%; margin-bottom: 10px; }
+                    .circulo-icono { display: block; width: 28px; height: 28px; background: #e2edfb; border-radius: 50%; margin-bottom: 10px; text-align: center; }
+                    .circulo-icono img { width: 16px; height: 16px; margin-top: 6px; }
                     .info-etiqueta { font-size: 10px; color: #6b7280; margin-bottom: 4px; }
                     .info-valor { font-size: 13px; font-weight: bold; color: #111827; }
                     .info-valor-chico { font-size: 10px; color: #6b7280; margin-top: 2px; }
@@ -160,23 +166,23 @@ public class FacturaPdfGeneratorService {
                     <table class="caja-info">
                         <tr>
                             <td class="celda-info">
-                                <span class="circulo-icono"></span>
+                                <span class="circulo-icono"><img src="{{ICONO_PEDIDO}}" /></span>
                                 <div class="info-etiqueta">Pedido</div>
                                 <div class="info-valor">#{{PEDIDO_ID}}</div>
                             </td>
                             <td class="celda-info">
-                                <span class="circulo-icono"></span>
+                                <span class="circulo-icono"><img src="{{ICONO_CLIENTE}}" /></span>
                                 <div class="info-etiqueta">Cliente</div>
                                 <div class="info-valor">{{CLIENTE_NOMBRE}}</div>
                                 <div class="info-valor-chico">{{CLIENTE_EMAIL}}</div>
                             </td>
                             <td class="celda-info">
-                                <span class="circulo-icono"></span>
+                                <span class="circulo-icono"><img src="{{ICONO_DIRECCION}}" /></span>
                                 <div class="info-etiqueta">Direcci\u00f3n de entrega</div>
                                 <div class="info-valor">{{DIRECCION}}</div>
                             </td>
                             <td class="celda-info">
-                                <span class="circulo-icono"></span>
+                                <span class="circulo-icono"><img src="{{ICONO_MEDIO_PAGO}}" /></span>
                                 <div class="info-etiqueta">Medio de pago</div>
                                 <div class="info-valor">{{MEDIO_PAGO}}</div>
                             </td>
@@ -211,7 +217,7 @@ public class FacturaPdfGeneratorService {
                                 <div class="caja-gracias">
                                     <div class="gracias-titulo">\u00a1Gracias por elegir Foodly!</div>
                                     <div class="gracias-texto">Nos alegra llevar tu comida favorita hasta donde est\u00e9s.</div>
-                                    <div class="gracias-web">www.foodly.com</div>
+                                    <div class="gracias-web">{{SITIO_WEB}}</div>
                                 </div>
                             </td>
                             <td class="celda-totales">
@@ -238,6 +244,11 @@ public class FacturaPdfGeneratorService {
 
         return plantilla
                 .replace("{{LOGO_URL}}", LOGO_URL)
+                .replace("{{SITIO_WEB}}", SITIO_WEB)
+                .replace("{{ICONO_PEDIDO}}", ICONO_PEDIDO)
+                .replace("{{ICONO_CLIENTE}}", ICONO_CLIENTE)
+                .replace("{{ICONO_DIRECCION}}", ICONO_DIRECCION)
+                .replace("{{ICONO_MEDIO_PAGO}}", ICONO_MEDIO_PAGO)
                 .replace("{{NUMERO}}", escapeHtml(valorSeguro(factura.getNumero())))
                 .replace("{{FECHA_PEDIDO}}", fechaPedido)
                 .replace("{{FECHA_EMISION}}", fechaEmision)
