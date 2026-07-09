@@ -87,8 +87,7 @@ public class FacturaPdfGeneratorService {
                     table { border-collapse: collapse; width: 100%; }
                     td, th { vertical-align: top; }
 
-                    .logo-img { width: 42px; height: 42px; }
-                    .logo-texto { font-size: 26px; font-weight: bold; color: #1565d8; padding-left: 8px; }
+                    .logo-img { width: 70px; height: 70px; }
                     .tagline { margin-top: 8px; font-size: 12px; color: #6b7280; line-height: 1.5; }
 
                     .col-derecha { text-align: right; width: 55%; }
@@ -100,16 +99,16 @@ public class FacturaPdfGeneratorService {
 
                     .caja-info { background: #fdf3ea; border-radius: 16px; margin-top: 26px; }
                     .caja-info td { padding: 18px 14px; }
-                    .celda-info { width: 25%; border-right: 1px solid #f0dfcd; }
+                    .celda-info { width: 25%; border-right: 1px solid #f0dfcd; text-align: center; }
                     .celda-info:last-child { border-right: none; }
-                    .circulo-icono { display: block; width: 28px; height: 28px; background: #e2edfb; border-radius: 50%; margin-bottom: 10px; text-align: center; overflow: hidden; }
+                    .circulo-icono { display: block; width: 28px; height: 28px; background: #e2edfb; border-radius: 50%; margin: 0 auto 10px auto; text-align: center; overflow: hidden; }
                     .circulo-icono img { width: 28px; height: 28px; }
                     .info-etiqueta { font-size: 10px; color: #6b7280; margin-bottom: 4px; }
                     .info-valor { font-size: 13px; font-weight: bold; color: #111827; }
                     .info-valor-chico { font-size: 10px; color: #6b7280; margin-top: 2px; }
 
                     .caja-local { border: 1px solid #eee; border-radius: 16px; margin-top: 20px; }
-                    .caja-local td { padding: 16px 18px; }
+                    .caja-local td { padding: 16px 18px; vertical-align: middle; }
                     .circulo-local { display: block; width: 44px; height: 44px; background: #ffffff; border-radius: 50%; text-align: center; overflow: hidden; }
                     .circulo-local img { width: 44px; height: 44px; margin-top: 0; }
                     .local-etiqueta { font-size: 12px; color: #1565d8; font-weight: bold; }
@@ -153,7 +152,6 @@ public class FacturaPdfGeneratorService {
                         <tr>
                             <td style="width:45%;">
                                 <img class="logo-img" src="{{LOGO_URL}}" />
-                                <span class="logo-texto">Foodly</span>
                                 <div class="tagline">Miles de sabores.<br/>Un solo lugar.</div>
                             </td>
                             <td class="col-derecha">
