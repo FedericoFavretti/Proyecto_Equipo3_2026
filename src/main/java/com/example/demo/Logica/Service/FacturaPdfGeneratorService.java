@@ -192,7 +192,7 @@ public class FacturaPdfGeneratorService {
 
                     <table class="caja-local">
                         <tr>
-                            <td style="width:60px;"><span class="circulo-local"><img src="{{LOGO_URL}}" /></span></td>
+                            <td style="width:60px;"><span class="circulo-local"><img src="https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783636365/foodly_sycini_x7k5rh.png" /></span></td>
                             <td>
                                 <div class="local-etiqueta">Local</div>
                                 <div class="local-nombre">{{LOCAL_NOMBRE}}</div>
