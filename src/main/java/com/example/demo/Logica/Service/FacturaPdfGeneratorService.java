@@ -20,6 +20,7 @@ public class FacturaPdfGeneratorService {
     private static final String ICONO_CLIENTE = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565217/WhatsApp_Image_2026-07-08_at_11.44.03_PM_1_fyjam2.jpg";
     private static final String ICONO_DIRECCION = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565191/WhatsApp_Image_2026-07-08_at_11.44.02_PM_busy9b.jpg";
     private static final String ICONO_MEDIO_PAGO = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565209/WhatsApp_Image_2026-07-08_at_11.44.03_PM_qsds2s.jpg";
+    private static final String LOGO_LOCAL_POR_DEFECTO = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783636365/foodly_sycini_x7k5rh.png";
 
     public byte[] generarFacturaPdf(Factura factura, List<FacturaDetalle> detalles) {
         String html = construirHtmlFactura(factura, detalles);
@@ -192,7 +193,7 @@ public class FacturaPdfGeneratorService {
 
                     <table class="caja-local">
                         <tr>
-                            <td style="width:60px;"><span class="circulo-local"><img src="https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783636365/foodly_sycini_x7k5rh.png" /></span></td>
+                            <td style="width:60px;"><span class="circulo-local"><img src="{{LOGO_LOCAL}}" /></span></td>
                             <td>
                                 <div class="local-etiqueta">Local</div>
                                 <div class="local-nombre">{{LOCAL_NOMBRE}}</div>
@@ -263,7 +264,8 @@ public class FacturaPdfGeneratorService {
                 .replace("{{FILAS_DETALLE}}", filas.toString())
                 .replace("{{SUBTOTAL}}", formatoMoneda(subtotal))
                 .replace("{{ENVIO}}", formatoMoneda(envio))
-                .replace("{{TOTAL}}", formatoMoneda(total));
+                .replace("{{TOTAL}}", formatoMoneda(total))
+                .replace("{{LOGO_LOCAL}}", valorSeguro(factura.getLocalLogoSnapshot(), LOGO_LOCAL_POR_DEFECTO));
     }
 
     private String formatoMoneda(Double valor) {
@@ -273,6 +275,10 @@ public class FacturaPdfGeneratorService {
 
     private String valorSeguro(Object valor) {
         return valor == null ? "-" : valor.toString();
+    }
+
+    private String valorSeguro(String valor, String porDefecto) {
+        return (valor == null || valor.isBlank()) ? porDefecto : valor;
     }
 
     private String escapeHtml(String valor) {

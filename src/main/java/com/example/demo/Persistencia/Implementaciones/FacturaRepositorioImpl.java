@@ -71,9 +71,9 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO Factura
                     (numero, id_pedido, fecha_pedido, fecha_emision, monto_total,
-                     local_nombre_snapshot, local_email_snapshot, cliente_nombre_snapshot,
+                     local_nombre_snapshot, local_email_snapshot, local_logo_snapshot, cliente_nombre_snapshot,
                      cliente_email_snapshot, direccion_entrega_snapshot, medio_pago_snapshot)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, new String[]{"id"});
             ps.setString(1, factura.getNumero());
             ps.setLong(2, factura.getPedido().getId());
@@ -82,10 +82,11 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
             ps.setDouble(5, factura.getMontoTotal());
             ps.setString(6, factura.getLocalNombreSnapshot());
             ps.setString(7, factura.getLocalEmailSnapshot());
-            ps.setString(8, factura.getClienteNombreSnapshot());
-            ps.setString(9, factura.getClienteEmailSnapshot());
-            ps.setString(10, factura.getDireccionEntregaSnapshot());
-            ps.setString(11, factura.getMedioPagoSnapshot());
+            ps.setString(8, factura.getLocalLogoSnapshot());
+            ps.setString(9, factura.getClienteNombreSnapshot());
+            ps.setString(10, factura.getClienteEmailSnapshot());
+            ps.setString(11, factura.getDireccionEntregaSnapshot());
+            ps.setString(12, factura.getMedioPagoSnapshot());
             return ps;
         }, keyHolder);
 
@@ -102,7 +103,7 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
         jdbcTemplate.update("""
                         UPDATE Factura
                         SET numero = ?, id_pedido = ?, fecha_pedido = ?, fecha_emision = ?, monto_total = ?,
-                            local_nombre_snapshot = ?, local_email_snapshot = ?, cliente_nombre_snapshot = ?,
+                            local_nombre_snapshot = ?, local_email_snapshot = ?, local_logo_snapshot = ?, cliente_nombre_snapshot = ?,
                             cliente_email_snapshot = ?, direccion_entrega_snapshot = ?, medio_pago_snapshot = ?
                         WHERE id = ?
                         """,
@@ -113,6 +114,7 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
                 factura.getMontoTotal(),
                 factura.getLocalNombreSnapshot(),
                 factura.getLocalEmailSnapshot(),
+                factura.getLocalLogoSnapshot(),
                 factura.getClienteNombreSnapshot(),
                 factura.getClienteEmailSnapshot(),
                 factura.getDireccionEntregaSnapshot(),
@@ -202,6 +204,7 @@ public class FacturaRepositorioImpl implements FacturaRepositorio {
                 .montoTotal(rs.getDouble("monto_total"))
                 .localNombreSnapshot(rs.getString("local_nombre_snapshot"))
                 .localEmailSnapshot(rs.getString("local_email_snapshot"))
+                .localLogoSnapshot(rs.getString("local_logo_snapshot"))
                 .clienteNombreSnapshot(rs.getString("cliente_nombre_snapshot"))
                 .clienteEmailSnapshot(rs.getString("cliente_email_snapshot"))
                 .direccionEntregaSnapshot(rs.getString("direccion_entrega_snapshot"))

@@ -28,6 +28,7 @@ public class Factura {
     private LocalDateTime fechaGeneracionPdf;
     private String localNombreSnapshot;
     private String localEmailSnapshot;
+    private String localLogoSnapshot;
     private String clienteNombreSnapshot;
     private String clienteEmailSnapshot;
     private String direccionEntregaSnapshot;

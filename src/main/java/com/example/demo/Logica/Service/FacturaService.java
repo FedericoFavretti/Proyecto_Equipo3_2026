@@ -67,6 +67,7 @@ public class FacturaService {
                 .fechaGeneracionPdf(null)
                 .localNombreSnapshot(pedido.getLocal() != null ? pedido.getLocal().getNombre() : null)
                 .localEmailSnapshot(pedido.getLocal() != null ? pedido.getLocal().getEmail() : null)
+                .localLogoSnapshot(pedido.getLocal() != null ? pedido.getLocal().getFoto() : null)
                 .clienteNombreSnapshot(construirNombreCliente(pedido.getCliente()))
                 .clienteEmailSnapshot(pedido.getCliente() != null ? pedido.getCliente().getEmail() : null)
                 .direccionEntregaSnapshot(formatearDireccion(pedido.getDomicilioEntrega()))
