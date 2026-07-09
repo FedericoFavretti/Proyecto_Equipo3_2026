@@ -2,165 +2,287 @@ package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Clases.Factura;
 import com.example.demo.Logica.Clases.FacturaDetalle;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 
 @Service
 public class FacturaPdfGeneratorService {
 
-    private static final Charset PDF_CHARSET = StandardCharsets.ISO_8859_1;
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    private static final int MAX_LINEAS_POR_PAGINA = 34;
+    private static final String LOGO_CLASSPATH = "pdf/foodly-logo.png";
 
     public byte[] generarFacturaPdf(Factura factura, List<FacturaDetalle> detalles) {
-        List<String> lineas = construirLineasFactura(factura, detalles);
-        List<List<String>> paginas = paginar(lineas, MAX_LINEAS_POR_PAGINA);
-        return construirPdf(paginas);
+        String html = construirHtmlFactura(factura, detalles);
+        return renderizarPdf(html);
     }
 
-    private List<String> construirLineasFactura(Factura factura, List<FacturaDetalle> detalles) {
-        List<String> lineas = new ArrayList<>();
-        lineas.add("Factura " + valorSeguro(factura.getNumero()));
-        lineas.add("Pedido: #" + (factura.getPedido() != null ? factura.getPedido().getId() : "-"));
-        lineas.add("Fecha pedido: " + (factura.getFechaPedido() != null
+    private byte[] renderizarPdf(String html) {
+        try (ByteArrayOutputStream salida = new ByteArrayOutputStream()) {
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+            builder.useFastMode();
+            builder.withHtmlContent(html, null);
+            builder.toStream(salida);
+            builder.run();
+            return salida.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generando el PDF de la factura", e);
+        }
+    }
+
+    private String construirHtmlFactura(Factura factura, List<FacturaDetalle> detalles) {
+        double subtotal = detalles == null ? 0.0 : detalles.stream()
+                .mapToDouble(d -> d.getSubtotal() != null ? d.getSubtotal() : 0.0)
+                .sum();
+        double total = factura.getMontoTotal() != null ? factura.getMontoTotal() : subtotal;
+        double envio = Math.max(0.0, total - subtotal);
+
+        String fechaPedido = factura.getFechaPedido() != null
                 ? factura.getFechaPedido().format(DATE_TIME_FORMATTER)
-                : "-"));
-        lineas.add("Fecha emision: " + (factura.getFechaEmision() != null
+                : "-";
+        String fechaEmision = factura.getFechaEmision() != null
                 ? factura.getFechaEmision().format(DATE_TIME_FORMATTER)
                 : factura.getFechaUltimoIntento() != null
                 ? factura.getFechaUltimoIntento().format(DATE_TIME_FORMATTER)
-                : "-"));
-        lineas.add("");
-        lineas.add("Local: " + valorSeguro(factura.getLocalNombreSnapshot()));
-        lineas.add("Email local: " + valorSeguro(factura.getLocalEmailSnapshot()));
-        lineas.add("Cliente: " + valorSeguro(factura.getClienteNombreSnapshot()));
-        lineas.add("Email cliente: " + valorSeguro(factura.getClienteEmailSnapshot()));
-        lineas.add("Direccion entrega: " + valorSeguro(factura.getDireccionEntregaSnapshot()));
-        lineas.add("Medio de pago: " + valorSeguro(factura.getMedioPagoSnapshot()));
-        lineas.add(String.format(Locale.US, "Total: %.2f", factura.getMontoTotal() != null ? factura.getMontoTotal() : 0.0));
-        lineas.add("");
-        lineas.add("Detalle:");
+                : "-";
+        String pedidoId = factura.getPedido() != null ? String.valueOf(factura.getPedido().getId()) : "-";
 
+        StringBuilder filas = new StringBuilder();
         if (detalles == null || detalles.isEmpty()) {
-            lineas.add("- Sin items registrados");
+            filas.append("<tr><td colspan=\"4\" class=\"sin-items\">Sin items registrados</td></tr>");
         } else {
-            for (FacturaDetalle detalle : detalles) {
-                lineas.add("- " + valorSeguro(detalle.getNombreProductoSnapshot()));
-                lineas.add("  Cantidad: " + valorSeguro(detalle.getCantidad()));
-                lineas.add(String.format(Locale.US, "  Precio unitario: %.2f", detalle.getPrecioUnitario() != null ? detalle.getPrecioUnitario() : 0.0));
-                lineas.add(String.format(Locale.US, "  Subtotal: %.2f", detalle.getSubtotal() != null ? detalle.getSubtotal() : 0.0));
+            for (FacturaDetalle d : detalles) {
+                filas.append("<tr>")
+                        .append("<td>").append(escapeHtml(valorSeguro(d.getNombreProductoSnapshot()))).append("</td>")
+                        .append("<td class=\"centro\">").append(escapeHtml(valorSeguro(d.getCantidad()))).append("</td>")
+                        .append("<td class=\"derecha\">").append(formatoMoneda(d.getPrecioUnitario())).append("</td>")
+                        .append("<td class=\"derecha\">").append(formatoMoneda(d.getSubtotal())).append("</td>")
+                        .append("</tr>");
             }
         }
 
-        return lineas;
+        String plantilla = """
+                <html>
+                <head>
+                <style>
+                    @page { size: 620px 900px; margin: 0; }
+                    * { box-sizing: border-box; }
+                    body {
+                        margin: 0; padding: 0;
+                        font-family: Helvetica, Arial, sans-serif;
+                        color: #1f2937;
+                        background: #ffffff;
+                    }
+                    .hoja { padding: 28px 32px 0 32px; }
+                    table { border-collapse: collapse; width: 100%; }
+                    td, th { vertical-align: top; }
+
+                    .logo-img { width: 42px; height: 42px; }
+                    .logo-texto { font-size: 26px; font-weight: bold; color: #1565d8; padding-left: 8px; }
+                    .tagline { margin-top: 8px; font-size: 12px; color: #6b7280; line-height: 1.5; }
+
+                    .col-derecha { text-align: right; width: 55%; }
+                    .factura-label { font-size: 13px; color: #374151; }
+                    .factura-numero { font-size: 30px; font-weight: bold; color: #1565d8; margin: 2px 0 12px 0; }
+                    .fecha-fila { font-size: 11px; color: #374151; margin-bottom: 5px; }
+                    .fecha-fila b { color: #111827; }
+                    .punto { display: inline-block; width: 7px; height: 7px; background: #f4a261; border-radius: 50%; margin-right: 6px; }
+
+                    .caja-info { background: #fdf3ea; border-radius: 16px; margin-top: 26px; }
+                    .caja-info td { padding: 18px 14px; }
+                    .celda-info { width: 25%; border-right: 1px solid #f0dfcd; }
+                    .celda-info:last-child { border-right: none; }
+                    .circulo-icono { display: block; width: 28px; height: 28px; background: #e2edfb; border-radius: 50%; margin-bottom: 10px; }
+                    .info-etiqueta { font-size: 10px; color: #6b7280; margin-bottom: 4px; }
+                    .info-valor { font-size: 13px; font-weight: bold; color: #111827; }
+                    .info-valor-chico { font-size: 10px; color: #6b7280; margin-top: 2px; }
+
+                    .caja-local { border: 1px solid #eee; border-radius: 16px; margin-top: 20px; }
+                    .caja-local td { padding: 16px 18px; }
+                    .circulo-local { display: block; width: 44px; height: 44px; background: #1565d8; border-radius: 50%; }
+                    .local-etiqueta { font-size: 12px; color: #1565d8; font-weight: bold; }
+                    .local-nombre { font-size: 17px; font-weight: bold; color: #111827; margin: 3px 0; }
+                    .local-email { font-size: 11px; color: #6b7280; }
+
+                    .titulo-seccion { font-size: 15px; font-weight: bold; color: #1565d8; margin-top: 28px; margin-bottom: 10px; }
+
+                    .tabla-detalle { border: 1px solid #f0e2d2; border-radius: 10px; margin-top: 4px; }
+                    .tabla-detalle th { background: #fbe8d3; text-align: left; padding: 10px 12px; font-size: 11px; color: #92603a; }
+                    .tabla-detalle td { padding: 10px 12px; font-size: 12px; border-top: 1px solid #f2f2f2; }
+                    .centro { text-align: center; }
+                    .derecha { text-align: right; }
+                    .sin-items { text-align: center; color: #9ca3af; padding: 16px; }
+
+                    .fila-inferior { margin-top: 24px; }
+                    .celda-gracias { width: 50%; padding-right: 12px; }
+                    .celda-totales { width: 50%; padding-left: 12px; }
+
+                    .caja-gracias { background: #eef4fb; border-radius: 14px; padding: 16px; }
+                    .gracias-titulo { font-weight: bold; color: #1565d8; font-size: 13px; margin-bottom: 4px; }
+                    .gracias-texto { font-size: 11px; color: #6b7280; line-height: 1.5; }
+                    .gracias-web { font-size: 11px; color: #1565d8; margin-top: 10px; }
+
+                    .tabla-totales td { padding: 8px 0; font-size: 12px; border-bottom: 1px solid #eee; }
+                    .et-totales { color: #374151; }
+                    .val-totales { text-align: right; font-weight: bold; color: #111827; }
+
+                    .barra-total { background: #1565d8; border-radius: 10px; margin-top: 12px; }
+                    .barra-total td { padding: 13px 16px; color: #ffffff; font-weight: bold; font-size: 16px; }
+
+                    .pie { margin-top: 30px; background: #fdf3ea; padding: 20px; text-align: center; border-radius: 24px 24px 0 0; }
+                    .pie-titulo { font-weight: bold; color: #111827; font-size: 13px; }
+                    .pie-sub { font-size: 10px; color: #6b7280; margin-top: 3px; }
+                </style>
+                </head>
+                <body>
+                <div class="hoja">
+
+                    <table>
+                        <tr>
+                            <td style="width:45%;">
+                                <img class="logo-img" src="data:image/png;base64,{{LOGO_BASE64}}" />
+                                <span class="logo-texto">Foodly</span>
+                                <div class="tagline">Miles de sabores.<br/>Un solo lugar.</div>
+                            </td>
+                            <td class="col-derecha">
+                                <div class="factura-label">Factura</div>
+                                <div class="factura-numero">{{NUMERO}}</div>
+                                <div class="fecha-fila"><span class="punto"></span>Fecha del pedido: <b>{{FECHA_PEDIDO}}</b></div>
+                                <div class="fecha-fila"><span class="punto"></span>Fecha de emisi\u00f3n: <b>{{FECHA_EMISION}}</b></div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="caja-info">
+                        <tr>
+                            <td class="celda-info">
+                                <span class="circulo-icono"></span>
+                                <div class="info-etiqueta">Pedido</div>
+                                <div class="info-valor">#{{PEDIDO_ID}}</div>
+                            </td>
+                            <td class="celda-info">
+                                <span class="circulo-icono"></span>
+                                <div class="info-etiqueta">Cliente</div>
+                                <div class="info-valor">{{CLIENTE_NOMBRE}}</div>
+                                <div class="info-valor-chico">{{CLIENTE_EMAIL}}</div>
+                            </td>
+                            <td class="celda-info">
+                                <span class="circulo-icono"></span>
+                                <div class="info-etiqueta">Direcci\u00f3n de entrega</div>
+                                <div class="info-valor">{{DIRECCION}}</div>
+                            </td>
+                            <td class="celda-info">
+                                <span class="circulo-icono"></span>
+                                <div class="info-etiqueta">Medio de pago</div>
+                                <div class="info-valor">{{MEDIO_PAGO}}</div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="caja-local">
+                        <tr>
+                            <td style="width:60px;"><span class="circulo-local"></span></td>
+                            <td>
+                                <div class="local-etiqueta">Local</div>
+                                <div class="local-nombre">{{LOCAL_NOMBRE}}</div>
+                                <div class="local-email">{{LOCAL_EMAIL}}</div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="titulo-seccion">Detalle del pedido</div>
+                    <table class="tabla-detalle">
+                        <tr>
+                            <th>Producto</th>
+                            <th class="centro">Cantidad</th>
+                            <th class="derecha">Precio unitario</th>
+                            <th class="derecha">Subtotal</th>
+                        </tr>
+                        {{FILAS_DETALLE}}
+                    </table>
+
+                    <table class="fila-inferior">
+                        <tr>
+                            <td class="celda-gracias">
+                                <div class="caja-gracias">
+                                    <div class="gracias-titulo">\u00a1Gracias por elegir Foodly!</div>
+                                    <div class="gracias-texto">Nos alegra llevar tu comida favorita hasta donde est\u00e9s.</div>
+                                    <div class="gracias-web">www.foodly.com</div>
+                                </div>
+                            </td>
+                            <td class="celda-totales">
+                                <table class="tabla-totales">
+                                    <tr><td class="et-totales">Subtotal</td><td class="val-totales">{{SUBTOTAL}}</td></tr>
+                                    <tr><td class="et-totales">Costo de env\u00edo</td><td class="val-totales">{{ENVIO}}</td></tr>
+                                </table>
+                                <table class="barra-total">
+                                    <tr><td>TOTAL</td><td class="derecha">{{TOTAL}}</td></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="pie">
+                        <div class="pie-titulo">\u00a1Gracias por tu compra!</div>
+                        <div class="pie-sub">Factura generada autom\u00e1ticamente</div>
+                    </div>
+
+                </div>
+                </body>
+                </html>
+                """;
+
+        return plantilla
+                .replace("{{LOGO_BASE64}}", cargarLogoBase64())
+                .replace("{{NUMERO}}", escapeHtml(valorSeguro(factura.getNumero())))
+                .replace("{{FECHA_PEDIDO}}", fechaPedido)
+                .replace("{{FECHA_EMISION}}", fechaEmision)
+                .replace("{{PEDIDO_ID}}", escapeHtml(pedidoId))
+                .replace("{{CLIENTE_NOMBRE}}", escapeHtml(valorSeguro(factura.getClienteNombreSnapshot())))
+                .replace("{{CLIENTE_EMAIL}}", escapeHtml(valorSeguro(factura.getClienteEmailSnapshot())))
+                .replace("{{DIRECCION}}", escapeHtml(valorSeguro(factura.getDireccionEntregaSnapshot())))
+                .replace("{{MEDIO_PAGO}}", escapeHtml(valorSeguro(factura.getMedioPagoSnapshot())))
+                .replace("{{LOCAL_NOMBRE}}", escapeHtml(valorSeguro(factura.getLocalNombreSnapshot())))
+                .replace("{{LOCAL_EMAIL}}", escapeHtml(valorSeguro(factura.getLocalEmailSnapshot())))
+                .replace("{{FILAS_DETALLE}}", filas.toString())
+                .replace("{{SUBTOTAL}}", formatoMoneda(subtotal))
+                .replace("{{ENVIO}}", formatoMoneda(envio))
+                .replace("{{TOTAL}}", formatoMoneda(total));
     }
 
-    private List<List<String>> paginar(List<String> lineas, int maxLineasPorPagina) {
-        List<List<String>> paginas = new ArrayList<>();
-        for (int inicio = 0; inicio < lineas.size(); inicio += maxLineasPorPagina) {
-            int fin = Math.min(inicio + maxLineasPorPagina, lineas.size());
-            paginas.add(new ArrayList<>(lineas.subList(inicio, fin)));
+    private String cargarLogoBase64() {
+        try (InputStream in = new ClassPathResource(LOGO_CLASSPATH).getInputStream()) {
+            return Base64.getEncoder().encodeToString(in.readAllBytes());
+        } catch (IOException e) {
+            return "";
         }
-        return paginas;
     }
 
-    private byte[] construirPdf(List<List<String>> paginas) {
-        int fontObjectNumber = 3 + (paginas.size() * 2);
-        List<byte[]> objetos = new ArrayList<>();
-
-        objetos.add(bytes("<< /Type /Catalog /Pages 2 0 R >>"));
-
-        StringBuilder kids = new StringBuilder();
-        for (int i = 0; i < paginas.size(); i++) {
-            int pageObjectNumber = 3 + (i * 2);
-            if (kids.length() > 0) {
-                kids.append(' ');
-            }
-            kids.append(pageObjectNumber).append(" 0 R");
-        }
-        objetos.add(bytes("<< /Type /Pages /Kids [" + kids + "] /Count " + paginas.size() + " >>"));
-
-        for (int i = 0; i < paginas.size(); i++) {
-            int contentObjectNumber = 4 + (i * 2);
-            objetos.add(bytes("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 " + fontObjectNumber + " 0 R >> >> /Contents " + contentObjectNumber + " 0 R >>"));
-
-            String stream = renderizarContenidoPagina(paginas.get(i));
-            byte[] streamBytes = bytes(stream);
-            String encabezado = "<< /Length " + streamBytes.length + " >>\nstream\n";
-            String cierre = "\nendstream";
-            objetos.add(bytes(encabezado + stream + cierre));
-        }
-
-        objetos.add(bytes("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"));
-
-        StringBuilder pdf = new StringBuilder("%PDF-1.4\n");
-        List<Integer> offsets = new ArrayList<>();
-        offsets.add(0);
-
-        for (int i = 0; i < objetos.size(); i++) {
-            offsets.add(pdf.toString().getBytes(PDF_CHARSET).length);
-            pdf.append(i + 1).append(" 0 obj\n");
-            pdf.append(new String(objetos.get(i), PDF_CHARSET));
-            pdf.append("\nendobj\n");
-        }
-
-        int startxref = pdf.toString().getBytes(PDF_CHARSET).length;
-        pdf.append("xref\n");
-        pdf.append("0 ").append(objetos.size() + 1).append("\n");
-        pdf.append("0000000000 65535 f \n");
-
-        for (int i = 1; i < offsets.size(); i++) {
-            pdf.append(String.format(Locale.US, "%010d 00000 n %n", offsets.get(i)));
-        }
-
-        pdf.append("trailer\n");
-        pdf.append("<< /Size ").append(objetos.size() + 1).append(" /Root 1 0 R >>\n");
-        pdf.append("startxref\n");
-        pdf.append(startxref).append("\n");
-        pdf.append("%%EOF");
-
-        return bytes(pdf.toString());
-    }
-
-    private String renderizarContenidoPagina(List<String> lineas) {
-        StringBuilder contenido = new StringBuilder();
-        contenido.append("BT\n");
-        contenido.append("/F1 12 Tf\n");
-        contenido.append("50 760 Td\n");
-
-        boolean primera = true;
-        for (String linea : lineas) {
-            if (!primera) {
-                contenido.append("0 -18 Td\n");
-            }
-            contenido.append("(").append(escaparPdf(linea)).append(") Tj\n");
-            primera = false;
-        }
-
-        contenido.append("ET");
-        return contenido.toString();
-    }
-
-    private String escaparPdf(String valor) {
-        return valor
-                .replace("\\", "\\\\")
-                .replace("(", "\\(")
-                .replace(")", "\\)")
-                .replace("\r", " ")
-                .replace("\n", " ");
+    private String formatoMoneda(Double valor) {
+        double v = valor != null ? valor : 0.0;
+        return String.format(Locale.US, "$%,.2f", v);
     }
 
     private String valorSeguro(Object valor) {
         return valor == null ? "-" : valor.toString();
     }
 
-    private byte[] bytes(String valor) {
-        return valor.getBytes(PDF_CHARSET);
+    private String escapeHtml(String valor) {
+        if (valor == null) {
+            return "";
+        }
+        return valor
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 }
