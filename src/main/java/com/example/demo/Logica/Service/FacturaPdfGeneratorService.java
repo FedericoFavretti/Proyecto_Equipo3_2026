@@ -16,10 +16,10 @@ public class FacturaPdfGeneratorService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String LOGO_URL = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783563076/foodly_sycini.png";
     private static final String SITIO_WEB = "https://frontend-proyecto-foodly-test.up.railway.app/";
-    private static final String ICONO_PEDIDO = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565191/WhatsApp_Image_2026-07-08_at_11.44.02_PM_busy9b.jpg";
-    private static final String ICONO_CLIENTE = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565201/WhatsApp_Image_2026-07-08_at_11.44.02_PM_1_a0zrqh.jpg";
-    private static final String ICONO_DIRECCION = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565209/WhatsApp_Image_2026-07-08_at_11.44.03_PM_qsds2s.jpg";
-    private static final String ICONO_MEDIO_PAGO = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565217/WhatsApp_Image_2026-07-08_at_11.44.03_PM_1_fyjam2.jpg";
+    private static final String ICONO_PEDIDO = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565201/WhatsApp_Image_2026-07-08_at_11.44.02_PM_1_a0zrqh.jpg";
+    private static final String ICONO_CLIENTE = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565217/WhatsApp_Image_2026-07-08_at_11.44.03_PM_1_fyjam2.jpg";
+    private static final String ICONO_DIRECCION = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565191/WhatsApp_Image_2026-07-08_at_11.44.02_PM_busy9b.jpg";
+    private static final String ICONO_MEDIO_PAGO = "https://res.cloudinary.com/dh8f9uvlu/image/upload/v1783565209/WhatsApp_Image_2026-07-08_at_11.44.03_PM_qsds2s.jpg";
 
     public byte[] generarFacturaPdf(Factura factura, List<FacturaDetalle> detalles) {
         String html = construirHtmlFactura(factura, detalles);
@@ -101,15 +101,16 @@ public class FacturaPdfGeneratorService {
                     .caja-info td { padding: 18px 14px; }
                     .celda-info { width: 25%; border-right: 1px solid #f0dfcd; }
                     .celda-info:last-child { border-right: none; }
-                    .circulo-icono { display: block; width: 28px; height: 28px; background: #e2edfb; border-radius: 50%; margin-bottom: 10px; text-align: center; }
-                    .circulo-icono img { width: 16px; height: 16px; margin-top: 6px; }
+                    .circulo-icono { display: block; width: 28px; height: 28px; background: #e2edfb; border-radius: 50%; margin-bottom: 10px; text-align: center; overflow: hidden; }
+                    .circulo-icono img { width: 28px; height: 28px; }
                     .info-etiqueta { font-size: 10px; color: #6b7280; margin-bottom: 4px; }
                     .info-valor { font-size: 13px; font-weight: bold; color: #111827; }
                     .info-valor-chico { font-size: 10px; color: #6b7280; margin-top: 2px; }
 
                     .caja-local { border: 1px solid #eee; border-radius: 16px; margin-top: 20px; }
                     .caja-local td { padding: 16px 18px; }
-                    .circulo-local { display: block; width: 44px; height: 44px; background: #1565d8; border-radius: 50%; }
+                    .circulo-local { display: block; width: 44px; height: 44px; background: #1565d8; border-radius: 50%; text-align: center; overflow: hidden; }
+                    .circulo-local img { width: 30px; height: 30px; margin-top: 7px; }
                     .local-etiqueta { font-size: 12px; color: #1565d8; font-weight: bold; }
                     .local-nombre { font-size: 17px; font-weight: bold; color: #111827; margin: 3px 0; }
                     .local-email { font-size: 11px; color: #6b7280; }
@@ -191,7 +192,7 @@ public class FacturaPdfGeneratorService {
 
                     <table class="caja-local">
                         <tr>
-                            <td style="width:60px;"><span class="circulo-local"></span></td>
+                            <td style="width:60px;"><span class="circulo-local"><img src="{{LOGO_URL}}" /></span></td>
                             <td>
                                 <div class="local-etiqueta">Local</div>
                                 <div class="local-nombre">{{LOCAL_NOMBRE}}</div>
