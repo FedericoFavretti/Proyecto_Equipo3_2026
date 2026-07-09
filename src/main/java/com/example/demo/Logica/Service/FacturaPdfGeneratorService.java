@@ -109,8 +109,8 @@ public class FacturaPdfGeneratorService {
 
                     .caja-local { border: 1px solid #eee; border-radius: 16px; margin-top: 20px; }
                     .caja-local td { padding: 16px 18px; }
-                    .circulo-local { display: block; width: 44px; height: 44px; background: #1565d8; border-radius: 50%; text-align: center; overflow: hidden; }
-                    .circulo-local img { width: 30px; height: 30px; margin-top: 7px; }
+                    .circulo-local { display: block; width: 44px; height: 44px; background: #ffffff; border-radius: 50%; text-align: center; overflow: hidden; }
+                    .circulo-local img { width: 44px; height: 44px; margin-top: 0; }
                     .local-etiqueta { font-size: 12px; color: #1565d8; font-weight: bold; }
                     .local-nombre { font-size: 17px; font-weight: bold; color: #111827; margin: 3px 0; }
                     .local-email { font-size: 11px; color: #6b7280; }
