@@ -20,8 +20,6 @@ public class PagoController {
         this.mercadoPagoWebhookService = mercadoPagoWebhookService;
     }
 
-    // Mercado Pago llama por POST en producción, pero al simular notificaciones
-    // desde el panel a veces se dispara un GET de verificación. Aceptamos ambos.
     @PostMapping("/webhook")
     public ResponseEntity<Void> recibirNotificacionPost(
             @RequestBody(required = false) DtMercadoPagoWebhookRequest body,

@@ -128,7 +128,6 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
 
     @Override
     public List<PedidoListadoView> listarHistorialPorCliente(Long idCliente, DtPedidoListadoFiltro filtro) {
-        // Regla de producto: el cliente ve sus pedidos apenas se crean, incluso si el pago externo sigue pendiente.
         StringBuilder sql = new StringBuilder("""
                 SELECT
                     p.id,

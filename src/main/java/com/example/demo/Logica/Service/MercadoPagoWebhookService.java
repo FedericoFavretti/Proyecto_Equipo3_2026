@@ -22,7 +22,6 @@ public class MercadoPagoWebhookService {
             String topic,
             String dataId,
             String id) {
-        // "type"/"data.id" es el formato actual de Webhooks; "topic"/"id" es el formato legado de IPN.
         String tipoEvento = primerValorNoVacio(
                 type,
                 body != null ? body.getType() : null,

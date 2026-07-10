@@ -236,7 +236,6 @@ public class PedidoService {
 
             notificacionPedidoService.notificarPedido(pedido);
         } else {
-            // Mercado Pago: recién se avisa al local cuando el webhook confirme el pago (ver procesarPagoConfirmado).
             crearPreferenciaPago(pedido, detalles);
         }
 
