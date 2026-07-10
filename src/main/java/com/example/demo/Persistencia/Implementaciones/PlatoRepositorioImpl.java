@@ -56,7 +56,8 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         StringBuilder sql = new StringBuilder(
                 "SELECT p.id, p.nombre, p.descripcion, p.precio, " +
                         "p.imagen, p.disponible, p.idLocal, p.idcategoria " +
-                        "FROM plato p LEFT JOIN categoria c ON c.id = p.idcategoria WHERE 1=1"
+                        "FROM plato p LEFT JOIN categoria c ON c.id = p.idcategoria WHERE 1=1" +
+                        " AND p.disponible = true"
         );
         List<Object> params = new ArrayList<>();
 
