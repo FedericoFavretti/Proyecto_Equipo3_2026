@@ -38,7 +38,7 @@ class PlatoRepositorioImplTest {
     }
 
     @Test
-    void buscarConFiltrosUsaBusquedaCaseInsensitiveParaNombre() {
+    void buscarConFiltrosUsaFullTextSearchConNombreYCategoria() {
         DtFiltro filtro = DtFiltro.builder()
                 .nombre("Milanesa")
                 .build();
@@ -50,7 +50,13 @@ class PlatoRepositorioImplTest {
 
         verify(jdbcTemplate).query(sqlCaptor.capture(), any(RowMapper.class), any(Object[].class));
 
-        assertThat(sqlCaptor.getValue()).contains("p.nombre ILIKE ?");
-        assertThat(sqlCaptor.getValue()).doesNotContain("p.nombre LIKE ?");
+        assertThat(sqlCaptor.getValue()).contains("LEFT JOIN categoria c ON c.id = p.idcategoria");
+        assertThat(sqlCaptor.getValue()).contains("p.disponible = true");
+        assertThat(sqlCaptor.getValue()).contains("to_tsvector(");
+        assertThat(sqlCaptor.getValue()).contains("'spanish_unaccent'");
+        assertThat(sqlCaptor.getValue()).contains("coalesce(p.nombre, '')");
+        assertThat(sqlCaptor.getValue()).contains("coalesce(c.nombre, '')");
+        assertThat(sqlCaptor.getValue()).contains("@@ websearch_to_tsquery('spanish_unaccent', ?)");
+        assertThat(sqlCaptor.getValue()).doesNotContain("ILIKE");
     }
 }
