@@ -55,12 +55,12 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     public List<Plato> buscarConFiltros(DtFiltro filtro) {
         StringBuilder sql = new StringBuilder(
                 "SELECT p.id, p.nombre, p.descripcion, p.precio, " +
-                        "p.imagen, p.disponible, p.idLocal, p.idcategoria FROM plato p WHERE 1=1"
+                        "p.imagen, p.disponible, p.idLocal, p.idcategoria FROM plato p WHERE p.disponible = true"
         );
         List<Object> params = new ArrayList<>();
 
         if (filtro.getNombre() != null && !filtro.getNombre().isEmpty()) {
-            sql.append(" AND p.nombre ILIKE ?");
+            sql.append(" AND p.nombre LIKE ?");
             params.add("%" + filtro.getNombre() + "%");
         }
 
