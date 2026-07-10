@@ -13,6 +13,7 @@ import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import com.example.demo.Logica.Interfaces.iClienteController;
 import com.example.demo.Logica.Service.ClienteService;
 import com.example.demo.Logica.Service.CloudinaryService;
+import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -57,15 +58,41 @@ public class ClienteController implements iClienteController {
     }
 
     @PreAuthorize("hasRole('Cliente')")
-    @PostMapping("/busqueda")
-    public ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(@RequestBody DtFiltro dtFiltro) {
+    @GetMapping("/busqueda")
+    public ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) Boolean precioMasBajo,
+            @RequestParam(required = false) Boolean precioMasAlto,
+            @RequestParam(required = false) Boolean promocionActiva,
+            @RequestParam(required = false) Boolean alfabetico,
+            @RequestParam(required = false) Long localId) {
+        DtFiltro dtFiltro = DtFiltro.builder()
+                .nombre(nombre)
+                .precioMasBajo(precioMasBajo)
+                .precioMasAlto(precioMasAlto)
+                .promocionActiva(promocionActiva)
+                .alfabetico(alfabetico)
+                .dtLocal(localId != null ? DtLocal.builder().id(localId).build() : null)
+                .build();
         DtBusquedaPlatosPromocionesResponse response = clienteService.buscarPlatosYPromociones(dtFiltro);
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('Cliente')")
-    @PostMapping("/listar_locales")
-    public ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(@RequestBody DtFiltroLocal dtFiltroLocal) {
+    @GetMapping("/listar_locales")
+    public ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) Double calificacionMinima,
+            @RequestParam(required = false) Boolean estaAbierto,
+            @RequestParam(required = false) String ordenarPor,
+            @RequestParam(required = false) String direccion) {
+        DtFiltroLocal dtFiltroLocal = DtFiltroLocal.builder()
+                .nombre(nombre)
+                .calificacionMinima(calificacionMinima)
+                .estaAbierto(estaAbierto)
+                .ordenarPor(ordenarPor)
+                .direccion(direccion)
+                .build();
         List<DtLocalBusquedaResponse> locales = clienteService.buscarYListarLocales(dtFiltroLocal);
         return ResponseEntity.ok(locales);
     }

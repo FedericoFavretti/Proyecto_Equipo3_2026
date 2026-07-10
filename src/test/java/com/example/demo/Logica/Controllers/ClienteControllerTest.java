@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -161,14 +162,9 @@ class ClienteControllerTest {
                         .build()
         );
 
-        mockMvc.perform(post("/api/v1/clientes/busqueda")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "nombre": "Mil",
-                                  "promocionActiva": true
-                                }
-                                """))
+        mockMvc.perform(get("/api/v1/clientes/busqueda")
+                        .param("nombre", "Mil")
+                        .param("promocionActiva", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.platos[0].id").value(10))
                 .andExpect(jsonPath("$.platos[0].nombre").value("Milanesa"))
@@ -181,13 +177,8 @@ class ClienteControllerTest {
         when(clienteService.buscarPlatosYPromociones(any()))
                 .thenThrow(new IllegalArgumentException("No se encontraron platos o promociones que coincidan con su búsqueda."));
 
-        mockMvc.perform(post("/api/v1/clientes/busqueda")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "nombre": "Inexistente"
-                                }
-                                """))
+        mockMvc.perform(get("/api/v1/clientes/busqueda")
+                        .param("nombre", "Inexistente"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("No se encontraron platos o promociones que coincidan con su búsqueda."));
     }

@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.example.demo.Logica.Enums.EstadoCuenta;
 
 @RestController
 @RequestMapping("/api/v1/admins")
@@ -43,8 +44,20 @@ public class AdminController implements iAdminController {
     }
 
     @PreAuthorize("hasRole('Admin')")
-    @PostMapping("/usuarios")
-    public ResponseEntity<List<DtUsuarioListadoResponse>> buscarYListarUsuarios(@RequestBody DtFiltroUsuario  dtFiltroUsuario) {
+    @GetMapping("/usuarios")
+    public ResponseEntity<List<DtUsuarioListadoResponse>> buscarYListarUsuarios(
+            @RequestParam(required = false) String texto,
+            @RequestParam(required = false) String tipoUsuario,
+            @RequestParam(required = false) EstadoCuenta estado,
+            @RequestParam(required = false) String ordenarPor,
+            @RequestParam(required = false) String direccion) {
+        DtFiltroUsuario dtFiltroUsuario = DtFiltroUsuario.builder()
+                .texto(texto)
+                .tipoUsuario(tipoUsuario)
+                .estado(estado)
+                .ordenarPor(ordenarPor)
+                .direccion(direccion)
+                .build();
         List<DtUsuarioListadoResponse> usuarios = adminService.buscarYListarUsuarios(dtFiltroUsuario);
         return ResponseEntity.ok(usuarios);
     }

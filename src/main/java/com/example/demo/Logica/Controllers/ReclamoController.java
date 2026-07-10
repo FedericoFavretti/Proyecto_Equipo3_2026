@@ -4,7 +4,10 @@ import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
 import com.example.demo.Logica.DataTypes.shared.DtReclamo;
 import com.example.demo.Logica.Interfaces.iReclamoController;
 import com.example.demo.Logica.Service.ReclamoService;
-
+import com.example.demo.Logica.Enums.EstadoPedido;
+import com.example.demo.Logica.Enums.EstadoReclamo;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,8 +38,20 @@ public class ReclamoController implements iReclamoController {
     }
 
     @PreAuthorize("hasRole('Local')")
-    @PostMapping("/buscar_reclamo")
-    public ResponseEntity<List<DtReclamo>> buscarReclamos(@RequestBody DtFiltroReclamo dtFiltroReclamo) {
+    @GetMapping("/buscar_reclamo")
+    public ResponseEntity<List<DtReclamo>> buscarReclamos(
+            @RequestParam(required = false) Long idLocal,
+            @RequestParam(required = false) Long idCliente,
+            @RequestParam(required = false) EstadoPedido estadoPedido,
+            @RequestParam(required = false) EstadoReclamo estadoReclamo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaReclamo) {
+        DtFiltroReclamo dtFiltroReclamo = DtFiltroReclamo.builder()
+                .idLocal(idLocal)
+                .idCliente(idCliente)
+                .estadoPedido(estadoPedido)
+                .estadoReclamo(estadoReclamo)
+                .fechaReclamo(fechaReclamo)
+                .build();
         return ResponseEntity.ok(reclamoService.buscarReclamos(dtFiltroReclamo));
     }
 

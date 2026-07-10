@@ -135,9 +135,20 @@ public class LocalController implements iLocalController {
     }
 
     @PreAuthorize("hasRole('Local')")
-    @PostMapping("/{idLocal}/clientes")
-    public ResponseEntity<List<DtClienteLocalResponse>> buscarYListarClientesDelLocal(@PathVariable("idLocal") Long idLocal, @RequestBody DtFiltroClienteLocal  DtFiltroClienteLocal) {
-        List<DtClienteLocalResponse> clientes = localService.buscarYListarClientesDelLocal(idLocal, DtFiltroClienteLocal);
+    @GetMapping("/{idLocal}/clientes")
+    public ResponseEntity<List<DtClienteLocalResponse>> buscarYListarClientesDelLocal(
+            @PathVariable("idLocal") Long idLocal,
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) Double calificacionMinima,
+            @RequestParam(required = false) String ordenarPor,
+            @RequestParam(required = false) String direccion) {
+        DtFiltroClienteLocal filtro = DtFiltroClienteLocal.builder()
+                .nombre(nombre)
+                .calificacionMinima(calificacionMinima)
+                .ordenarPor(ordenarPor)
+                .direccion(direccion)
+                .build();
+        List<DtClienteLocalResponse> clientes = localService.buscarYListarClientesDelLocal(idLocal, filtro);
         return ResponseEntity.ok(clientes);
     }
 

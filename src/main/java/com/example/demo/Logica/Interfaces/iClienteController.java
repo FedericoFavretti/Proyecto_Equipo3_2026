@@ -11,6 +11,9 @@ import com.example.demo.Logica.DataTypes.response.DtLocalBusquedaResponse;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
 import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import org.springframework.http.ResponseEntity;
+import com.example.demo.Logica.DataTypes.request.DtFiltro;
+import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +26,9 @@ public interface iClienteController {
     ResponseEntity<DtGoogleRegistroPendienteResponse> iniciarRegistroConGoogle(DtGoogleAuthRequest request);
     ResponseEntity<DtLoginResponseCliente> completarRegistroConGoogle(@RequestPart("datos") DtGoogleRegistroCompletarRequest datos,
                                                                       @RequestPart("foto") MultipartFile foto);
-    ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(@RequestBody DtFiltro dtFiltro);
-    ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(@RequestBody DtFiltroLocal dtFiltroLocal);
+    ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(
+            String nombre, Boolean precioMasBajo, Boolean precioMasAlto,
+            Boolean promocionActiva, Boolean alfabetico, Long localId);
+    ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(
+            String nombre, Double calificacionMinima, Boolean estaAbierto, String ordenarPor, String direccion);
 }

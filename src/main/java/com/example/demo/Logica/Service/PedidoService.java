@@ -231,7 +231,7 @@ public class PedidoService {
         boolean esMedioSimulado = MEDIO_PAGO_EFECTIVO.equalsIgnoreCase(pedido.getMedioDePago());
 
         if (esMedioSimulado) {
-            // Sin pasarela externa: el local se entera apenas se crea el pedido, como hasta ahora.
+
             notificacionPedidoService.notificarPedido(pedido);
         } else {
             // Mercado Pago: recién se avisa al local cuando el webhook confirme el pago (ver procesarPagoConfirmado).
