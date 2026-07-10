@@ -19,5 +19,7 @@ public class DtPedidoListadoFiltro {
     private Long idLocal;
     private String ordenarPor;
     private String direccion;
+    private Integer pagina;
+    private Integer tamanio;
 }
 

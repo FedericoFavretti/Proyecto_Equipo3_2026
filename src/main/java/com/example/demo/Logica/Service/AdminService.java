@@ -16,6 +16,8 @@ import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
 import com.example.demo.Logica.DataTypes.response.DtUsuarioListadoResponse;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
+import com.example.demo.Utils.PaginacionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,7 +120,7 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public List<DtUsuarioListadoResponse> buscarYListarUsuarios(DtFiltroUsuario filtro) {
+    public DtPagina<DtUsuarioListadoResponse> buscarYListarUsuarios(DtFiltroUsuario filtro, Integer pagina, Integer tamanio) {
         List<DtUsuarioListadoResponse> usuarios = new ArrayList<>();
 
         boolean incluirClientes = filtro == null || filtro.getTipoUsuario() == null
@@ -160,7 +162,7 @@ public class AdminService {
         );
         usuarios.sort(descendente ? comparador.reversed() : comparador);
 
-        return usuarios;
+        return PaginacionUtils.paginar(usuarios, pagina, tamanio);
     }
 
     private void validarIdLocal(Long idLocal) {

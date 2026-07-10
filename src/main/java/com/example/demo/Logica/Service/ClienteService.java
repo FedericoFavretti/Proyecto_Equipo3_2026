@@ -30,6 +30,8 @@ import com.example.demo.Persistencia.Repositorios.TokenActivacionCuentaRepositor
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.Utils.TokenSeguroUtils;
 import com.example.demo.jwt.JwtService;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
+import com.example.demo.Utils.PaginacionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -228,7 +230,7 @@ public class ClienteService {
     }
 
     @Transactional
-    public DtBusquedaPlatosPromocionesResponse buscarPlatosYPromociones(DtFiltro dtFiltro) {
+    public DtBusquedaPlatosPromocionesResponse buscarPlatosYPromociones(DtFiltro dtFiltro, Integer pagina, Integer tamanio) {
         if (dtFiltro == null) {
             throw new BusinessRuleException(MENSAJE_FILTRO_NULO);
         }
@@ -266,18 +268,24 @@ public class ClienteService {
             }
         });
 
+        DtPagina<DtPlato> paginaDePlatos = PaginacionUtils.paginar(platos, pagina, tamanio);
+
         return DtBusquedaPlatosPromocionesResponse.builder()
-                .platos(platos)
+                .platos(paginaDePlatos.getContenido())
                 .promociones(promociones)
+                .paginaActual(paginaDePlatos.getPaginaActual())
+                .tamanioPagina(paginaDePlatos.getTamanioPagina())
+                .totalPaginas(paginaDePlatos.getTotalPaginas())
+                .totalElementos(paginaDePlatos.getTotalElementos())
                 .build();
     }
 
-    @Transactional
-    public List<DtLocalBusquedaResponse> buscarYListarLocales(DtFiltroLocal filtro) {
+    public DtPagina<DtLocalBusquedaResponse> buscarYListarLocales(DtFiltroLocal filtro, Integer pagina, Integer tamanio) {
         validarFiltroLocal(filtro);
-        return localRepositorio.buscarHabilitadosConFiltros(filtro).stream()
+        List<DtLocalBusquedaResponse> locales = localRepositorio.buscarHabilitadosConFiltros(filtro).stream()
                 .map(localMapper::mapearDtLocalBusquedaDeClase)
                 .toList();
+        return PaginacionUtils.paginar(locales, pagina, tamanio);
     }
 
     private DtGoogleUserInfo obtenerDatosGoogle(DtGoogleAuthRequest request) {

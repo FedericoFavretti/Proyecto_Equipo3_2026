@@ -1,7 +1,5 @@
 package com.example.demo.Logica.DataTypes.response;
 
-import com.example.demo.Logica.DataTypes.shared.DtPlato;
-import com.example.demo.Logica.DataTypes.shared.DtPromocion;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +11,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DtBusquedaPlatosPromocionesResponse {
-    private List<DtPlato> platos;
-    private List<DtPromocion> promociones;
+public class DtPagina<T> {
+    private List<T> contenido;
     private int paginaActual;
     private int tamanioPagina;
     private int totalPaginas;

@@ -10,6 +10,7 @@ import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
 import com.example.demo.Logica.Interfaces.iPedidoController;
 import com.example.demo.Logica.Mappers.PedidoResponseMapper;
 import com.example.demo.Logica.Service.PedidoService;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -74,20 +75,20 @@ public class PedidoController implements iPedidoController {
 
     @PreAuthorize("hasRole('Local')")
     @GetMapping("/listar-pedido-local/{idLocal}")
-    public ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro) {
-        List<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(idLocal, dtPedidoListadoFiltro);
+    public ResponseEntity<DtPagina<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro) {
+        DtPagina<DtPedidoListadoResponse> pedidos = pedidoService.listarPedidos(idLocal, dtPedidoListadoFiltro);
         return ResponseEntity.ok(pedidos);
     }
 
     @PreAuthorize("hasRole('Cliente')")
     @GetMapping("/mi-historial")
-    public ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(
+    public ResponseEntity<DtPagina<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(
             Authentication authentication,
             DtPedidoListadoFiltro dtPedidoListadoFiltro) {
         if (autenticacionInvalida(authentication)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        List<DtPedidoListadoResponse> pedidos = pedidoService.buscarYListarHistorialPedidosPropios(
+        DtPagina<DtPedidoListadoResponse> pedidos = pedidoService.buscarYListarHistorialPedidosPropios(
                 authentication.getName(), dtPedidoListadoFiltro);
         return ResponseEntity.ok(pedidos);
     }

@@ -390,7 +390,7 @@ class ClienteServiceTest {
         when(platoMapper.mapearDtPlatoDeClase(plato)).thenReturn(dtPlato);
         when(promocionMapper.mapearDtPromocionDeClase(promocion)).thenReturn(dtPromocion);
 
-        DtBusquedaPlatosPromocionesResponse response = clienteService.buscarPlatosYPromociones(filtro);
+        DtBusquedaPlatosPromocionesResponse response = clienteService.buscarPlatosYPromociones(filtro, null, null);
 
         assertThat(response.getPlatos()).containsExactly(dtPlato);
         assertThat(response.getPromociones()).containsExactly(dtPromocion);
@@ -403,7 +403,7 @@ class ClienteServiceTest {
         when(platoRepositorio.buscarConFiltros(filtro)).thenReturn(List.of());
         when(promocionRepositorio.buscarActivasConFiltros(filtro)).thenReturn(List.of());
 
-        assertThatThrownBy(() -> clienteService.buscarPlatosYPromociones(filtro))
+        assertThatThrownBy(() -> clienteService.buscarPlatosYPromociones(filtro, null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("No se encontraron platos o promociones que coincidan con su búsqueda.");
     }

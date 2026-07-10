@@ -15,6 +15,8 @@ import com.example.demo.Logica.Mappers.PedidoMapper;
 import com.example.demo.Logica.Mappers.ReclamoMapper;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
+import com.example.demo.Utils.PaginacionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,13 +92,14 @@ public class ReclamoService {
     }
 
     @Transactional
-    public List<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo){
+    public DtPagina<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo, Integer pagina, Integer tamanio){
         if (dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null
                 && dtFiltroReclamo.getIdCliente() == null && dtFiltroReclamo.getEstadoReclamo() == null
                 && dtFiltroReclamo.getIdLocal() == null) {
             throw new BusinessRuleException(MENSAJE_FILTRO_REQUERIDO);
         }
-        return reclamoMapper.mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));
+        List<DtReclamo> reclamos = reclamoMapper.mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));
+        return PaginacionUtils.paginar(reclamos, pagina, tamanio);
     }
 
     @Transactional

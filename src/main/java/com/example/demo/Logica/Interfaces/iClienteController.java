@@ -13,6 +13,7 @@ import com.example.demo.Logica.DataTypes.shared.DtCliente;
 import org.springframework.http.ResponseEntity;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -28,7 +29,8 @@ public interface iClienteController {
                                                                       @RequestPart("foto") MultipartFile foto);
     ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(
             String nombre, Boolean precioMasBajo, Boolean precioMasAlto,
-            Boolean promocionActiva, Boolean alfabetico, Long localId);
-    ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(
-            String nombre, Double calificacionMinima, Boolean estaAbierto, String ordenarPor, String direccion);
+            Boolean promocionActiva, Boolean alfabetico, Long localId, Integer pagina, Integer tamanio);
+    ResponseEntity<DtPagina<DtLocalBusquedaResponse>> buscarYListarLocales(
+            String nombre, Double calificacionMinima, Boolean estaAbierto, String ordenarPor, String direccion,
+            Integer pagina, Integer tamanio);
 }

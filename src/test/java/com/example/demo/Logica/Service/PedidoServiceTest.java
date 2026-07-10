@@ -30,6 +30,7 @@ import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -248,13 +249,13 @@ class PedidoServiceTest {
         when(pedidoRepositorio.listarHistorialPorCliente(cliente.getId(), null)).thenReturn(List.of(pedidoListadoView));
         when(pedidoListadoMapper.toResponse(pedidoListadoView)).thenReturn(response);
 
-        List<DtPedidoListadoResponse> historial = pedidoService
+        DtPagina<DtPedidoListadoResponse> historial = pedidoService
                 .buscarYListarHistorialPedidosPropios("ana@test.com", null);
 
-        assertThat(historial).hasSize(1);
-        assertThat(historial.getFirst().getId()).isEqualTo(88L);
-        assertThat(historial.getFirst().getPagado()).isFalse();
-        assertThat(historial.getFirst().getEstado()).isEqualTo(EstadoPedido.Pendiente);
+        assertThat(historial.getContenido()).hasSize(1);
+        assertThat(historial.getContenido().getFirst().getId()).isEqualTo(88L);
+        assertThat(historial.getContenido().getFirst().getPagado()).isFalse();
+        assertThat(historial.getContenido().getFirst().getEstado()).isEqualTo(EstadoPedido.Pendiente);
         verify(pedidoRepositorio).listarHistorialPorCliente(cliente.getId(), null);
     }
 

@@ -6,6 +6,7 @@ import com.example.demo.Logica.DataTypes.request.DtRechazarPedidoRequest;
 import com.example.demo.Logica.DataTypes.shared.DtPedidoConDetalles;
 import com.example.demo.Logica.DataTypes.summary.DtPedidoListadoResponse;
 import com.example.demo.Logica.DataTypes.response.DtPedidoResponse;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +20,7 @@ public interface iPedidoController {
     ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles);
     ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido, Authentication authentication);
     ResponseEntity<DtPedidoResponse> reintentarPago(@PathVariable Long idPedido, Authentication authentication);
-    ResponseEntity<List<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro);
-    ResponseEntity<List<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(Authentication authentication, DtPedidoListadoFiltro dtPedidoListadoFiltro);
+    ResponseEntity<DtPagina<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro);
+    ResponseEntity<DtPagina<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(Authentication authentication, DtPedidoListadoFiltro dtPedidoListadoFiltro);
 }
 

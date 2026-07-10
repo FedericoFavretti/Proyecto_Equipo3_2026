@@ -155,7 +155,7 @@ class ClienteControllerTest {
                 .dtPlato(plato)
                 .build();
 
-        when(clienteService.buscarPlatosYPromociones(any())).thenReturn(
+        when(clienteService.buscarPlatosYPromociones(any(), any(), any())).thenReturn(
                 DtBusquedaPlatosPromocionesResponse.builder()
                         .platos(List.of(plato))
                         .promociones(List.of(promocion))
@@ -174,7 +174,7 @@ class ClienteControllerTest {
 
     @Test
     void buscarPlatosYPromocionesRespondeBadRequestSinResultados() throws Exception {
-        when(clienteService.buscarPlatosYPromociones(any()))
+        when(clienteService.buscarPlatosYPromociones(any(), any(), any()))
                 .thenThrow(new IllegalArgumentException("No se encontraron platos o promociones que coincidan con su búsqueda."));
 
         mockMvc.perform(get("/api/v1/clientes/busqueda")

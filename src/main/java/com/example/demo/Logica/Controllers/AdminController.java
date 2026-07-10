@@ -7,6 +7,7 @@ import com.example.demo.Logica.Interfaces.iAdminController;
 import com.example.demo.Logica.Service.AdminService;
 import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
 import com.example.demo.Logica.DataTypes.response.DtUsuarioListadoResponse;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,12 +46,14 @@ public class AdminController implements iAdminController {
 
     @PreAuthorize("hasRole('Admin')")
     @GetMapping("/usuarios")
-    public ResponseEntity<List<DtUsuarioListadoResponse>> buscarYListarUsuarios(
+    public ResponseEntity<DtPagina<DtUsuarioListadoResponse>> buscarYListarUsuarios(
             @RequestParam(required = false) String texto,
             @RequestParam(required = false) String tipoUsuario,
             @RequestParam(required = false) EstadoCuenta estado,
             @RequestParam(required = false) String ordenarPor,
-            @RequestParam(required = false) String direccion) {
+            @RequestParam(required = false) String direccion,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanio) {
         DtFiltroUsuario dtFiltroUsuario = DtFiltroUsuario.builder()
                 .texto(texto)
                 .tipoUsuario(tipoUsuario)
@@ -58,7 +61,7 @@ public class AdminController implements iAdminController {
                 .ordenarPor(ordenarPor)
                 .direccion(direccion)
                 .build();
-        List<DtUsuarioListadoResponse> usuarios = adminService.buscarYListarUsuarios(dtFiltroUsuario);
+        DtPagina<DtUsuarioListadoResponse> usuarios = adminService.buscarYListarUsuarios(dtFiltroUsuario, pagina, tamanio);
         return ResponseEntity.ok(usuarios);
     }
 }

@@ -14,6 +14,7 @@ import com.example.demo.Logica.Interfaces.iClienteController;
 import com.example.demo.Logica.Service.ClienteService;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -65,7 +66,9 @@ public class ClienteController implements iClienteController {
             @RequestParam(required = false) Boolean precioMasAlto,
             @RequestParam(required = false) Boolean promocionActiva,
             @RequestParam(required = false) Boolean alfabetico,
-            @RequestParam(required = false) Long localId) {
+            @RequestParam(required = false) Long localId,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanio) {
         DtFiltro dtFiltro = DtFiltro.builder()
                 .nombre(nombre)
                 .precioMasBajo(precioMasBajo)
@@ -74,18 +77,20 @@ public class ClienteController implements iClienteController {
                 .alfabetico(alfabetico)
                 .dtLocal(localId != null ? DtLocal.builder().id(localId).build() : null)
                 .build();
-        DtBusquedaPlatosPromocionesResponse response = clienteService.buscarPlatosYPromociones(dtFiltro);
+        DtBusquedaPlatosPromocionesResponse response = clienteService.buscarPlatosYPromociones(dtFiltro, pagina, tamanio);
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('Cliente')")
     @GetMapping("/listar_locales")
-    public ResponseEntity<List<DtLocalBusquedaResponse>> buscarYListarLocales(
+    public ResponseEntity<DtPagina<DtLocalBusquedaResponse>> buscarYListarLocales(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) Double calificacionMinima,
             @RequestParam(required = false) Boolean estaAbierto,
             @RequestParam(required = false) String ordenarPor,
-            @RequestParam(required = false) String direccion) {
+            @RequestParam(required = false) String direccion,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanio) {
         DtFiltroLocal dtFiltroLocal = DtFiltroLocal.builder()
                 .nombre(nombre)
                 .calificacionMinima(calificacionMinima)
@@ -93,7 +98,7 @@ public class ClienteController implements iClienteController {
                 .ordenarPor(ordenarPor)
                 .direccion(direccion)
                 .build();
-        List<DtLocalBusquedaResponse> locales = clienteService.buscarYListarLocales(dtFiltroLocal);
+        DtPagina<DtLocalBusquedaResponse> locales = clienteService.buscarYListarLocales(dtFiltroLocal, pagina, tamanio);
         return ResponseEntity.ok(locales);
     }
 }

@@ -12,6 +12,8 @@ import com.example.demo.Logica.Exceptions.ExternalServiceException;
 import com.example.demo.Logica.Exceptions.PagoRechazadoException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Mappers.PedidoListadoMapper;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
+import com.example.demo.Utils.PaginacionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.example.demo.Persistencia.Repositorios.*;
@@ -334,19 +336,22 @@ public class PedidoService {
         return pedido;
     }
 
-    @Transactional(readOnly = true)
-    public List<DtPedidoListadoResponse> listarPedidos(Long idLocal, DtPedidoListadoFiltro filtro) {
+    public DtPagina<DtPedidoListadoResponse> listarPedidos(Long idLocal, DtPedidoListadoFiltro filtro) {
         localRepositorio.buscarPorId(idLocal)
                 .orElseThrow(() -> new ResourceNotFoundException("Local", idLocal));
         validarFiltroListado(filtro);
 
-        return pedidoRepositorio.listarRecibidosPorLocal(idLocal, filtro).stream()
+        List<DtPedidoListadoResponse> pedidos = pedidoRepositorio.listarRecibidosPorLocal(idLocal, filtro).stream()
                 .map(pedidoListadoMapper::toResponse)
                 .toList();
+
+        Integer pagina = filtro != null ? filtro.getPagina() : null;
+        Integer tamanio = filtro != null ? filtro.getTamanio() : null;
+        return PaginacionUtils.paginar(pedidos, pagina, tamanio);
     }
 
     @Transactional(readOnly = true)
-    public List<DtPedidoListadoResponse> buscarYListarHistorialPedidosPropios(String emailAutenticado, DtPedidoListadoFiltro filtro) {
+    public DtPagina<DtPedidoListadoResponse> buscarYListarHistorialPedidosPropios(String emailAutenticado, DtPedidoListadoFiltro filtro) {
         Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
 
@@ -365,7 +370,9 @@ public class PedidoService {
                 .toList();
 
         if (!pedidos.isEmpty()) {
-            return pedidos;
+            Integer pagina = filtro != null ? filtro.getPagina() : null;
+            Integer tamanio = filtro != null ? filtro.getTamanio() : null;
+            return PaginacionUtils.paginar(pedidos, pagina, tamanio);
         }
 
         if (tieneFiltrosAplicados(filtro)) {

@@ -6,6 +6,7 @@ import com.example.demo.Logica.Enums.EstadoPedido;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Mappers.PedidoResponseMapper;
 import com.example.demo.Logica.Service.PedidoService;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -53,17 +54,23 @@ class PedidoControllerTest {
                 .build();
 
         when(pedidoService.buscarYListarHistorialPedidosPropios(any(), any()))
-                .thenReturn(List.of(response));
+                .thenReturn(DtPagina.<DtPedidoListadoResponse>builder()
+                        .contenido(List.of(response))
+                        .paginaActual(0)
+                        .tamanioPagina(10)
+                        .totalPaginas(1)
+                        .totalElementos(1)
+                        .build());
 
         mockMvc.perform(get("/api/v1/pedidos/mi-historial")
                         .principal(new UsernamePasswordAuthenticationToken("ana@test.com", "token", List.of()))
                         .param("estado", "Confirmado")
                         .param("idLocal", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(88))
-                .andExpect(jsonPath("$[0].local.id").value(10))
-                .andExpect(jsonPath("$[0].local.nombre").value("La Cocina"))
-                .andExpect(jsonPath("$[0].motivoRechazo").value("Se cortó la energía en el local"));
+                .andExpect(jsonPath("$.contenido[0].id").value(88))
+                .andExpect(jsonPath("$.contenido[0].local.id").value(10))
+                .andExpect(jsonPath("$.contenido[0].local.nombre").value("La Cocina"))
+                .andExpect(jsonPath("$.contenido[0].motivoRechazo").value("Se cortó la energía en el local"));
     }
 
     @Test
