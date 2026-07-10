@@ -302,12 +302,7 @@ public class PedidoService {
     public void cancelarPedido(Long idPedido) {
         Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", idPedido));
-        if (!pedido.getEstado().equals(EstadoPedido.Pendiente)) {
-            throw new BusinessRuleException(MENSAJE_PEDIDO_NO_PENDIENTE);
-        }
-        pedido.setEstado(EstadoPedido.Cancelado);
-        pedidoRepositorio.actualizar(pedido);
-        notificacionPedidoService.notificarPedidoCancelado(pedido);
+        cancelarPedidoInterno(pedido);
     }
 
     @Transactional
@@ -578,9 +573,17 @@ public class PedidoService {
         if (!pedido.getEstado().equals(EstadoPedido.Pendiente)) {
             throw new BusinessRuleException(MENSAJE_PEDIDO_NO_PENDIENTE);
         }
+        boolean localYaFueNotificadoDelPedido = yaSeNotificoAlLocal(pedido);
         pedido.setEstado(EstadoPedido.Cancelado);
         pedidoRepositorio.actualizar(pedido);
-        notificacionPedidoService.notificarPedidoCancelado(pedido);
+        if (localYaFueNotificadoDelPedido) {
+            notificacionPedidoService.notificarPedidoCancelado(pedido);
+        }
+    }
+
+    private boolean yaSeNotificoAlLocal(Pedido pedido) {
+        boolean esMedioSimulado = MEDIO_PAGO_EFECTIVO.equalsIgnoreCase(pedido.getMedioDePago());
+        return esMedioSimulado || Boolean.TRUE.equals(pedido.getPagado());
     }
 
     private boolean esPedidoPendienteDePagoMercadoPago(Pedido pedido) {
