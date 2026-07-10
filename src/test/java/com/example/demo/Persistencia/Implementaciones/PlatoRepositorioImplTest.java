@@ -51,6 +51,7 @@ class PlatoRepositorioImplTest {
         verify(jdbcTemplate).query(sqlCaptor.capture(), any(RowMapper.class), any(Object[].class));
 
         assertThat(sqlCaptor.getValue()).contains("LEFT JOIN categoria c ON c.id = p.idcategoria");
+        assertThat(sqlCaptor.getValue()).contains("p.disponible = true");
         assertThat(sqlCaptor.getValue()).contains("to_tsvector(");
         assertThat(sqlCaptor.getValue()).contains("'spanish_unaccent'");
         assertThat(sqlCaptor.getValue()).contains("coalesce(p.nombre, '')");

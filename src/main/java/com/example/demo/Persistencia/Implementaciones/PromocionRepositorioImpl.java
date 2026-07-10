@@ -76,6 +76,7 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
                 INNER JOIN plato p ON p.id = pr.idPlato
                 WHERE pr.fechaInicio <= CURRENT_DATE
                   AND pr.fechaFin >= CURRENT_DATE
+                  AND p.disponible = true
                 """);
         List<Object> params = new ArrayList<>();
 

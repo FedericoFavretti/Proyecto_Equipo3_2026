@@ -47,6 +47,7 @@ class PromocionRepositorioImplTest {
 
         verify(jdbcTemplate).query(sqlCaptor.capture(), any(RowMapper.class), any(Object[].class));
 
+        assertThat(sqlCaptor.getValue()).contains("p.disponible = true");
         assertThat(sqlCaptor.getValue()).contains("p.nombre ILIKE ?");
         assertThat(sqlCaptor.getValue()).contains("pr.descripcion ILIKE ?");
         assertThat(sqlCaptor.getValue()).doesNotContain("p.nombre LIKE ?");
