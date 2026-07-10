@@ -55,13 +55,19 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     public List<Plato> buscarConFiltros(DtFiltro filtro) {
         StringBuilder sql = new StringBuilder(
                 "SELECT p.id, p.nombre, p.descripcion, p.precio, " +
-                        "p.imagen, p.disponible, p.idLocal, p.idcategoria FROM plato p WHERE 1=1"
+                        "p.imagen, p.disponible, p.idLocal, p.idcategoria " +
+                        "FROM plato p LEFT JOIN categoria c ON c.id = p.idcategoria WHERE 1=1"
         );
         List<Object> params = new ArrayList<>();
 
-        if (filtro.getNombre() != null && !filtro.getNombre().isEmpty()) {
-            sql.append(" AND p.nombre ILIKE ?");
-            params.add("%" + filtro.getNombre() + "%");
+        if (filtro.getNombre() != null && !filtro.getNombre().isBlank()) {
+            sql.append("""
+                     AND to_tsvector(
+                        'spanish_unaccent',
+                        coalesce(p.nombre, '') || ' ' || coalesce(c.nombre, '')
+                    ) @@ websearch_to_tsquery('spanish_unaccent', ?)
+                    """);
+            params.add(filtro.getNombre().trim());
         }
 
         if (filtro.getDtLocal() != null) {
