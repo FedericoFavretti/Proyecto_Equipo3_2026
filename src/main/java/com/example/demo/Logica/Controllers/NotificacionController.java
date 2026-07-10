@@ -23,7 +23,7 @@ public class NotificacionController {
         this.notificacionService = notificacionService;
     }
 
-    @PreAuthorize("hasAnyRole('Cliente', 'Local')")
+    @PreAuthorize("hasAnyRole('Cliente', 'Local', 'Admin')")
     @GetMapping("/mias")
     public ResponseEntity<List<DtNotificacion>> listarMisNotificaciones(Authentication authentication) {
         if (autenticacionInvalida(authentication)) {
@@ -32,7 +32,7 @@ public class NotificacionController {
         return ResponseEntity.ok(notificacionService.listarMisNotificaciones(authentication.getName()));
     }
 
-    @PreAuthorize("hasAnyRole('Cliente', 'Local')")
+    @PreAuthorize("hasAnyRole('Cliente', 'Local', 'Admin')")
     @PutMapping("/{idNotificacion}/leida")
     public ResponseEntity<Void> marcarComoLeida(Authentication authentication, @PathVariable Long idNotificacion) {
         if (autenticacionInvalida(authentication)) {
