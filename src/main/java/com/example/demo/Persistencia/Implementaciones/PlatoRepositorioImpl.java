@@ -7,6 +7,7 @@ import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
+import com.example.demo.Logica.Enums.EstadoPedido;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -100,6 +101,31 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         return jdbcTemplate.query(sql.toString(),
                 (rs, row) -> mapearPlato(rs),
                 params.toArray()
+        );
+    }
+
+    @Override
+    public List<Plato> buscarMasPedidos(int limite) {
+        String sql = """
+                SELECT p.id, p.nombre, p.descripcion, p.precio, p.imagen, p.disponible, p.idLocal, p.idcategoria
+                FROM plato p
+                JOIN (
+                    SELECT dp.idplato, SUM(dp.cantidad) AS cantidad_total
+                    FROM detallepedido dp
+                    JOIN pedido pe ON pe.id = dp.idpedido
+                    WHERE pe.estado IN (?, ?)
+                    GROUP BY dp.idplato
+                ) conteo ON conteo.idplato = p.id
+                WHERE p.disponible = true
+                ORDER BY conteo.cantidad_total DESC
+                LIMIT ?
+                """;
+        return jdbcTemplate.query(
+                sql,
+                (rs, row) -> mapearPlato(rs),
+                EstadoPedido.Confirmado.name(),
+                EstadoPedido.Entregado.name(),
+                limite
         );
     }
 

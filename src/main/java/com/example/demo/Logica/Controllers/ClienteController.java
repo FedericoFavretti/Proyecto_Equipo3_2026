@@ -15,6 +15,7 @@ import com.example.demo.Logica.Service.ClienteService;
 import com.example.demo.Logica.Service.CloudinaryService;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.response.DtPagina;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -100,5 +101,19 @@ public class ClienteController implements iClienteController {
                 .build();
         DtPagina<DtLocalBusquedaResponse> locales = clienteService.buscarYListarLocales(dtFiltroLocal, pagina, tamanio);
         return ResponseEntity.ok(locales);
+    }
+
+    @PreAuthorize("hasRole('Cliente')")
+    @GetMapping("/locales-populares")
+    public ResponseEntity<List<DtLocalBusquedaResponse>> buscarLocalesPopulares(
+            @RequestParam(required = false) Integer limite) {
+        return ResponseEntity.ok(clienteService.buscarLocalesPopulares(limite));
+    }
+
+    @PreAuthorize("hasRole('Cliente')")
+    @GetMapping("/platos-mas-pedidos")
+    public ResponseEntity<List<DtPlato>> buscarPlatosMasPedidos(
+            @RequestParam(required = false) Integer limite) {
+        return ResponseEntity.ok(clienteService.buscarPlatosMasPedidos(limite));
     }
 }

@@ -17,4 +17,5 @@ public interface LocalRepositorio {
     void eliminar(Long id);
     List<Local> buscarHabilitadosConFiltros(DtFiltroLocal filtro);
     List<Local> buscarUsuariosConFiltros(DtFiltroUsuario filtro);
+    List<Local> buscarMasPedidos(int limite);
 }

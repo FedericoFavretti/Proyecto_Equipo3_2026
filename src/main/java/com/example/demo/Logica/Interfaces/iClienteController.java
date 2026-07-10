@@ -9,9 +9,11 @@ import com.example.demo.Logica.DataTypes.response.DtLocalBusquedaResponse;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
 import com.example.demo.Logica.DataTypes.response.DtPagina;
 import com.example.demo.Logica.DataTypes.shared.DtCliente;
+import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 
 public interface iClienteController {
     ResponseEntity<Cliente> registrarUsuario(@RequestPart("datos") DtCliente dtCliente, @RequestPart("foto") MultipartFile foto);
@@ -25,4 +27,6 @@ public interface iClienteController {
     ResponseEntity<DtPagina<DtLocalBusquedaResponse>> buscarYListarLocales(
             String nombre, Double calificacionMinima, Boolean estaAbierto, String ordenarPor, String direccion,
             Integer pagina, Integer tamanio);
+    ResponseEntity<List<DtLocalBusquedaResponse>> buscarLocalesPopulares(Integer limite);
+    ResponseEntity<List<DtPlato>> buscarPlatosMasPedidos(Integer limite);
 }

@@ -14,6 +14,7 @@ import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Logica.DataTypes.request.DtFiltroLocal;
 import com.example.demo.Logica.DataTypes.request.DtFiltroUsuario;
+import com.example.demo.Logica.Enums.EstadoPedido;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -91,6 +92,29 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                 sql.toString(),
                 (rs, row) -> mapearLocal(rs),
                 params.toArray()
+        );
+    }
+
+    @Override
+    public List<Local> buscarMasPedidos(int limite) {
+        String sql = SELECT_LOCAL_CON_USUARIO + """
+                JOIN (
+                    SELECT p.idlocal, COUNT(*) AS cantidad_pedidos
+                    FROM pedido p
+                    WHERE p.estado IN (?, ?)
+                    GROUP BY p.idlocal
+                ) conteo ON conteo.idlocal = l.id
+                WHERE l.estado = ?
+                ORDER BY conteo.cantidad_pedidos DESC
+                LIMIT ?
+                """;
+        return jdbcTemplate.query(
+                sql,
+                (rs, row) -> mapearLocal(rs),
+                EstadoPedido.Confirmado.name(),
+                EstadoPedido.Entregado.name(),
+                EstadoLocal.Habilitado.name(),
+                limite
         );
     }
 

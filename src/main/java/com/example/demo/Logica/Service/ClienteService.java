@@ -73,6 +73,8 @@ public class ClienteService {
     private static final String MENSAJE_DATOS_FALTANTES =
             "Los siguientes campos son requeridos: %s. Por favor, complételos para finalizar el registro.";
     private static final String RUTA_ACTIVACION_CUENTA = "/activar-cuenta";
+    private static final int LIMITE_POPULARES_POR_DEFECTO = 4;
+    private static final int LIMITE_POPULARES_MAXIMO = 20;
 
     @Value("${app.account.activation-frontend-base-url}")
     private String activationFrontendBaseUrl;
@@ -286,6 +288,29 @@ public class ClienteService {
                 .map(localMapper::mapearDtLocalBusquedaDeClase)
                 .toList();
         return PaginacionUtils.paginar(locales, pagina, tamanio);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DtLocalBusquedaResponse> buscarLocalesPopulares(Integer limite) {
+        int limiteNormalizado = normalizarLimitePopulares(limite);
+        return localRepositorio.buscarMasPedidos(limiteNormalizado).stream()
+                .map(localMapper::mapearDtLocalBusquedaDeClase)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<DtPlato> buscarPlatosMasPedidos(Integer limite) {
+        int limiteNormalizado = normalizarLimitePopulares(limite);
+        return platoRepositorio.buscarMasPedidos(limiteNormalizado).stream()
+                .map(platoMapper::mapearDtPlatoDeClase)
+                .toList();
+    }
+
+    private int normalizarLimitePopulares(Integer limite) {
+        if (limite == null || limite <= 0) {
+            return LIMITE_POPULARES_POR_DEFECTO;
+        }
+        return Math.min(limite, LIMITE_POPULARES_MAXIMO);
     }
 
     private DtGoogleUserInfo obtenerDatosGoogle(DtGoogleAuthRequest request) {

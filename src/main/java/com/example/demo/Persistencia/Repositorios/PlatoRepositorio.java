@@ -16,4 +16,5 @@ public interface PlatoRepositorio {
     Optional<Plato> buscarPorNombre(String nombre);
     List<Plato> buscarConFiltros(DtFiltro filtro);
     List<Plato> buscarPlatosDelocal(Long idLocal);
+    List<Plato> buscarMasPedidos(int limite);
 }
