@@ -80,7 +80,7 @@ public class PromocionRepositorioImpl  implements PromocionRepositorio {
         List<Object> params = new ArrayList<>();
 
         if (filtro.getNombre() != null && !filtro.getNombre().isBlank()) {
-            sql.append(" AND (p.nombre LIKE ? OR pr.descripcion LIKE ?)");
+            sql.append(" AND (p.nombre ILIKE ? OR pr.descripcion ILIKE ?)");
             String termino = "%" + filtro.getNombre() + "%";
             params.add(termino);
             params.add(termino);

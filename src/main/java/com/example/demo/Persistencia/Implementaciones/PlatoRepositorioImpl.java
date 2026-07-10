@@ -60,7 +60,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
         List<Object> params = new ArrayList<>();
 
         if (filtro.getNombre() != null && !filtro.getNombre().isEmpty()) {
-            sql.append(" AND p.nombre LIKE ?");
+            sql.append(" AND p.nombre ILIKE ?");
             params.add("%" + filtro.getNombre() + "%");
         }
 
