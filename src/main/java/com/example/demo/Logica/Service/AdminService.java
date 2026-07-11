@@ -80,6 +80,9 @@ public class AdminService {
         usuarioRepositorio.actualizarEstado(local.getId(), estadoCuenta);
         localRepositorio.actualizar(local);
         registroLocalNotificador.notificarLocalResolucionSolicitud(local);
+        if(request.getEstadoObjetivo() == EstadoLocal.Rechazado){
+            usuarioRepositorio.eliminar(local.getId());
+        }
     }
 
     @Transactional
