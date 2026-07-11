@@ -1,5 +1,6 @@
 package com.example.demo.Logica.Service;
 
+import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Notificacion;
@@ -73,6 +74,9 @@ public class NotificacionService {
         if (usuario instanceof Local) {
             return TipoDestinatario.Local;
         }
-        throw new BusinessRuleException("Solo clientes y locales tienen notificaciones.");
+        if (usuario instanceof Administrador) {
+            return TipoDestinatario.Administrador;
+        }
+        throw new BusinessRuleException("Solo clientes, locales y administradores tienen notificaciones.");
     }
 }

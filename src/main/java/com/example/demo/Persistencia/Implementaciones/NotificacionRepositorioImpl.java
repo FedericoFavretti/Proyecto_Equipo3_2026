@@ -142,6 +142,19 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
                     .destinatarioTipo(destinatarioTipo)
                     .destinatarioId(destinatarioId)
                     .build();
+        } else if (tipo == TipoNotificacion.Local) {
+            return Notificacion.builder()
+                    .id(rs.getLong("id"))
+                    .tipo(TipoNotificacion.valueOf(rs.getString("tipo")))
+                    .mensaje(rs.getString("mensaje"))
+                    .canal(CanalNotificacion.valueOf(rs.getString("canal")))
+                    .leida(rs.getBoolean("leida"))
+                    .fecha(rs.getTimestamp("fecha").toLocalDateTime())
+                    .reclamo(null)
+                    .pedido(null)
+                    .destinatarioTipo(destinatarioTipo)
+                    .destinatarioId(destinatarioId)
+                    .build();
         }
         return null;
     }
