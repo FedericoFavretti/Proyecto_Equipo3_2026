@@ -95,6 +95,8 @@ public class LocalService {
             "La fechaDesde no puede ser posterior a fechaHasta.";
     private static final int LIMITE_PLATOS_MAS_PEDIDOS = 5;
     private static final String MENSAJE_CATEGORIA_DE_OTRO_LOCAL = "La catagoria no pertenece a este local";
+    private static final String MENSAJE_EMAIL_LOCAL_DUPLICADO =
+            "Este correo ya se encuentra registrado.";
 
     private final LocalRepositorio localRepositorio;
     private final PlatoRepositorio platoRepositorio;
@@ -271,6 +273,10 @@ public class LocalService {
 
         if (localRepositorio.buscarPorNombre(dtLocal.getNombre()).isPresent()) {
             throw new ResourceConflictException(MENSAJE_NOMBRE_LOCAL_DUPLICADO);
+        }
+
+        if (usuarioRepositorio.existeCorreo(dtLocal.getEmail())) {
+            throw new ResourceConflictException(MENSAJE_EMAIL_LOCAL_DUPLICADO);
         }
 
         dtLocal.setPasswd(passwordEncoder.encode(dtLocal.getPasswd()));

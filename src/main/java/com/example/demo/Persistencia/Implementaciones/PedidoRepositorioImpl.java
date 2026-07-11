@@ -443,11 +443,12 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     }
 
     @Override
-    public void marcarPagoAprobado(Long pedidoId) {
-        jdbcTemplate.update(
-                "UPDATE pedido SET pagado = ?, pagosimulado = ? WHERE id = ?",
+    public boolean marcarPagoAprobado(Long pedidoId) {
+        int filasActualizadas = jdbcTemplate.update(
+                "UPDATE pedido SET pagado = ?, pagosimulado = ? WHERE id = ? AND (pagado IS NULL OR pagado = false)",
                 true, false, pedidoId
         );
+        return filasActualizadas > 0;
     }
 
     private Pedido mapearPedido(ResultSet rs, int row) throws SQLException {

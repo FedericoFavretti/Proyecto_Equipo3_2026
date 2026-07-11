@@ -106,10 +106,10 @@ public class ReclamoService {
     public void resolverReclamo(DtReclamo dtReclamo) {
         Reclamo reclamoExistente = reclamoRepositorio.buscarPorId(dtReclamo.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Reclamo", dtReclamo.getId()));
-        reclamoExistente.setEstado(EstadoReclamo.Atendido);
         if(reclamoExistente.getEstado() != EstadoReclamo.Pendiente){
             throw new BusinessRuleException("El reclamo debe estar en estado pendiente.");
         }
+        reclamoExistente.setEstado(EstadoReclamo.Atendido);
         reclamoExistente.setTipoCompensacion(dtReclamo.getTipoCompensacion());
         if (dtReclamo.getMotivo() != null && !dtReclamo.getMotivo().isBlank()) {
             reclamoExistente.setMotivo(dtReclamo.getMotivo());

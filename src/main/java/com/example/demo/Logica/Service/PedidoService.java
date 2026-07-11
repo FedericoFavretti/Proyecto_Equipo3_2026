@@ -412,8 +412,8 @@ public class PedidoService {
                 Long pedidoId = Long.parseLong(payment.getExternalReference());
                 pedidoRepositorio.buscarPorId(pedidoId).ifPresentOrElse(pedido -> {
                     if (pedido.getEstado() != EstadoPedido.Cancelado) {
-                        if (!Boolean.TRUE.equals(pedido.getPagado())) {
-                            pedidoRepositorio.marcarPagoAprobado(pedidoId);
+                        boolean pagoRecienConfirmado = pedidoRepositorio.marcarPagoAprobado(pedidoId);
+                        if (pagoRecienConfirmado) {
                             pedido.setPagado(true);
                             notificacionPedidoService.notificarPedido(pedido);
                             LOGGER.info("Pedido {} marcado como pagado.", pedidoId);
