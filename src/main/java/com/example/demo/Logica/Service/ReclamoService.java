@@ -64,6 +64,7 @@ public class ReclamoService {
         if (dtReclamo.getDtPedido() == null || dtReclamo.getDtPedido().getId() == null) {
             throw new BusinessRuleException(DATOS_INCOMPLETOS);
         }
+
         dtReclamo.setEstado(EstadoReclamo.Pendiente);
         Pedido pedido = pedidoRepositorio.buscarPorId(dtReclamo.getDtPedido().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", dtReclamo.getDtPedido().getId()));
@@ -108,6 +109,9 @@ public class ReclamoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Reclamo", dtReclamo.getId()));
         if(reclamoExistente.getEstado() != EstadoReclamo.Pendiente){
             throw new BusinessRuleException("El reclamo debe estar en estado pendiente.");
+        }
+        if(reclamoExistente.getPedido().getLocal().getEstaAbierto() != true){
+            throw new BusinessRuleException("El local debe estar abierto para poder resolver un reclamo");
         }
         reclamoExistente.setEstado(EstadoReclamo.Atendido);
         reclamoExistente.setTipoCompensacion(dtReclamo.getTipoCompensacion());
