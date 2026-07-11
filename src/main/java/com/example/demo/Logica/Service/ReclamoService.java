@@ -113,7 +113,7 @@ public class ReclamoService {
         if(reclamoExistente.getPedido().getLocal().getEstaAbierto() != true){
             throw new BusinessRuleException("El local debe estar abierto para poder resolver un reclamo");
         }
-        reclamoExistente.setEstado(EstadoReclamo.Atendido);
+        reclamoExistente.setEstado(dtReclamo.getEstado());
         reclamoExistente.setTipoCompensacion(dtReclamo.getTipoCompensacion());
         if (dtReclamo.getMotivo() != null && !dtReclamo.getMotivo().isBlank()) {
             reclamoExistente.setMotivo(dtReclamo.getMotivo());
