@@ -9,6 +9,7 @@ import com.example.demo.Logica.DataTypes.response.DtLoginResponseLocal;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.DataTypes.shared.DtUsuario;
 import com.example.demo.Logica.Enums.EstadoCuenta;
+import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
 import com.example.demo.Logica.Exceptions.ResourceConflictException;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
@@ -428,10 +429,16 @@ public class UsuarioService {
         Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
 
-        if (!(usuario instanceof Cliente cliente)) {
-            throw new IllegalStateException("Solo los clientes pueden eliminar su propia cuenta.");
+        if (usuario instanceof Cliente cliente) {
+            eliminarCuentaCliente(cliente);
+        } else if (usuario instanceof Local local) {
+            eliminarCuentaLocal(local);
+        } else {
+            throw new IllegalStateException("Este tipo de usuario no puede eliminar su propia cuenta.");
         }
+    }
 
+    private void eliminarCuentaCliente(Cliente cliente) {
         Long idCliente = cliente.getId();
 
         if (pedidoRepositorio.existePedidoActivoPorCliente(idCliente)) {
@@ -448,6 +455,25 @@ public class UsuarioService {
         invalidarSesiones(cliente);
         anonimizarCliente(cliente);
         usuarioRepositorio.actualizar(cliente);
+    }
+
+    private void eliminarCuentaLocal(Local local) {
+        Long idLocal = local.getId();
+
+        if (pedidoRepositorio.existePedidoActivoPorLocal(idLocal)) {
+            throw new IllegalStateException(MENSAJE_PEDIDOS_ACTIVOS);
+        }
+
+        if (reclamoRepositorio.existeReclamoPendientePorLocal(idLocal)) {
+            throw new IllegalStateException(MENSAJE_RECLAMOS_PENDIENTES);
+        }
+
+        List<Long> idsClientesAfectados = calificacionRepositorio.obtenerClientesAfectadosPorArchivoDeLocal(idLocal);
+        calificacionRepositorio.archivarPorLocal(idLocal);
+        recalcularCalificacionGlobalClientes(idsClientesAfectados);
+        invalidarSesiones(local);
+        anonimizarLocal(local);
+        usuarioRepositorio.actualizar(local);
     }
 
     @Transactional
@@ -709,6 +735,21 @@ public class UsuarioService {
         cliente.setDireccion(DIRECCION_ANONIMIZADA);
     }
 
+    private void anonimizarLocal(Local local) {
+        Long idLocal = local.getId();
+        local.setEstado(EstadoCuenta.Bloqueado);
+        local.setEstadoLocal(EstadoLocal.Bloqueado);
+        local.setEstaAbierto(false);
+        local.setCalificacionGlobal(0.0);
+        local.setEmail("anon-" + idLocal + "@deleted.local");
+        local.setPasswd(passwordEncoder.encode("cuenta-eliminada-" + idLocal));
+        local.setFoto("anonimizado");
+        local.setNombre("Local eliminado");
+        local.setDescripcion("");
+        local.setDireccion(DIRECCION_ANONIMIZADA);
+        local.setImagenes(List.of());
+    }
+
     private void recalcularCalificacionGlobalLocales(List<Long> idsLocalesAfectados) {
         if (idsLocalesAfectados == null || idsLocalesAfectados.isEmpty()) {
             return;
@@ -725,6 +766,26 @@ public class UsuarioService {
                         .orElse(0.0);
                 local.setCalificacionGlobal(promedio);
                 localRepositorio.actualizar(local);
+            });
+        }
+    }
+
+    private void recalcularCalificacionGlobalClientes(List<Long> idsClientesAfectados) {
+        if (idsClientesAfectados == null || idsClientesAfectados.isEmpty()) {
+            return;
+        }
+
+        for (Long idCliente : idsClientesAfectados) {
+            if (idCliente == null) {
+                continue;
+            }
+            clienteRepositorio.buscarPorId(idCliente).ifPresent(cliente -> {
+                double promedio = calificacionRepositorio.listarPorCliente(idCliente).stream()
+                        .mapToInt(calificacion -> calificacion.getPuntaje())
+                        .average()
+                        .orElse(0.0);
+                cliente.setCalificacionGlobal(promedio);
+                clienteRepositorio.actualizar(cliente);
             });
         }
     }

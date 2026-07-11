@@ -231,6 +231,32 @@ public class CalificacionRepositorioImpl implements CalificacionRepositorio {
         );
     }
 
+    @Override
+    public void archivarPorLocal(Long idLocal) {
+        jdbcTemplate.update("""
+                UPDATE calificacion
+                SET archivada = TRUE
+                WHERE idlocal_emisor = ? OR idlocal_receptor = ?
+                """, idLocal, idLocal);
+    }
+
+    @Override
+    public List<Long> obtenerClientesAfectadosPorArchivoDeLocal(Long idLocal) {
+        return jdbcTemplate.query("""
+                SELECT DISTINCT idcliente_receptor AS idcliente
+                FROM calificacion
+                WHERE idlocal_emisor = ? AND idcliente_receptor IS NOT NULL
+                UNION
+                SELECT DISTINCT idcliente_emisor AS idcliente
+                FROM calificacion
+                WHERE idlocal_receptor = ? AND idcliente_emisor IS NOT NULL
+                """,
+                (rs, row) -> rs.getLong("idcliente"),
+                idLocal,
+                idLocal
+        );
+    }
+
     private Calificacion calificacionMapper(ResultSet rs, int row) throws SQLException {
         TipoCalificacion tipo = TipoCalificacion.valueOf(rs.getString("tipo"));
         Long idCalificacion = rs.getLong("id");

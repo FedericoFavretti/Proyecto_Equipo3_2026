@@ -133,6 +133,22 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
     }
 
     @Override
+    public boolean existeReclamoPendientePorLocal(Long idLocal) {
+        Integer cantidad = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM reclamo r
+                JOIN pedido p ON p.id = r.idpedido
+                WHERE p.idlocal = ?
+                AND r.estado = 'Pendiente'
+                """,
+                Integer.class,
+                idLocal
+        );
+        return cantidad != null && cantidad > 0;
+    }
+
+    @Override
     public Optional<Reclamo> buscarReclamoPorPedido(Long idPedido) {
         return jdbcTemplate.query("SELECT * FROM Reclamo WHERE idPedido = ?",
                 (rs, row) -> mapearRecalamo(rs), idPedido

@@ -236,6 +236,18 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
     }
 
     @Override
+    public boolean existePedidoActivoPorLocal(Long idLocal) {
+        Integer cantidad = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM pedido WHERE idlocal = ? AND estado IN (?, ?)",
+                Integer.class,
+                idLocal,
+                EstadoPedido.Pendiente.name(),
+                EstadoPedido.Confirmado.name()
+        );
+        return cantidad != null && cantidad > 0;
+    }
+
+    @Override
     public boolean existePedidoValidoParaEstadisticasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva) {
         String sql = """
         SELECT COUNT(*)

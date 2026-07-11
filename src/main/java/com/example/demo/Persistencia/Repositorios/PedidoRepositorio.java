@@ -26,6 +26,7 @@ public interface PedidoRepositorio {
     boolean existePedidoDeClienteEnLocal(Long idCliente, Long idLocal);
     boolean existePedidoActivoPorCliente(Long idCliente);
     boolean existePedidoPendientePorLocal(Long idLocal);
+    boolean existePedidoActivoPorLocal(Long idLocal);
     boolean existePedidoValidoParaEstadisticasEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva);
     List<PlatoVendidoEstadisticaProjection> obtenerPlatosMasPedidosEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva, int limite);
     List<PlatoVendidoEstadisticaProjection> obtenerVentasPorPlatoEnPeriodo(Long idLocal, LocalDateTime fechaDesdeInclusive, LocalDateTime fechaHastaExclusiva);
