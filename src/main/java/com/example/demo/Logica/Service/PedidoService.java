@@ -415,7 +415,7 @@ public class PedidoService {
                         if (!Boolean.TRUE.equals(pedido.getPagado())) {
                             pedidoRepositorio.marcarPagoAprobado(pedidoId);
                             pedido.setPagado(true);
-
+                            notificacionPedidoService.notificarPedido(pedido);
                             LOGGER.info("Pedido {} marcado como pagado.", pedidoId);
                         } else {
                             LOGGER.info("Pedido {} ya estaba marcado como pagado, se ignora.", pedidoId);
