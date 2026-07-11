@@ -91,4 +91,39 @@ class ReclamoControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("No puede realizar reclamos sobre pedidos que no le pertenecen."));
     }
+
+    @Test
+    void resolverReclamoRespondeUnauthorizedCuandoLaAutenticacionEsInvalida() throws Exception {
+        mockMvc.perform(post("/api/v1/reclamos/resolver_reclamo")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "id": 99,
+                                  "estado": "Rechazado",
+                                  "motivoRechazo": "No corresponde"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void resolverReclamoPasaEmailAutenticadoAlServicio() throws Exception {
+        TestingAuthenticationToken authentication =
+                new TestingAuthenticationToken("local@foodly.com", "secret");
+        authentication.setAuthenticated(true);
+
+        mockMvc.perform(post("/api/v1/reclamos/resolver_reclamo")
+                        .principal(authentication)
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "id": 99,
+                                  "estado": "Rechazado",
+                                  "motivoRechazo": "El local verificó que el pedido fue rehecho."
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        Mockito.verify(reclamoService).resolverReclamo(eq("local@foodly.com"), any(DtReclamo.class));
+    }
 }

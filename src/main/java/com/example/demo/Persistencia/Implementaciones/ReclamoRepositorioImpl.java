@@ -48,15 +48,16 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO Reclamo (motivo, tipoCompensacion, montoReintegro, fecha, idPedido, estado) VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO Reclamo (motivo, tipoCompensacion, motivorechazo, montoReintegro, fecha, idPedido, estado) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     new String[]{"id"}
             );
             ps.setString(1, reclamo.getMotivo());
             ps.setString(2, reclamo.getTipoCompensacion());
-            ps.setDouble(3, reclamo.getMontoReintegro());
-            ps.setTimestamp(4, java.sql.Timestamp.valueOf(reclamo.getFecha()));
-            ps.setLong(5, reclamo.getPedido().getId());
-            ps.setString(6, reclamo.getEstado().name());
+            ps.setString(3, reclamo.getMotivoRechazo());
+            ps.setDouble(4, reclamo.getMontoReintegro());
+            ps.setTimestamp(5, java.sql.Timestamp.valueOf(reclamo.getFecha()));
+            ps.setLong(6, reclamo.getPedido().getId());
+            ps.setString(7, reclamo.getEstado().name());
             return ps;
         }, keyHolder);
 
@@ -65,9 +66,10 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
 
     @Override
     public void actualizar(Reclamo reclamo) {
-        jdbcTemplate.update("UPDATE Reclamo SET motivo = ?, tipoCompensacion = ?, montoReintegro = ?, fecha = ?, idPedido = ?, estado = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE Reclamo SET motivo = ?, tipoCompensacion = ?, motivorechazo = ?, montoReintegro = ?, fecha = ?, idPedido = ?, estado = ? WHERE id = ?",
                 reclamo.getMotivo(),
                 reclamo.getTipoCompensacion(),
+                reclamo.getMotivoRechazo(),
                 reclamo.getMontoReintegro(),
                 reclamo.getFecha(),
                 reclamo.getPedido().getId(),
@@ -162,6 +164,7 @@ public class ReclamoRepositorioImpl implements ReclamoRepositorio {
                 rs.getString("motivo"),
                 estadoReclamo,
                 rs.getString("tipoCompensacion"),
+                rs.getString("motivorechazo"),
                 rs.getDouble("montoReintegro"),
                 rs.getTimestamp("fecha").toLocalDateTime(),
                 pedidoRepositorio.buscarPorId(rs.getLong("idPedido")).orElseThrow(()->new RuntimeException("Pedido no encontrado"))
