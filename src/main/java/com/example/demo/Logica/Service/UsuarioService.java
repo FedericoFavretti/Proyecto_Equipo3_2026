@@ -411,7 +411,7 @@ public class UsuarioService {
         }
         usuarioRepositorio.actualizar(usuario);
         if (usuario instanceof Cliente cliente) {
-           return clienteMapper.mapearDtClienteDeClase(cliente);
+            return clienteMapper.mapearDtClienteDeClase(cliente);
         } else if (usuario instanceof Local local) {
             return localMapper.mapearDtLocalDeClase(local);
         }else{
@@ -478,7 +478,7 @@ public class UsuarioService {
         emailService.enviarCodigoVerificacion(usuario.getEmail(), codigo);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
     public void verificarCodigoCambioPasswd(DtVerificarCodigoRequest request) {
         if (request == null || request.getIdUsuario() == null || request.getCodigo() == null) {
             throw new IllegalArgumentException("Debe indicar el usuario y el código de verificación.");
