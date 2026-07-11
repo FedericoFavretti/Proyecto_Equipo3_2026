@@ -3,6 +3,7 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
+import com.example.demo.Logica.DataTypes.response.DtPagina;
 import com.example.demo.Logica.DataTypes.shared.DtPedido;
 import com.example.demo.Logica.DataTypes.shared.DtReclamo;
 import com.example.demo.Logica.Enums.EstadoPedido;
@@ -15,7 +16,6 @@ import com.example.demo.Logica.Mappers.PedidoMapper;
 import com.example.demo.Logica.Mappers.ReclamoMapper;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.ReclamoRepositorio;
-import com.example.demo.Logica.DataTypes.response.DtPagina;
 import com.example.demo.Utils.PaginacionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +35,12 @@ public class ReclamoService {
             "Ya existe un reclamo para este pedido.";
     private static final String MENSAJE_PEDIDO_AJENO =
             "No puede realizar reclamos sobre pedidos que no le pertenecen.";
+    private static final String MENSAJE_LOCAL_AJENO =
+            "No puede resolver reclamos de otro local.";
+    private static final String MENSAJE_TIPO_RESOLUCION_REQUERIDO =
+            "Debe seleccionar el tipo de resolución (reintegro o compensación).";
+    private static final String MENSAJE_MOTIVO_RECHAZO_REQUERIDO =
+            "Debe ingresar un motivo de rechazo.";
 
     private final ReclamoRepositorio reclamoRepositorio;
     private final PedidoRepositorio pedidoRepositorio;
@@ -42,7 +48,9 @@ public class ReclamoService {
     private final PedidoMapper pedidoMapper;
     private final NotificarReclamoService notificarReclamoService;
 
-    public ReclamoService(ReclamoRepositorio reclamoRepositorio, PedidoRepositorio pedidoRepositorio,  ReclamoMapper reclamoMapper, PedidoMapper pedidoMapper, NotificarReclamoService notificarReclamoService) {
+    public ReclamoService(ReclamoRepositorio reclamoRepositorio, PedidoRepositorio pedidoRepositorio,
+                          ReclamoMapper reclamoMapper, PedidoMapper pedidoMapper,
+                          NotificarReclamoService notificarReclamoService) {
         this.reclamoRepositorio = reclamoRepositorio;
         this.pedidoRepositorio = pedidoRepositorio;
         this.reclamoMapper = reclamoMapper;
@@ -51,7 +59,7 @@ public class ReclamoService {
     }
 
     @Transactional
-    public void reclamar(String emailAutenticado, DtReclamo dtReclamo){
+    public void reclamar(String emailAutenticado, DtReclamo dtReclamo) {
         if (dtReclamo == null) {
             throw new BusinessRuleException(DATOS_INCOMPLETOS);
         }
@@ -66,6 +74,7 @@ public class ReclamoService {
         }
 
         dtReclamo.setEstado(EstadoReclamo.Pendiente);
+        dtReclamo.setMotivoRechazo(null);
         Pedido pedido = pedidoRepositorio.buscarPorId(dtReclamo.getDtPedido().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", dtReclamo.getDtPedido().getId()));
         validarPedidoReclamable(emailAutenticado, pedido);
@@ -93,33 +102,66 @@ public class ReclamoService {
     }
 
     @Transactional
-    public DtPagina<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo, Integer pagina, Integer tamanio){
+    public DtPagina<DtReclamo> buscarReclamos(DtFiltroReclamo dtFiltroReclamo, Integer pagina, Integer tamanio) {
         if (dtFiltroReclamo.getFechaReclamo() == null && dtFiltroReclamo.getEstadoPedido() == null
                 && dtFiltroReclamo.getIdCliente() == null && dtFiltroReclamo.getEstadoReclamo() == null
                 && dtFiltroReclamo.getIdLocal() == null) {
             throw new BusinessRuleException(MENSAJE_FILTRO_REQUERIDO);
         }
-        List<DtReclamo> reclamos = reclamoMapper.mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));
+        List<DtReclamo> reclamos = reclamoMapper
+                .mapearReclamosDeClase(reclamoRepositorio.buscarReclamosPorFiltro(dtFiltroReclamo));
         return PaginacionUtils.paginar(reclamos, pagina, tamanio);
     }
 
     @Transactional
-    public void resolverReclamo(DtReclamo dtReclamo) {
+    public void resolverReclamo(String emailAutenticado, DtReclamo dtReclamo) {
+        if (emailAutenticado == null || emailAutenticado.isBlank() || dtReclamo == null || dtReclamo.getId() == null
+                || dtReclamo.getEstado() == null) {
+            throw new BusinessRuleException(DATOS_INCOMPLETOS);
+        }
+
         Reclamo reclamoExistente = reclamoRepositorio.buscarPorId(dtReclamo.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Reclamo", dtReclamo.getId()));
-        if(reclamoExistente.getEstado() != EstadoReclamo.Pendiente){
+
+        if (reclamoExistente.getEstado() != EstadoReclamo.Pendiente) {
             throw new BusinessRuleException("El reclamo debe estar en estado pendiente.");
         }
-        if(reclamoExistente.getPedido().getLocal().getEstaAbierto() != true){
+        if (!Boolean.TRUE.equals(reclamoExistente.getPedido().getLocal().getEstaAbierto())) {
             throw new BusinessRuleException("El local debe estar abierto para poder resolver un reclamo");
         }
-        reclamoExistente.setEstado(dtReclamo.getEstado());
-        reclamoExistente.setTipoCompensacion(dtReclamo.getTipoCompensacion());
-        if (dtReclamo.getMotivo() != null && !dtReclamo.getMotivo().isBlank()) {
-            reclamoExistente.setMotivo(dtReclamo.getMotivo());
+        if (reclamoExistente.getPedido().getLocal() == null
+                || reclamoExistente.getPedido().getLocal().getEmail() == null
+                || !reclamoExistente.getPedido().getLocal().getEmail().equalsIgnoreCase(emailAutenticado)) {
+            throw new AccessDeniedException(MENSAJE_LOCAL_AJENO);
         }
+
+        if (dtReclamo.getEstado() == EstadoReclamo.Atendido) {
+            validarResolucionAtendida(dtReclamo);
+            reclamoExistente.setEstado(EstadoReclamo.Atendido);
+            reclamoExistente.setTipoCompensacion(dtReclamo.getTipoCompensacion().trim());
+            reclamoExistente.setMotivoRechazo(null);
+        } else if (dtReclamo.getEstado() == EstadoReclamo.Rechazado) {
+            validarResolucionRechazada(dtReclamo);
+            reclamoExistente.setEstado(EstadoReclamo.Rechazado);
+            reclamoExistente.setMotivoRechazo(dtReclamo.getMotivoRechazo().trim());
+        } else {
+            throw new BusinessRuleException("El estado de resolución del reclamo no es válido.");
+        }
+
         notificarReclamoService.notificarReslucionReclamo(reclamoExistente);
         reclamoRepositorio.actualizar(reclamoExistente);
+    }
+
+    private void validarResolucionAtendida(DtReclamo dtReclamo) {
+        if (dtReclamo.getTipoCompensacion() == null || dtReclamo.getTipoCompensacion().isBlank()) {
+            throw new BusinessRuleException(MENSAJE_TIPO_RESOLUCION_REQUERIDO);
+        }
+    }
+
+    private void validarResolucionRechazada(DtReclamo dtReclamo) {
+        if (dtReclamo.getMotivoRechazo() == null || dtReclamo.getMotivoRechazo().isBlank()) {
+            throw new BusinessRuleException(MENSAJE_MOTIVO_RECHAZO_REQUERIDO);
+        }
     }
 
     @Transactional(readOnly = true)

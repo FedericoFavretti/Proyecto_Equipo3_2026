@@ -16,5 +16,5 @@ public interface iReclamoController {
     ResponseEntity<DtPagina<DtReclamo>> buscarReclamos(
             Long idLocal, Long idCliente, EstadoPedido estadoPedido, EstadoReclamo estadoReclamo, LocalDate fechaReclamo,
             Integer pagina, Integer tamanio);
-    ResponseEntity<Void> resolverReclamo(@RequestBody DtReclamo dtReclamo);
+    ResponseEntity<Void> resolverReclamo(Authentication authentication, @RequestBody DtReclamo dtReclamo);
 }

@@ -3,6 +3,7 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Notificacion;
 import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.Enums.CanalNotificacion;
+import com.example.demo.Logica.Enums.EstadoReclamo;
 import com.example.demo.Logica.Enums.TipoDestinatario;
 import com.example.demo.Logica.Enums.TipoNotificacion;
 import com.example.demo.Persistencia.Repositorios.NotificacionRepositorio;
@@ -31,10 +32,10 @@ public class NotificarReclamoService {
         emailService.enviarCorreo(
                 reclamo.getPedido().getLocal().getEmail(),
                 "Se recibio un reclamo",
-                "Se ah recibido un reclamo para el pedido "+reclamo.getPedido().getId()
-                        +" fue realizado por el cliente "+reclamo.getPedido().getCliente().getNombre() +" "+  reclamo.getPedido().getCliente().getApellido()
-                        +" ingresa a la web para resolver el reclamo. "+
-                        reclamoUrl
+                "Se ha recibido un reclamo para el pedido " + reclamo.getPedido().getId()
+                        + " realizado por el cliente " + reclamo.getPedido().getCliente().getNombre() + " "
+                        + reclamo.getPedido().getCliente().getApellido()
+                        + ". Ingrese a la web para resolverlo: " + reclamoUrl
         );
 
         var local = reclamo.getPedido() != null ? reclamo.getPedido().getLocal() : null;
@@ -47,16 +48,35 @@ public class NotificarReclamoService {
     }
 
     public void notificarReslucionReclamo(Reclamo reclamo) {
+        String asunto;
+        String cuerpoCorreo;
+        String mensajeWeb;
+
+        if (reclamo.getEstado() == EstadoReclamo.Rechazado) {
+            asunto = "Tu reclamo fue rechazado";
+            cuerpoCorreo = "El local " + reclamo.getPedido().getLocal().getNombre()
+                    + " rechazó el reclamo del pedido " + reclamo.getPedido().getId()
+                    + ". Motivo: " + reclamo.getMotivoRechazo();
+            mensajeWeb = "Tu reclamo sobre el pedido #" + reclamo.getPedido().getId()
+                    + " fue rechazado. Motivo: " + reclamo.getMotivoRechazo();
+        } else {
+            asunto = "Se recibió la resolución de tu reclamo";
+            cuerpoCorreo = "El local " + reclamo.getPedido().getLocal().getNombre()
+                    + " resolvió el reclamo del pedido " + reclamo.getPedido().getId()
+                    + " con " + reclamo.getTipoCompensacion() + ".";
+            mensajeWeb = "Tu reclamo sobre el pedido #" + reclamo.getPedido().getId()
+                    + " fue atendido con " + reclamo.getTipoCompensacion() + ".";
+        }
+
         emailService.enviarCorreo(
                 reclamo.getPedido().getCliente().getEmail(),
-                "Se ah recibido la resolución de un reclamo",
-                "Se resolvio el reclamo asociado con el pedido " + reclamo.getPedido().getId()
-                        + "fue resuelto por el local " + reclamo.getPedido().getLocal().getNombre()
+                asunto,
+                cuerpoCorreo
         );
 
         var cliente = reclamo.getPedido() != null ? reclamo.getPedido().getCliente() : null;
         guardarNotificacionWeb(
-                "Tu reclamo sobre el pedido #" + reclamo.getPedido().getId() + " fue atendido.",
+                mensajeWeb,
                 reclamo,
                 TipoDestinatario.Cliente,
                 cliente != null ? cliente.getId() : null

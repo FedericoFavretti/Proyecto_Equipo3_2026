@@ -18,6 +18,7 @@ public class DtReclamo {
     private String motivo;
     private EstadoReclamo estado;
     private String tipoCompensacion;
+    private String motivoRechazo;
     private Double montoReintegro;
     private LocalDateTime fecha;
     private DtPedido dtPedido;
