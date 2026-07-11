@@ -20,7 +20,7 @@ public interface iClienteController {
     ResponseEntity<DtLoginResponseCliente> loginConGoogle(DtGoogleAuthRequest request);
     ResponseEntity<DtGoogleRegistroPendienteResponse> iniciarRegistroConGoogle(DtGoogleAuthRequest request);
     ResponseEntity<DtLoginResponseCliente> completarRegistroConGoogle(@RequestPart("datos") DtGoogleRegistroCompletarRequest datos,
-                                                                      @RequestPart("foto") MultipartFile foto);
+                                                                      @RequestPart(value = "foto", required = false) MultipartFile foto);
     ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(
             String nombre, Boolean precioMasBajo, Boolean precioMasAlto,
             Boolean promocionActiva, Boolean alfabetico, Long localId, Integer pagina, Integer tamanio);

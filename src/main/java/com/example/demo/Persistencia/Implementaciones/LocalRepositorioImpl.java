@@ -21,7 +21,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class LocalRepositorioImpl implements LocalRepositorio {
     private static final String SELECT_LOCAL_CON_USUARIO = """
-            SELECT l.*, u.email, u.passwd, u.estado AS estado_cuenta, u.tipo, u.foto, u.sesiones_invalidadas_desde
+            SELECT l.*, u.email, u.passwd, u.estado AS estado_cuenta, u.tipo, u.foto, u.autenticado_con_google, u.sesiones_invalidadas_desde
             FROM Local l
             LEFT JOIN usuario u ON u.id = l.id 
             """;
@@ -218,6 +218,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                 .passwd(rs.getString("passwd"))
                 .foto(rs.getString("foto"))
                 .tipo(rs.getString("tipo"))
+                .autenticadoConGoogle(rs.getObject("autenticado_con_google", Boolean.class))
                 .estado(estadoCuenta != null && !estadoCuenta.isBlank()
                         ? EstadoCuenta.valueOf(estadoCuenta)
                         : null)
