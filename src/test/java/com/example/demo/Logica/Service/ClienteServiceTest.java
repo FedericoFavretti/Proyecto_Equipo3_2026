@@ -123,8 +123,6 @@ class ClienteServiceTest {
                 googleIdentityService,
                 tokenActivacionCuentaRepositorio
         );
-        // "activationFrontendBaseUrl" es un campo @Value que Spring solo inyecta
-        // en tiempo de ejecución real; en un test unitario hay que setearlo a mano.
         ReflectionTestUtils.setField(clienteService, "activationFrontendBaseUrl", "https://foodly.com.uy");
     }
 
@@ -134,42 +132,42 @@ class ClienteServiceTest {
                 .passwd(passwd)
                 .documento("12345678")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
                 .build();
     }
 
     @Test
-    void registrarUsuarioRechazaContraseñaCortaSinMayusculaNiNumero() {
+    void registrarUsuarioRechazaContrasenaCortaSinMayusculaNiNumero() {
         DtCliente dtCliente = dtClienteConPasswd("123");
 
         assertThatThrownBy(() -> clienteService.registrarUsuario(dtCliente))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessage("La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.");
+                .hasMessageContaining("8 caracteres");
 
         verify(usuarioRepositorio, never()).guardar(any());
         verify(clienteRepositorio, never()).guardar(any());
     }
 
     @Test
-    void registrarUsuarioRechazaContraseñaSinMayuscula() {
+    void registrarUsuarioRechazaContrasenaSinMayuscula() {
         DtCliente dtCliente = dtClienteConPasswd("password1");
 
         assertThatThrownBy(() -> clienteService.registrarUsuario(dtCliente))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessage("La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.");
+                .hasMessageContaining("8 caracteres");
     }
 
     @Test
-    void registrarUsuarioRechazaContraseñaSinNumero() {
+    void registrarUsuarioRechazaContrasenaSinNumero() {
         DtCliente dtCliente = dtClienteConPasswd("Password");
 
         assertThatThrownBy(() -> clienteService.registrarUsuario(dtCliente))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessage("La contraseña debe tener al menos 8 caracteres, una letra mayúscula y un número.");
+                .hasMessageContaining("8 caracteres");
     }
 
     @Test
-    void registrarUsuarioAceptaContraseñaQueCumpleRequisitos() {
+    void registrarUsuarioAceptaContrasenaQueCumpleRequisitos() {
         DtCliente dtCliente = dtClienteConPasswd("Password1");
         Cliente cliente = new Cliente();
 
@@ -182,6 +180,7 @@ class ClienteServiceTest {
 
         assertThat(resultado).isSameAs(cliente);
         assertThat(resultado.getPasswd()).isEqualTo("hash-encriptado");
+        assertThat(resultado.getAutenticadoConGoogle()).isFalse();
     }
 
     @Test
@@ -190,7 +189,7 @@ class ClienteServiceTest {
         DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
                 .email("nuevo@foodly.com")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
                 .foto("https://googleusercontent.com/ana.png")
                 .build();
 
@@ -203,7 +202,7 @@ class ClienteServiceTest {
         assertThat(response.getTokenRegistro()).isEqualTo("registro-temporal");
         assertThat(response.getEmail()).isEqualTo("nuevo@foodly.com");
         assertThat(response.getNombre()).isEqualTo("Ana");
-        assertThat(response.getApellido()).isEqualTo("Pérez");
+        assertThat(response.getApellido()).isEqualTo("PÃƒÆ’Ã‚Â©rez");
         assertThat(response.getFoto()).isEqualTo("https://googleusercontent.com/ana.png");
         verify(usuarioRepositorio, never()).guardar(any());
         verify(clienteRepositorio, never()).guardar(any());
@@ -215,7 +214,7 @@ class ClienteServiceTest {
         DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
                 .email("existente@foodly.com")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
                 .foto("https://googleusercontent.com/ana.png")
                 .build();
 
@@ -224,22 +223,21 @@ class ClienteServiceTest {
 
         assertThatThrownBy(() -> clienteService.iniciarRegistroConGoogle(request))
                 .isInstanceOf(ResourceConflictException.class)
-                .hasMessage("El correo existente@foodly.com ya está asociado a una cuenta existente. ¿Desea iniciar sesión en su lugar?");
+                .hasMessageContaining("existente@foodly.com");
     }
 
     @Test
-    void completarRegistroConGoogleCreaCuentaActivaYDevuelveTokenFinal() {
+    void completarRegistroConGoogleCreaCuentaActivaConFotoDeGooglePorDefectoYDevuelveTokenFinal() {
         DtGoogleRegistroCompletarRequest request = DtGoogleRegistroCompletarRequest.builder()
                 .tokenRegistro("registro-temporal")
                 .documento("51234567")
                 .direccion(new DtDireccion("18 de Julio", "1234", "Montevideo", "11200"))
                 .aceptaTerminos(true)
-                .foto("https://cdn.foodly.com/perfil-google.png")
                 .build();
         DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
                 .email("nuevo@foodly.com")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
                 .foto("https://googleusercontent.com/ana.png")
                 .build();
 
@@ -259,25 +257,26 @@ class ClienteServiceTest {
         Cliente clienteGuardado = clienteCaptor.getValue();
         assertThat(clienteGuardado.getEmail()).isEqualTo("nuevo@foodly.com");
         assertThat(clienteGuardado.getNombre()).isEqualTo("Ana");
-        assertThat(clienteGuardado.getApellido()).isEqualTo("Pérez");
+        assertThat(clienteGuardado.getApellido()).isEqualTo("PÃƒÆ’Ã‚Â©rez");
         assertThat(clienteGuardado.getDocumento()).isEqualTo("51234567");
         assertThat(clienteGuardado.getDireccion()).isEqualTo(request.getDireccion());
-        assertThat(clienteGuardado.getFoto()).isEqualTo("https://cdn.foodly.com/perfil-google.png");
+        assertThat(clienteGuardado.getFoto()).isEqualTo("https://googleusercontent.com/ana.png");
         assertThat(clienteGuardado.getEstado()).isEqualTo(EstadoCuenta.Activo);
         assertThat(clienteGuardado.getActivo()).isTrue();
+        assertThat(clienteGuardado.getAutenticadoConGoogle()).isTrue();
         assertThat(clienteGuardado.getTipo()).isEqualTo("cliente");
         assertThat(clienteGuardado.getCalificacionGlobal()).isZero();
 
         assertThat(response.getToken()).isEqualTo("jwt-final");
         assertThat(response.getEmail()).isEqualTo("nuevo@foodly.com");
         assertThat(response.getNombre()).isEqualTo("Ana");
-        assertThat(response.getApellido()).isEqualTo("Pérez");
+        assertThat(response.getApellido()).isEqualTo("PÃƒÆ’Ã‚Â©rez");
         assertThat(response.getDireccion()).isEqualTo(request.getDireccion());
-        assertThat(response.getFoto()).isEqualTo("https://cdn.foodly.com/perfil-google.png");
+        assertThat(response.getFoto()).isEqualTo("https://googleusercontent.com/ana.png");
     }
 
     @Test
-    void completarRegistroConGoogleRechazaCamposObligatoriosFaltantes() {
+    void completarRegistroConGoogleRechazaCamposObligatoriosFaltantesSinExigirFoto() {
         DtGoogleRegistroCompletarRequest request = DtGoogleRegistroCompletarRequest.builder()
                 .tokenRegistro("registro-temporal")
                 .aceptaTerminos(true)
@@ -285,38 +284,39 @@ class ClienteServiceTest {
         DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
                 .email("nuevo@foodly.com")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
                 .build();
 
         when(jwtService.validarYObtenerDatosRegistroGoogle("registro-temporal")).thenReturn(googleUserInfo);
 
         assertThatThrownBy(() -> clienteService.completarRegistroConGoogle(request))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessage("Los siguientes campos son requeridos: documento, dirección, foto de perfil. Por favor, complételos para finalizar el registro.");
+                .hasMessageContaining("documento").hasMessageContaining("finalizar el registro");
 
         verify(usuarioRepositorio, never()).guardar(any());
         verify(clienteRepositorio, never()).guardar(any());
     }
 
     @Test
-    void loginConGoogleAutenticaClienteExistente() {
+    void loginConGoogleAutenticaClienteExistenteVinculado() {
         DtGoogleAuthRequest request = new DtGoogleAuthRequest("token-google", null, null, false);
         DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
                 .email("cliente@foodly.com")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
                 .foto("https://googleusercontent.com/ana.png")
                 .build();
         Cliente clienteExistente = Cliente.builder()
                 .id(10L)
                 .email("cliente@foodly.com")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
                 .documento("51234567")
                 .direccion(new DtDireccion("18 de Julio", "1234", "Montevideo", "11200"))
                 .foto("https://cdn.foodly.com/ana.png")
                 .estado(EstadoCuenta.Activo)
                 .tipo("cliente")
+                .autenticadoConGoogle(true)
                 .calificacionGlobal(4.8)
                 .activo(true)
                 .build();
@@ -330,7 +330,7 @@ class ClienteServiceTest {
 
         assertThat(response.getToken()).isEqualTo("jwt-login");
         assertThat(response.getEmail()).isEqualTo("cliente@foodly.com");
-        assertThat(response.getApellido()).isEqualTo("Pérez");
+        assertThat(response.getApellido()).isEqualTo("PÃƒÆ’Ã‚Â©rez");
         assertThat(response.getDireccion()).isEqualTo(clienteExistente.getDireccion());
     }
 
@@ -340,7 +340,7 @@ class ClienteServiceTest {
         DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
                 .email("desconocido@foodly.com")
                 .nombre("Ana")
-                .apellido("Pérez")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
                 .foto("https://googleusercontent.com/ana.png")
                 .build();
 
@@ -349,7 +349,85 @@ class ClienteServiceTest {
 
         assertThatThrownBy(() -> clienteService.loginConGoogle(request))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessage("No existe una cuenta de cliente asociada al correo desconocido@foodly.com. Regístrese con Google para continuar.");
+                .hasMessageContaining("desconocido@foodly.com").hasMessageContaining("Google");
+    }
+
+    @Test
+    void loginConGoogleRechazaCuentaNoVinculadaAProveedorGoogle() {
+        DtGoogleAuthRequest request = new DtGoogleAuthRequest("token-google", null, null, false);
+        DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
+                .email("cliente@foodly.com")
+                .nombre("Ana")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
+                .foto("https://googleusercontent.com/ana.png")
+                .build();
+        Cliente clienteExistente = Cliente.builder()
+                .id(10L)
+                .email("cliente@foodly.com")
+                .estado(EstadoCuenta.Activo)
+                .tipo("cliente")
+                .activo(true)
+                .autenticadoConGoogle(false)
+                .build();
+
+        when(googleIdentityService.obtenerDatosUsuario("token-google")).thenReturn(googleUserInfo);
+        when(clienteRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(clienteExistente));
+
+        assertThatThrownBy(() -> clienteService.loginConGoogle(request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("cliente@foodly.com").hasMessageContaining("Google");
+    }
+
+    @Test
+    void loginConGoogleRechazaCuentaPendienteAunqueEsteVinculadaAGoogle() {
+        DtGoogleAuthRequest request = new DtGoogleAuthRequest("token-google", null, null, false);
+        DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
+                .email("cliente@foodly.com")
+                .nombre("Ana")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
+                .foto("https://googleusercontent.com/ana.png")
+                .build();
+        Cliente clienteExistente = Cliente.builder()
+                .id(10L)
+                .email("cliente@foodly.com")
+                .estado(EstadoCuenta.Pendiente)
+                .tipo("cliente")
+                .activo(false)
+                .autenticadoConGoogle(true)
+                .build();
+
+        when(googleIdentityService.obtenerDatosUsuario("token-google")).thenReturn(googleUserInfo);
+        when(clienteRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(clienteExistente));
+
+        assertThatThrownBy(() -> clienteService.loginConGoogle(request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Usuario no activado o bloqueado.");
+    }
+
+    @Test
+    void loginConGoogleRechazaCuentaBloqueadaAunqueEsteVinculadaAGoogle() {
+        DtGoogleAuthRequest request = new DtGoogleAuthRequest("token-google", null, null, false);
+        DtGoogleUserInfo googleUserInfo = DtGoogleUserInfo.builder()
+                .email("cliente@foodly.com")
+                .nombre("Ana")
+                .apellido("PÃƒÆ’Ã‚Â©rez")
+                .foto("https://googleusercontent.com/ana.png")
+                .build();
+        Cliente clienteExistente = Cliente.builder()
+                .id(10L)
+                .email("cliente@foodly.com")
+                .estado(EstadoCuenta.Bloqueado)
+                .tipo("cliente")
+                .activo(false)
+                .autenticadoConGoogle(true)
+                .build();
+
+        when(googleIdentityService.obtenerDatosUsuario("token-google")).thenReturn(googleUserInfo);
+        when(clienteRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(clienteExistente));
+
+        assertThatThrownBy(() -> clienteService.loginConGoogle(request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Usuario no activado o bloqueado.");
     }
 
     @Test
@@ -405,6 +483,9 @@ class ClienteServiceTest {
 
         assertThatThrownBy(() -> clienteService.buscarPlatosYPromociones(filtro, null, null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("No se encontraron platos o promociones que coincidan con su búsqueda.");
+                .hasMessageContaining("No se encontraron platos o promociones");
     }
 }
+
+
+

@@ -143,6 +143,48 @@ class ClienteControllerTest {
     }
 
     @Test
+    void completarRegistroConGoogleAceptaFotoOpcional() throws Exception {
+        MockMultipartFile datos = new MockMultipartFile(
+                "datos",
+                "",
+                MediaType.APPLICATION_JSON_VALUE,
+                """
+                        {
+                          "tokenRegistro": "registro-temporal",
+                          "documento": "51234567",
+                          "aceptaTerminos": true,
+                          "direccion": {
+                            "calle": "18 de Julio",
+                            "numero": "1234",
+                            "ciudad": "Montevideo",
+                            "codigoPostal": "11200"
+                          }
+                        }
+                        """.getBytes(StandardCharsets.UTF_8)
+        );
+        DtLoginResponseCliente response = DtLoginResponseCliente.builder()
+                .id(10L)
+                .token("jwt-final")
+                .tipo("cliente")
+                .email("nuevo@foodly.com")
+                .nombre("Ana")
+                .apellido("PÃ©rez")
+                .direccion(new DtDireccion("18 de Julio", "1234", "Montevideo", "11200"))
+                .foto("https://googleusercontent.com/ana.png")
+                .calificacionGlobal(0.0)
+                .build();
+
+        when(clienteService.completarRegistroConGoogle(any())).thenReturn(response);
+
+        mockMvc.perform(multipart("/api/v1/clientes/google/registro/completar")
+                        .file(datos)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("jwt-final"))
+                .andExpect(jsonPath("$.foto").value("https://googleusercontent.com/ana.png"));
+    }
+
+    @Test
     void buscarPlatosYPromocionesDevuelveListadoCombinado() throws Exception {
         DtPlato plato = DtPlato.builder()
                 .id(10L)

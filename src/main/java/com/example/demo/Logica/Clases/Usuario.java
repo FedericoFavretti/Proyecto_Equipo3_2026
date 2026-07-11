@@ -20,5 +20,6 @@ public abstract class Usuario {
     private String foto;
     private EstadoCuenta estado;
     private String tipo;
+    private Boolean autenticadoConGoogle;
     private LocalDateTime sesionesInvalidadasDesde;
 }

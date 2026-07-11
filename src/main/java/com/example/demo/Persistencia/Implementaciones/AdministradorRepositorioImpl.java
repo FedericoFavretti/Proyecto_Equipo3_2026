@@ -15,7 +15,7 @@ import java.util.Optional;
 public class AdministradorRepositorioImpl implements AdministradorRepositorio {
 
     private static final String SELECT_ADMINISTRADOR_CON_USUARIO = """
-            SELECT u.id, u.email, u.passwd, u.foto, u.estado, u.tipo, a.nivelAcceso
+            SELECT u.id, u.email, u.passwd, u.foto, u.estado, u.tipo, u.autenticado_con_google, a.nivelAcceso
             FROM usuario u
             JOIN Administrador a ON a.id = u.id
             """;
@@ -73,6 +73,7 @@ public class AdministradorRepositorioImpl implements AdministradorRepositorio {
         administrador.setPasswd(rs.getString("passwd"));
         administrador.setFoto(rs.getString("foto"));
         administrador.setTipo(rs.getString("tipo"));
+        administrador.setAutenticadoConGoogle(rs.getObject("autenticado_con_google", Boolean.class));
         administrador.setNivelAcceso(rs.getString("nivelAcceso"));
         String estado = rs.getString("estado");
         if (estado != null && !estado.isBlank()) {

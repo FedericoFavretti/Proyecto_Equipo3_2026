@@ -72,6 +72,10 @@ public class ClienteService {
             "No existe una cuenta de cliente asociada al correo %s. Regístrese con Google para continuar.";
     private static final String MENSAJE_DATOS_FALTANTES =
             "Los siguientes campos son requeridos: %s. Por favor, complételos para finalizar el registro.";
+    private static final String MENSAJE_LOGIN_GOOGLE_NO_VINCULADO =
+            "La cuenta asociada al correo %s no estÃ¡ vinculada a Google. Inicie sesiÃ³n con correo y contraseÃ±a.";
+    private static final String MENSAJE_CUENTA_NO_ACTIVA =
+            "Usuario no activado o bloqueado.";
     private static final String RUTA_ACTIVACION_CUENTA = "/activar-cuenta";
     private static final int LIMITE_POPULARES_POR_DEFECTO = 4;
     private static final int LIMITE_POPULARES_MAXIMO = 20;
@@ -140,6 +144,7 @@ public class ClienteService {
         Cliente cliente = clienteMapper.mapearClienteDeDt(dtCliente);
         cliente.setTipo(TIPO_USUARIO_CLIENTE);
         cliente.setPasswd(passwdCodificada);
+        cliente.setAutenticadoConGoogle(false);
         usuarioRepositorio.guardar(cliente);
         clienteRepositorio.guardar(cliente);
 
@@ -205,9 +210,10 @@ public class ClienteService {
         Cliente cliente = Cliente.builder()
                 .email(datosGoogle.getEmail())
                 .passwd(passwordEncoder.encode("GOOGLEAUTH-" + UUID.randomUUID()))
-                .foto(request.getFoto())
+                .foto(resolverFotoRegistroGoogle(request, datosGoogle))
                 .estado(EstadoCuenta.Activo)
                 .tipo(TIPO_USUARIO_CLIENTE)
+                .autenticadoConGoogle(true)
                 .documento(request.getDocumento().trim())
                 .nombre(datosGoogle.getNombre())
                 .apellido(datosGoogle.getApellido())
@@ -228,6 +234,7 @@ public class ClienteService {
         Cliente cliente = clienteRepositorio.buscarPorEmail(datosGoogle.getEmail())
                 .orElseThrow(() -> new BusinessRuleException(
                         String.format(MENSAJE_LOGIN_GOOGLE_SIN_CUENTA, datosGoogle.getEmail())));
+        validarAccesoGoogle(cliente, datosGoogle.getEmail());
         return construirRespuestaLogin(cliente);
     }
 
@@ -351,12 +358,24 @@ public class ClienteService {
             }
         }
 
-        if (request.getFoto() == null || request.getFoto().isBlank()) {
-            faltantes.add("foto de perfil");
-        }
-
         if (!faltantes.isEmpty()) {
             throw new BusinessRuleException(String.format(MENSAJE_DATOS_FALTANTES, String.join(", ", faltantes)));
+        }
+    }
+
+    private String resolverFotoRegistroGoogle(DtGoogleRegistroCompletarRequest request, DtGoogleUserInfo datosGoogle) {
+        if (request.getFoto() != null && !request.getFoto().isBlank()) {
+            return request.getFoto();
+        }
+        return datosGoogle.getFoto();
+    }
+
+    private void validarAccesoGoogle(Cliente cliente, String email) {
+        if (cliente.getEstado() != EstadoCuenta.Activo || !Boolean.TRUE.equals(cliente.getActivo())) {
+            throw new BusinessRuleException(MENSAJE_CUENTA_NO_ACTIVA);
+        }
+        if (!Boolean.TRUE.equals(cliente.getAutenticadoConGoogle())) {
+            throw new BusinessRuleException(String.format(MENSAJE_LOGIN_GOOGLE_NO_VINCULADO, email));
         }
     }
 

@@ -171,6 +171,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                 .foto(rs.getString("foto"))
                 .estado(EstadoCuenta.valueOf(rs.getString("estado")))
                 .tipo(rs.getString("tipo"))
+                .autenticadoConGoogle(rs.getObject("autenticado_con_google", Boolean.class))
                 .sesionesInvalidadasDesde(
                         sesionesInvalidadasTs != null ? sesionesInvalidadasTs.toLocalDateTime() : null
                 )
