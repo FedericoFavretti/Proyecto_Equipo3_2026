@@ -96,6 +96,18 @@ public class UsuarioService {
             new DtDireccion("Anonimizada", "S/N", "N/D", "00000");
     private static final String MENSAJE_LINK_CAMBIO_CORREO_INVALIDO =
             "El enlace de confirmación de cambio de correo no es válido o ha expirado. Por favor, solicite el cambio nuevamente.";
+    private static final String MENSAJE_CORREO_REENVIO_REQUERIDO =
+            "Debe ingresar un correo electrónico.";
+    private static final String MENSAJE_CUENTA_NO_ENCONTRADA_REENVIO =
+            "No existe ninguna cuenta registrada con ese correo.";
+    private static final String MENSAJE_CUENTA_YA_ACTIVA =
+            "La cuenta ya se encuentra activada. Ya podés iniciar sesión.";
+    private static final String MENSAJE_CUENTA_BLOQUEADA_REENVIO =
+            "La cuenta está bloqueada. Comuníquese con soporte.";
+    private static final String RUTA_ACTIVACION_CUENTA = "/activar-cuenta";
+
+    @Value("${app.account.activation-frontend-base-url}")
+    private String activationFrontendBaseUrl;
 
     private final UsuarioRepositorio usuarioRepositorio;
     private final ClienteRepositorio clienteRepositorio;
@@ -224,6 +236,47 @@ public class UsuarioService {
         cliente.setEstado(EstadoCuenta.Activo);
         clienteRepositorio.actualizar(cliente);
         tokenActivacionCuentaRepositorio.marcarComoUsado(tokenActivacion.getId(), LocalDateTime.now());
+    }
+
+    @Transactional
+    public void reenviarActivacion(String correo) {
+        if (correo == null || correo.isBlank()) {
+            throw new BusinessRuleException(MENSAJE_CORREO_REENVIO_REQUERIDO);
+        }
+
+        String correoNormalizado = normalizarCorreo(correo);
+        Usuario usuario = usuarioRepositorio.buscarPorEmail(correoNormalizado)
+                .orElseThrow(() -> new ResourceNotFoundException(MENSAJE_CUENTA_NO_ENCONTRADA_REENVIO));
+
+        if (usuario.getEstado() == EstadoCuenta.Activo) {
+            throw new BusinessRuleException(MENSAJE_CUENTA_YA_ACTIVA);
+        }
+        if (usuario.getEstado() == EstadoCuenta.Bloqueado) {
+            throw new BusinessRuleException(MENSAJE_CUENTA_BLOQUEADA_REENVIO);
+        }
+
+        tokenActivacionCuentaRepositorio.invalidarActivosPorUsuario(usuario.getId());
+
+        String tokenPlano = TokenSeguroUtils.generar();
+        TokenActivacionCuenta tokenActivacion = TokenActivacionCuenta.builder()
+                .idUsuario(usuario.getId())
+                .tokenHash(TokenSeguroUtils.hashear(tokenPlano))
+                .fechaCreacion(LocalDateTime.now())
+                .fechaExpiracion(LocalDateTime.now().plusHours(24))
+                .fechaConsumo(null)
+                .usado(false)
+                .build();
+        tokenActivacionCuentaRepositorio.guardar(tokenActivacion);
+
+        String linkActivacion = UriComponentsBuilder.fromUriString(activationFrontendBaseUrl)
+                .replacePath(RUTA_ACTIVACION_CUENTA)
+                .replaceQuery(null)
+                .queryParam("token", tokenPlano)
+                .build()
+                .encode()
+                .toUriString();
+
+        emailService.enviarMailDeActivacion(usuario.getEmail(), linkActivacion);
     }
 
     @Transactional

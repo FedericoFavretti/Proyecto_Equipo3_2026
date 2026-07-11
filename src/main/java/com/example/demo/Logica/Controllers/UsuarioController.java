@@ -42,6 +42,12 @@ public class UsuarioController implements iUsuarioController {
         return ResponseEntity.ok("Cuenta activada correctamente.");
     }
 
+    @PostMapping("/reenviar-activacion")
+    public ResponseEntity<String> reenviarActivacion(@RequestBody DtReenviarActivacionRequest request) {
+        usuarioService.reenviarActivacion(request.getCorreo());
+        return ResponseEntity.ok("Te reenviamos el correo de activación.");
+    }
+
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/logout")
     public ResponseEntity<Void> cerrarSesion(

@@ -22,6 +22,6 @@ public interface iUsuarioController {
     ResponseEntity<Void> iniciarCambioPasswd(@RequestBody DtIniciarCambioPasswdRequest request);
     ResponseEntity<Void> verificarCodigoCambioPasswd(@RequestBody DtVerificarCodigoRequest request);
     ResponseEntity<Void> confirmarCambioPasswd(@RequestBody DtConfirmarCambioPasswdRequest request);
-
+    ResponseEntity<String> reenviarActivacion(@RequestBody DtReenviarActivacionRequest request);
 }
 
