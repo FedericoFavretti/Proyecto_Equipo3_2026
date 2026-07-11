@@ -218,11 +218,10 @@ public class UsuarioService {
 
         Long idUsuario = tokenActivacion.getIdUsuario();
         usuarioRepositorio.activarCuenta(idUsuario);
-        clienteRepositorio.actualizar(
-                clienteRepositorio.buscarPorId(idUsuario)
-                        .orElseThrow(() -> new ResourceNotFoundException("Cliente", idUsuario))
-        );
-
+        Cliente cliente =  clienteRepositorio.buscarPorId(idUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", idUsuario));
+        cliente.setEstado(EstadoCuenta.Activo);
+        clienteRepositorio.actualizar(cliente);
         tokenActivacionCuentaRepositorio.marcarComoUsado(tokenActivacion.getId(), LocalDateTime.now());
     }
 
