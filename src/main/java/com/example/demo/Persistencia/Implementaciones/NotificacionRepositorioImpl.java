@@ -129,7 +129,9 @@ public class NotificacionRepositorioImpl implements NotificacionRepositorio {
                     .build();
         } else if (tipo == TipoNotificacion.Pedido) {
             Long idPedido = pedidoNotificacionRepositorio.buscarPedido(rs.getLong("id"));
-            Pedido pedido = pedidoRepositorio.buscarPorId(idPedido).orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+            Pedido pedido = idPedido != null
+                    ? pedidoRepositorio.buscarPorId(idPedido).orElse(null)
+                    : null;
             return Notificacion.builder()
                     .id(rs.getLong("id"))
                     .tipo(TipoNotificacion.valueOf(rs.getString("tipo")))
