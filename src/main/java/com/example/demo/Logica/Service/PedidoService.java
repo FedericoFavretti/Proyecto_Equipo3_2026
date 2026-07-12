@@ -550,7 +550,8 @@ public class PedidoService {
         return filtro != null && (filtro.getEstado() != null
                 || filtro.getFechaDesde() != null
                 || filtro.getFechaHasta() != null
-                || filtro.getIdLocal() != null);
+                || filtro.getIdLocal() != null
+                || (filtro.getNombreLocal() != null && !filtro.getNombreLocal().isBlank()));
     }
 
     private Cliente obtenerClienteAutenticado(String emailAutenticado) {

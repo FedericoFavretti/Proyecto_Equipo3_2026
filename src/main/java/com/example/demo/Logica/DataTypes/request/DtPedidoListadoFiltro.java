@@ -17,6 +17,7 @@ public class DtPedidoListadoFiltro {
     private LocalDate fechaDesde;
     private LocalDate fechaHasta;
     private Long idLocal;
+    private String nombreLocal;
     private String ordenarPor;
     private String direccion;
     private Integer pagina;

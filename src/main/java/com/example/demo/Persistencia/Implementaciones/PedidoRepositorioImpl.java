@@ -179,6 +179,11 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
             parametros.add(filtro.getIdLocal());
         }
 
+        if (filtro != null && filtro.getNombreLocal() != null && !filtro.getNombreLocal().isBlank()) {
+            sql.append(" AND l.nombre ILIKE ?");
+            parametros.add("%" + filtro.getNombreLocal() + "%");
+        }
+
         sql.append("""
 
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
