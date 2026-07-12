@@ -43,9 +43,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 @Service
@@ -65,14 +63,6 @@ public class UsuarioService {
     private static final Pattern FORMATO_TELEFONO_FIJO =
             Pattern.compile("^\\+598\\d{8}$");
     private static final long MAX_TAMANIO_FOTO_BYTES = 5L * 1024 * 1024;
-    private static final Set<String> CAMPOS_EDITABLES_CLIENTE =
-            Set.of("nombre", "apellido", "email", "password", "celular",
-                    "direccion.calle", "direccion.numero", "direccion.ciudad", "direccion.codigoPostal");
-    private static final Set<String> CAMPOS_EDITABLES_LOCAL =
-            Set.of("nombre", "descripcion", "email", "password", "celular", "telefonoFijo",
-                    "direccion.calle", "direccion.numero", "direccion.ciudad", "direccion.codigoPostal");
-    private static final Set<String> CAMPOS_EDITABLES_ADMIN =
-            Set.of("email", "password");
     private static final String MENSAJE_FOTO_INVALIDA =
             "El formato de imagen no es compatible. Se aceptan archivos JPG, PNG o GIF de hasta 5 MB.";
     private static final String MENSAJE_EMAIL_DUPLICADO =
@@ -82,8 +72,6 @@ public class UsuarioService {
     private static final String MENSAJE_RECLAMOS_PENDIENTES =
             "No es posible eliminar la cuenta mientras tenga reclamos pendientes de resolución.";
     private static final String MENSAJE_USUARIO_NO_AUTENTICADO = "Usuario no autenticado.";
-    private static final String MENSAJE_TIPO_USUARIO_NO_COMPATIBLE =
-            "El tipo de usuario no es compatible con la edición de cuenta.";
     private static final String MENSAJE_USUARIO_NO_ENCONTRADO =
             "El Usuario no fue encontrado.";
     private static final String MENSAJE_NO_SE_PUDO_INVALIDAR_SESION =
@@ -437,7 +425,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public DtUsuario editarDatosDeCuentaDeUsuario(String emailAutenticado, String authHeader, Map<String, String> datos, MultipartFile foto) {
+    public DtUsuario editarDatosDeCuentaDeUsuario(String emailAutenticado, String authHeader, DtActualizarPerfilRequest datos, MultipartFile foto) {
         if (emailAutenticado == null || emailAutenticado.isBlank()) {
             throw new AuthenticationCredentialsNotFoundException(MENSAJE_USUARIO_NO_AUTENTICADO);
         }
@@ -445,12 +433,7 @@ public class UsuarioService {
         Usuario usuario = usuarioRepositorio.buscarPorEmail(emailAutenticado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", emailAutenticado));
 
-        if(!emailAutenticado.equals(usuario.getEmail()) && emailAutenticado != null) {
-
-        }
-
-        Map<String, String> datosActualizacion = datos == null ? Map.of() : datos;
-        validarCamposPermitidos(usuario, datosActualizacion);
+        DtActualizarPerfilRequest datosActualizacion = datos == null ? DtActualizarPerfilRequest.builder().build() : datos;
 
         boolean credencialesActualizadas = aplicarCambiosComunes(usuario, datosActualizacion);
 
@@ -634,15 +617,6 @@ public class UsuarioService {
         emailService.enviarConfirmacionCambioPasswd(usuario.getEmail());
     }
 
-    private void validarCamposPermitidos(Usuario usuario, Map<String, String> datosActualizacion) {
-        Set<String> camposPermitidos = obtenerCamposPermitidos(usuario);
-        for (String field : datosActualizacion.keySet()) {
-            if (!camposPermitidos.contains(field)) {
-                throw formatoInvalido(field);
-            }
-        }
-    }
-
     private String construirLinkCambioCorreo(String tokenPlano) {
         return UriComponentsBuilder.fromUriString(passwordResetFrontendBaseUrl)
                 .replacePath(RUTA_CONFIRMAR_CAMBIO_CORREO)
@@ -653,24 +627,11 @@ public class UsuarioService {
                 .toUriString();
     }
 
-    private Set<String> obtenerCamposPermitidos(Usuario usuario) {
-        if (usuario instanceof Cliente) {
-            return CAMPOS_EDITABLES_CLIENTE;
-        }
-        if (usuario instanceof Local) {
-            return CAMPOS_EDITABLES_LOCAL;
-        }
-        if (usuario instanceof Administrador) {
-            return CAMPOS_EDITABLES_ADMIN;
-        }
-        throw new BusinessRuleException(MENSAJE_TIPO_USUARIO_NO_COMPATIBLE);
-    }
-
-    private boolean aplicarCambiosComunes(Usuario usuario, Map<String, String> datosActualizacion) {
+    private boolean aplicarCambiosComunes(Usuario usuario, DtActualizarPerfilRequest datos) {
         boolean credencialesActualizadas = false;
 
-        if (datosActualizacion.containsKey("email")) {
-            String nuevoEmail = extraerTextoObligatorio(datosActualizacion, "email");
+        if (datos.getEmail() != null) {
+            String nuevoEmail = limpiarTextoObligatorio(datos.getEmail(), "email");
             if (!FORMATO_EMAIL.matcher(nuevoEmail).matches()) {
                 throw formatoInvalido("email");
             }
@@ -683,8 +644,8 @@ public class UsuarioService {
             }
         }
 
-        if (datosActualizacion.containsKey("password")) {
-            String nuevaPassword = extraerTextoObligatorio(datosActualizacion, "password");
+        if (datos.getPassword() != null) {
+            String nuevaPassword = limpiarTextoObligatorio(datos.getPassword(), "password");
             usuario.setPasswd(passwordEncoder.encode(nuevaPassword));
             credencialesActualizadas = true;
         }
@@ -692,68 +653,60 @@ public class UsuarioService {
         return credencialesActualizadas;
     }
 
-    private void aplicarCambiosCliente(Cliente cliente, Map<String, String> datosActualizacion) {
-        if (datosActualizacion.containsKey("nombre")) {
-            cliente.setNombre(extraerTextoObligatorio(datosActualizacion, "nombre"));
+    private void aplicarCambiosCliente(Cliente cliente, DtActualizarPerfilRequest datos) {
+        if (datos.getNombre() != null) {
+            cliente.setNombre(limpiarTextoObligatorio(datos.getNombre(), "nombre"));
         }
-        if (datosActualizacion.containsKey("apellido")) {
-            cliente.setApellido(extraerTextoObligatorio(datosActualizacion, "apellido"));
+        if (datos.getApellido() != null) {
+            cliente.setApellido(limpiarTextoObligatorio(datos.getApellido(), "apellido"));
         }
-        if (datosActualizacion.containsKey("celular")) {
-            String celular = extraerTextoObligatorio(datosActualizacion, "celular");
+        if (datos.getCelular() != null) {
+            String celular = limpiarTextoObligatorio(datos.getCelular(), "celular");
             if (!FORMATO_CELULAR.matcher(celular).matches()) {
                 throw formatoInvalido("celular");
             }
             cliente.setCelular(celular);
         }
-        if (tieneCambiosEnDireccion(datosActualizacion)) {
-            cliente.setDireccion(mapearDireccion(datosActualizacion));
+        if (datos.getDireccion() != null) {
+            cliente.setDireccion(validarDireccion(datos.getDireccion()));
         }
     }
 
-    private void aplicarCambiosLocal(Local local, Map<String, String> datosActualizacion) {
-        if (datosActualizacion.containsKey("nombre")) {
-            local.setNombre(extraerTextoObligatorio(datosActualizacion, "nombre"));
+    private void aplicarCambiosLocal(Local local, DtActualizarPerfilRequest datos) {
+        if (datos.getNombre() != null) {
+            local.setNombre(limpiarTextoObligatorio(datos.getNombre(), "nombre"));
         }
-        if (datosActualizacion.containsKey("descripcion")) {
-            local.setDescripcion(extraerTextoObligatorio(datosActualizacion, "descripcion"));
+        if (datos.getDescripcion() != null) {
+            local.setDescripcion(limpiarTextoObligatorio(datos.getDescripcion(), "descripcion"));
         }
-        if (datosActualizacion.containsKey("celular")) {
-            String celular = extraerTextoObligatorio(datosActualizacion, "celular");
+        if (datos.getCelular() != null) {
+            String celular = limpiarTextoObligatorio(datos.getCelular(), "celular");
             if (!FORMATO_CELULAR.matcher(celular).matches()) {
                 throw formatoInvalido("celular");
             }
             local.setCelular(celular);
         }
-        if (datosActualizacion.containsKey("telefonoFijo")) {
-            String telefonoFijo = extraerTextoObligatorio(datosActualizacion, "telefonoFijo");
+        if (datos.getTelefonoFijo() != null) {
+            String telefonoFijo = limpiarTextoObligatorio(datos.getTelefonoFijo(), "telefonoFijo");
             if (!FORMATO_TELEFONO_FIJO.matcher(telefonoFijo).matches()) {
                 throw formatoInvalido("telefonoFijo");
             }
             local.setTelefonoFijo(telefonoFijo);
         }
-        if (tieneCambiosEnDireccion(datosActualizacion)) {
-            local.setDireccion(mapearDireccion(datosActualizacion));
+        if (datos.getDireccion() != null) {
+            local.setDireccion(validarDireccion(datos.getDireccion()));
         }
     }
 
-    private boolean tieneCambiosEnDireccion(Map<String, String> datosActualizacion) {
-        return datosActualizacion.containsKey("direccion.calle")
-                || datosActualizacion.containsKey("direccion.numero")
-                || datosActualizacion.containsKey("direccion.ciudad")
-                || datosActualizacion.containsKey("direccion.codigoPostal");
-    }
-
-    private DtDireccion mapearDireccion(Map<String, String> datosActualizacion) {
-        String calle = extraerTextoObligatorio(datosActualizacion, "direccion.calle");
-        String numero = extraerTextoObligatorio(datosActualizacion, "direccion.numero");
-        String ciudad = extraerTextoObligatorio(datosActualizacion, "direccion.ciudad");
-        String codigoPostal = extraerTextoObligatorio(datosActualizacion, "direccion.codigoPostal");
+    private DtDireccion validarDireccion(DtDireccion direccion) {
+        String calle = limpiarTextoObligatorio(direccion.getCalle(), "direccion.calle");
+        String numero = limpiarTextoObligatorio(direccion.getNumero(), "direccion.numero");
+        String ciudad = limpiarTextoObligatorio(direccion.getCiudad(), "direccion.ciudad");
+        String codigoPostal = limpiarTextoObligatorio(direccion.getCodigoPostal(), "direccion.codigoPostal");
         return new DtDireccion(calle, numero, ciudad, codigoPostal);
     }
 
-    private String extraerTextoObligatorio(Map<String, String> datosActualizacion, String campo) {
-        String valor = datosActualizacion.get(campo);
+    private String limpiarTextoObligatorio(String valor, String campo) {
         if (valor == null) {
             throw formatoInvalido(campo);
         }

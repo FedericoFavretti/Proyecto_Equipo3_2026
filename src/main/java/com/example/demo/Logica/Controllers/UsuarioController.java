@@ -15,8 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
-
 import static com.example.demo.Utils.AuthUtils.autenticacionInvalida;
 
 @RestController
@@ -60,7 +58,7 @@ public class UsuarioController implements iUsuarioController {
     @PreAuthorize("isAuthenticated()")
     @PutMapping(value = "/perfil", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DtUsuario> editarDatosDeCuentaDeUsuario(
-            @RequestParam Map<String, String> datos,
+            @RequestPart(value = "datos", required = false) DtActualizarPerfilRequest datos,
             @RequestPart(value = "foto", required = false) MultipartFile foto,
             @RequestHeader("Authorization") String authHeader,
             Authentication authentication) {
