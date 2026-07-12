@@ -14,7 +14,6 @@ public class DtActualizarPerfilRequest {
     private String nombre;
     private String apellido;
     private String descripcion;
-    private String email;
     private String password;
     private String celular;
     private String telefonoFijo;

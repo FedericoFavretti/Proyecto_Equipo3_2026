@@ -435,7 +435,7 @@ public class UsuarioService {
 
         DtActualizarPerfilRequest datosActualizacion = datos == null ? DtActualizarPerfilRequest.builder().build() : datos;
 
-        boolean credencialesActualizadas = aplicarCambiosComunes(usuario, datosActualizacion);
+        boolean credencialesActualizadas = aplicarCambioPasswd(usuario, datosActualizacion);
 
         if (usuario instanceof Cliente cliente) {
             aplicarCambiosCliente(cliente, datosActualizacion);
@@ -627,30 +627,13 @@ public class UsuarioService {
                 .toUriString();
     }
 
-    private boolean aplicarCambiosComunes(Usuario usuario, DtActualizarPerfilRequest datos) {
-        boolean credencialesActualizadas = false;
-
-        if (datos.getEmail() != null) {
-            String nuevoEmail = limpiarTextoObligatorio(datos.getEmail(), "email");
-            if (!FORMATO_EMAIL.matcher(nuevoEmail).matches()) {
-                throw formatoInvalido("email");
-            }
-            if (!nuevoEmail.equalsIgnoreCase(usuario.getEmail()) && usuarioRepositorio.existeCorreo(nuevoEmail)) {
-                throw new ResourceConflictException(MENSAJE_EMAIL_DUPLICADO);
-            }
-            if (!nuevoEmail.equalsIgnoreCase(usuario.getEmail())) {
-                usuario.setEmail(nuevoEmail);
-                credencialesActualizadas = true;
-            }
+    private boolean aplicarCambioPasswd(Usuario usuario, DtActualizarPerfilRequest datos) {
+        if (datos.getPassword() == null) {
+            return false;
         }
-
-        if (datos.getPassword() != null) {
-            String nuevaPassword = limpiarTextoObligatorio(datos.getPassword(), "password");
-            usuario.setPasswd(passwordEncoder.encode(nuevaPassword));
-            credencialesActualizadas = true;
-        }
-
-        return credencialesActualizadas;
+        String nuevaPassword = limpiarTextoObligatorio(datos.getPassword(), "password");
+        usuario.setPasswd(passwordEncoder.encode(nuevaPassword));
+        return true;
     }
 
     private void aplicarCambiosCliente(Cliente cliente, DtActualizarPerfilRequest datos) {
