@@ -15,6 +15,7 @@ import com.example.demo.Logica.DataTypes.response.DtPlatoEstadistica;
 import com.example.demo.Logica.DataTypes.response.DtEstadisticasLocal;
 import com.example.demo.Logica.DataTypes.response.DtVentaMensualEstadistica;
 import com.example.demo.Logica.DataTypes.shared.DtCategoria;
+import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
@@ -57,7 +58,7 @@ public class LocalService {
     private static final Pattern FORMATO_TELEFONO_FIJO =
             Pattern.compile("^\\+598\\d{8}$");
     private static final String MENSAJE_CAMPOS_REQUERIDOS =
-            "Los siguientes campos son requeridos. Por favor, completelos antes de enviar.";
+            "Los siguientes campos son requeridos: %s. Por favor, completelos antes de enviar.";
     private static final String MENSAJE_EMAIL_INVALIDO =
             "El correo electronico ingresado no tiene un formato valido.";
     private static final String MENSAJE_CELULAR_INVALIDO =
@@ -191,7 +192,7 @@ public class LocalService {
         Plato plato = platoRepositorio.buscarPorId(idPlato)
                 .orElseThrow(() -> new ResourceNotFoundException("Plato", idPlato));
         plato.setDisponible(false);
-        platoRepositorio.eliminar(idPlato);
+        platoRepositorio.actualizar(plato);
     }
 
     @Transactional
@@ -521,8 +522,27 @@ public class LocalService {
         if (dtLocal == null) {
             throw new BusinessRuleException(String.format(
                     MENSAJE_CAMPOS_REQUERIDOS,
-                    "Completar: email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
+                    "email, passwd, nombre, calle, numero, ciudad, codigoPostal, descripcion, imagenes"));
         }
+
+        DtDireccion direccion = dtLocal.getDireccion();
+        List<String> camposFaltantes = new ArrayList<>();
+        agregarSiVacio(camposFaltantes, "email", dtLocal.getEmail());
+        agregarSiVacio(camposFaltantes, "passwd", dtLocal.getPasswd());
+        agregarSiVacio(camposFaltantes, "nombre", dtLocal.getNombre());
+        agregarSiVacio(camposFaltantes, "calle", direccion == null ? null : direccion.getCalle());
+        agregarSiVacio(camposFaltantes, "numero", direccion == null ? null : direccion.getNumero());
+        agregarSiVacio(camposFaltantes, "ciudad", direccion == null ? null : direccion.getCiudad());
+        agregarSiVacio(camposFaltantes, "codigoPostal", direccion == null ? null : direccion.getCodigoPostal());
+        agregarSiVacio(camposFaltantes, "descripcion", dtLocal.getDescripcion());
+        if (dtLocal.getImagenes() == null || dtLocal.getImagenes().isEmpty()) {
+            camposFaltantes.add("imagenes");
+        }
+        if (!camposFaltantes.isEmpty()) {
+            throw new BusinessRuleException(
+                    String.format(MENSAJE_CAMPOS_REQUERIDOS, String.join(", ", camposFaltantes)));
+        }
+
         if (!FORMATO_EMAIL.matcher(dtLocal.getEmail()).matches()) {
             throw new BusinessRuleException(MENSAJE_EMAIL_INVALIDO);
         }
