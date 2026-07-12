@@ -2,6 +2,7 @@ package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Persistencia.Repositorios.PedidoNotificacionRepositorio;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -21,6 +22,14 @@ public class PedidoNotificacionRepositorioImpl implements PedidoNotificacionRepo
 
     @Override
     public Long buscarPedido(Long idNotificacion) {
-        return jdbcTemplate.queryForObject("SELECT idpedido FROM pedido_notificacion  WHERE idnotificacion = ?", Long.class,idNotificacion);
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT idpedido FROM pedido_notificacion  WHERE idnotificacion = ?",
+                    Long.class,
+                    idNotificacion
+            );
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 }
