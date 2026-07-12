@@ -71,6 +71,8 @@ public class PedidoService {
             "Solo se puede reintentar el pago de pedidos pendientes de Mercado Pago sin acreditar.";
     private static final String MENSAJE_REINTENTO_SIN_DETALLES =
             "No se pudo reintentar el pago porque el pedido no tiene detalles asociados.";
+    private static final String MENSAJE_REINTENTO_LOCAL_CERRADO =
+            "El local cerró y no puede continuar con el pago en este momento. Espere a que el local vuelva a abrir para reintentar el pago.";
     private static final String MENSAJE_LOCAL_REQUERIDO = "Debe indicar el local del pedido.";
     private static final String MENSAJE_CLIENTE_REQUERIDO = "Debe indicar el cliente del pedido.";
     private static final String MENSAJE_FECHA_DESDE_INVALIDA =
@@ -319,6 +321,10 @@ public class PedidoService {
 
         if (!esPedidoPendienteDePagoMercadoPago(pedido)) {
             throw new BusinessRuleException(MENSAJE_REINTENTO_SOLO_MP_PENDIENTE);
+        }
+
+        if (pedido.getLocal() == null || !Boolean.TRUE.equals(pedido.getLocal().getEstaAbierto())) {
+            throw new BusinessRuleException(MENSAJE_REINTENTO_LOCAL_CERRADO);
         }
 
         List<DetallePedido> detalles = detallePedidoRepositorio.buscarPorPedido(idPedido);

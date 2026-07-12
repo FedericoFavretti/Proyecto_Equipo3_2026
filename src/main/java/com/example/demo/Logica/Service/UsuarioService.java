@@ -797,7 +797,7 @@ public class UsuarioService {
         local.setEmail("anon-" + idLocal + "@deleted.local");
         local.setPasswd(passwordEncoder.encode("cuenta-eliminada-" + idLocal));
         local.setFoto("anonimizado");
-        local.setNombre("Local eliminado");
+        local.setNombre("Local eliminado " + idLocal);
         local.setDescripcion("");
         local.setDireccion(DIRECCION_ANONIMIZADA);
         local.setImagenes(List.of());
