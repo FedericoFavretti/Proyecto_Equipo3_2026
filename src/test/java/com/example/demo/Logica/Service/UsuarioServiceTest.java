@@ -3,6 +3,7 @@ package com.example.demo.Logica.Service;
 import com.example.demo.Logica.Clases.Administrador;
 import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.Clases.Local;
+import com.example.demo.Logica.DataTypes.request.DtActualizarPerfilRequest;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
 import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
@@ -34,7 +35,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,30 +93,24 @@ class UsuarioServiceTest {
         MockMultipartFile foto = new MockMultipartFile("foto", "perfil.png", "image/png", new byte[]{1, 2, 3});
 
         when(usuarioRepositorio.buscarPorEmail("cliente@foodly.com")).thenReturn(Optional.of(cliente));
-        when(usuarioRepositorio.existeCorreo("nuevo@foodly.com")).thenReturn(false);
         when(passwordEncoder.encode("NuevaClave123")).thenReturn("hash-nuevo");
         when(cloudinaryService.subirImagen(foto)).thenReturn("https://cdn.foodly.com/perfil.png");
 
         usuarioService.editarDatosDeCuentaDeUsuario(
                 "cliente@foodly.com",
                 "Bearer token-actual",
-                Map.of(
-                        "nombre", "Maria",
-                        "apellido", "Gomez",
-                        "direccion.calle", "18 de Julio",
-                        "direccion.numero", "1234",
-                        "direccion.ciudad", "Montevideo",
-                        "direccion.codigoPostal", "11200",
-                        "email", "nuevo@foodly.com",
-                        "password", "NuevaClave123"
-                ),
+                DtActualizarPerfilRequest.builder()
+                        .nombre("Maria")
+                        .apellido("Gomez")
+                        .direccion(new DtDireccion("18 de Julio", "1234", "Montevideo", "11200"))
+                        .password("NuevaClave123")
+                        .build(),
                 foto
         );
 
         assertThat(cliente.getNombre()).isEqualTo("Maria");
         assertThat(cliente.getApellido()).isEqualTo("Gomez");
         assertThat(cliente.getDireccion().getCalle()).isEqualTo("18 de Julio");
-        assertThat(cliente.getEmail()).isEqualTo("nuevo@foodly.com");
         assertThat(cliente.getPasswd()).isEqualTo("hash-nuevo");
         assertThat(cliente.getFoto()).isEqualTo("https://cdn.foodly.com/perfil.png");
         assertThat(cliente.getDocumento()).isEqualTo("51234567");
@@ -132,7 +126,7 @@ class UsuarioServiceTest {
     }
 
     @Test
-    void editarDatosDeCuentaLocalRechazaCamposFueraDeWhitelist() {
+    void editarDatosDeCuentaLocalRechazaCelularConFormatoInvalido() {
         UsuarioService usuarioService = crearServicio();
         Local local = localExistente();
 
@@ -141,10 +135,10 @@ class UsuarioServiceTest {
         assertThatThrownBy(() -> usuarioService.editarDatosDeCuentaDeUsuario(
                 "local@foodly.com",
                 "Bearer token-local",
-                Map.of("estadoLocal", "Bloqueado"),
+                DtActualizarPerfilRequest.builder().celular("no-es-un-celular").build(),
                 null
         )).isInstanceOf(BusinessRuleException.class)
-                .hasMessage("El campo estadoLocal contiene un formato inválido. Por favor, revíselo e inténtelo de nuevo.");
+                .hasMessage("El campo celular contiene un formato inválido. Por favor, revíselo e inténtelo de nuevo.");
 
         verify(usuarioRepositorio, never()).actualizar(local);
         verifyNoInteractions(passwordEncoder, cloudinaryService, tokenBlacklistRepositorio, jwtService);
@@ -156,7 +150,6 @@ class UsuarioServiceTest {
         Administrador administrador = administradorExistente();
 
         when(usuarioRepositorio.buscarPorEmail("admin@foodly.com")).thenReturn(Optional.of(administrador));
-        when(usuarioRepositorio.existeCorreo("admin2@foodly.com")).thenReturn(false);
         when(passwordEncoder.encode("ClaveSegura123")).thenReturn("hash-admin");
 
         // Decisión de producto: los administradores no editan sus propios datos por esta vía.
@@ -165,10 +158,7 @@ class UsuarioServiceTest {
         assertThatThrownBy(() -> usuarioService.editarDatosDeCuentaDeUsuario(
                 "admin@foodly.com",
                 "Bearer token-admin",
-                Map.of(
-                        "email", "admin2@foodly.com",
-                        "password", "ClaveSegura123"
-                ),
+                DtActualizarPerfilRequest.builder().password("ClaveSegura123").build(),
                 null
         )).isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("El tipo de usario es incorrecto");
@@ -185,7 +175,7 @@ class UsuarioServiceTest {
         assertThatThrownBy(() -> usuarioService.editarDatosDeCuentaDeUsuario(
                 "cliente@foodly.com",
                 "Bearer token-actual",
-                Map.of("nombre", "Maria"),
+                DtActualizarPerfilRequest.builder().nombre("Maria").build(),
                 foto
         )).isInstanceOf(BusinessRuleException.class)
                 .hasMessage("El formato de imagen no es compatible. Se aceptan archivos JPG, PNG o GIF de hasta 5 MB.");

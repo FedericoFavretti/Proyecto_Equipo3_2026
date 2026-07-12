@@ -1,13 +1,12 @@
 package com.example.demo.Logica.Controllers;
 
+import com.example.demo.Logica.DataTypes.request.DtActualizarPerfilRequest;
 import com.example.demo.Logica.Service.UsuarioService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.TestingAuthenticationToken;
-
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -34,15 +33,17 @@ class UsuarioControllerTest {
         TestingAuthenticationToken authentication =
                 new TestingAuthenticationToken("cliente@foodly.com", null, "ROLE_cliente");
 
+        DtActualizarPerfilRequest datos = DtActualizarPerfilRequest.builder().nombre("Maria").build();
+
         var response = controller.editarDatosDeCuentaDeUsuario(
-                Map.of("nombre", "Maria"),
+                datos,
                 foto,
                 "Bearer token",
                 authentication
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(usuarioService).editarDatosDeCuentaDeUsuario("cliente@foodly.com", "Bearer token", Map.of("nombre", "Maria"), foto);
+        verify(usuarioService).editarDatosDeCuentaDeUsuario("cliente@foodly.com", "Bearer token", datos, foto);
     }
 
     @Test
@@ -51,7 +52,7 @@ class UsuarioControllerTest {
         UsuarioController controller = new UsuarioController(usuarioService);
 
         var response = controller.editarDatosDeCuentaDeUsuario(
-                Map.of("nombre", "Maria"),
+                DtActualizarPerfilRequest.builder().nombre("Maria").build(),
                 null,
                 "Bearer token",
                 null
