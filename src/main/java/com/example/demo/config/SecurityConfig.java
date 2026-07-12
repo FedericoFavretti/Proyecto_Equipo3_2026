@@ -29,6 +29,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/usuarios/login",
                                 "/api/v1/usuarios/activar",
+                                "/api/v1/usuarios/reenviar-activacion",
                                 "/api/v1/usuarios/recuperar_contra_correo",
                                 "/api/v1/usuarios/recuperar"
                         ).permitAll()
