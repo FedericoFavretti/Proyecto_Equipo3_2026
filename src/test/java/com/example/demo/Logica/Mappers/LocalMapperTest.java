@@ -43,6 +43,7 @@ class LocalMapperTest {
         DtLocalPerfilResponse response = localMapper.mapearDtLocalPerfilDeClase(local);
 
         assertThat(response.getFoto()).isEqualTo("https://cdn.foodly.com/local-logo.png");
+        assertThat(response.getCelular()).isEqualTo("+59899123456");
     }
 
     private Local crearLocal() {
@@ -53,6 +54,7 @@ class LocalMapperTest {
                 .estado(EstadoCuenta.Activo)
                 .tipo("local")
                 .nombre("McDonald's")
+                .celular("+59899123456")
                 .direccion(DtDireccion.builder()
                         .calle("Av. Italia")
                         .numero("1234")

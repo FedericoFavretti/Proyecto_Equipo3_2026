@@ -72,6 +72,7 @@ public class LocalMapper {
                 .estaAbierto(local.getEstaAbierto())
                 .imagenes(local.getImagenes())
                 .telefonoFijo(local.getTelefonoFijo())
+                .celular(local.getCelular())
                 .build();
     }
 }

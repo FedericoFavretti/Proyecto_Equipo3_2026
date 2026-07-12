@@ -22,4 +22,5 @@ public class DtLocalPerfilResponse {
     private Boolean estaAbierto;
     private List<String> imagenes;
     private String telefonoFijo;
+    private String celular;
 }
