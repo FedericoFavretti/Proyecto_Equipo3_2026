@@ -80,11 +80,14 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     c.id AS cliente_id,
                     c.nombre AS cliente_nombre,
                     c.apellido AS cliente_apellido,
+                    u.celular AS cliente_celular,
                     NULL::bigint AS local_id,
                     NULL::varchar AS local_nombre,
+                    NULL::varchar AS local_telefono_fijo,
                     COALESCE(SUM(dp.cantidad), 0) AS cantidad_items
                 FROM pedido p
                 JOIN cliente c ON c.id = p.idcliente
+                LEFT JOIN usuario u ON u.id = c.id
                 LEFT JOIN detallepedido dp ON dp.idpedido = p.id
                 WHERE p.idlocal = ?
                   AND c.documento NOT ILIKE 'ANON-%'
@@ -112,8 +115,8 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         sql.append("""
 
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
-                         p.motivorechazo, p.pagado, p.mediopago, p.mp_init_point, c.id, c.nombre, c.apellido
-                ORDER BY 
+                         p.motivorechazo, p.pagado, p.mediopago, p.mp_init_point, c.id, c.nombre, c.apellido, u.celular
+                ORDER BY
                 """);
         sql.append(resolverCampoOrden(filtro));
         sql.append(" ");
@@ -142,8 +145,10 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                     NULL::bigint AS cliente_id,
                     NULL::varchar AS cliente_nombre,
                     NULL::varchar AS cliente_apellido,
+                    NULL::varchar AS cliente_celular,
                     l.id AS local_id,
                     l.nombre AS local_nombre,
+                    l.telefonofijo AS local_telefono_fijo,
                     COALESCE(SUM(dp.cantidad), 0) AS cantidad_items
                 FROM pedido p
                 JOIN local l ON l.id = p.idlocal
@@ -177,7 +182,7 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
         sql.append("""
 
                 GROUP BY p.id, p.fecha, p.estado, p.total, p.tiempoestentrega,
-                         p.motivorechazo, p.pagado, p.mediopago, p.mp_init_point, l.id, l.nombre
+                         p.motivorechazo, p.pagado, p.mediopago, p.mp_init_point, l.id, l.nombre, l.telefonofijo
                 ORDER BY
                 """);
         sql.append(resolverCampoOrden(filtro));
@@ -534,8 +539,10 @@ public class PedidoRepositorioImpl implements PedidoRepositorio {
                 .clienteId(rs.getObject("cliente_id", Long.class))
                 .clienteNombre(rs.getString("cliente_nombre"))
                 .clienteApellido(rs.getString("cliente_apellido"))
+                .clienteCelular(rs.getString("cliente_celular"))
                 .localId(rs.getObject("local_id", Long.class))
                 .localNombre(rs.getString("local_nombre"))
+                .localTelefonoFijo(rs.getString("local_telefono_fijo"))
                 .cantidadItems(rs.getInt("cantidad_items"))
                 .motivoRechazo(rs.getString("motivorechazo"))
                 .pagado(rs.getBoolean("pagado"))

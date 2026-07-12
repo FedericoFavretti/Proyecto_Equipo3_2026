@@ -32,12 +32,14 @@ public class PedidoListadoMapper {
                         .id(pedidoListadoView.getClienteId())
                         .nombre(pedidoListadoView.getClienteNombre())
                         .apellido(pedidoListadoView.getClienteApellido())
+                        .celular(pedidoListadoView.getClienteCelular())
                         .build()
                         : null)
                 .local(pedidoListadoView.getLocalId() != null
                         ? DtLocalResumenResponse.builder()
                         .id(pedidoListadoView.getLocalId())
                         .nombre(pedidoListadoView.getLocalNombre())
+                        .telefonoFijo(pedidoListadoView.getLocalTelefonoFijo())
                         .build()
                         : null)
                 .build();

@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class DtLocalResumenResponse {
     private Long id;
     private String nombre;
+    private String telefonoFijo;
 }
 

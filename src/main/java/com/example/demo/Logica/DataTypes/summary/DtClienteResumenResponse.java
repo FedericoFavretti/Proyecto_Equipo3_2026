@@ -13,5 +13,6 @@ public class DtClienteResumenResponse {
     private Long id;
     private String nombre;
     private String apellido;
+    private String celular;
 }
 
