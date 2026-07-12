@@ -16,6 +16,17 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class UsuarioControllerTest {
 
     @Test
+    void reenviarActivacionDevuelveOkYDelegaEnServicio() {
+        UsuarioService usuarioService = Mockito.mock(UsuarioService.class);
+        UsuarioController controller = new UsuarioController(usuarioService);
+
+        var response = controller.reenviarActivacion(new com.example.demo.Logica.DataTypes.request.DtReenviarActivacionRequest("pendiente@foodly.com"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(usuarioService).reenviarActivacion("pendiente@foodly.com");
+    }
+
+    @Test
     void editarDatosDeCuentaDevuelveOkSiElUsuarioEstaAutenticado() {
         UsuarioService usuarioService = Mockito.mock(UsuarioService.class);
         UsuarioController controller = new UsuarioController(usuarioService);
