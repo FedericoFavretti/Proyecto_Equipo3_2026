@@ -450,12 +450,14 @@ class PedidoServiceTest {
     @Test
     void reintentarPagoGeneraNuevaPreferenciaCuandoPedidoPendienteSinAcreditar() {
         Cliente cliente = Cliente.builder().id(20L).email("ana@test.com").activo(true).build();
+        Local local = Local.builder().id(10L).nombre("La Cocina").estaAbierto(true).build();
         Pedido pedido = Pedido.builder()
                 .id(77L)
                 .estado(EstadoPedido.Pendiente)
                 .pagado(false)
                 .medioDePago("Mercado Pago")
                 .cliente(cliente)
+                .local(local)
                 .build();
         DetallePedido detalle = DetallePedido.builder()
                 .id(1L)
@@ -550,12 +552,14 @@ class PedidoServiceTest {
     @Test
     void reintentarPagoRechazaSiElPedidoNoTieneDetallesAsociados() {
         Cliente cliente = Cliente.builder().id(20L).email("ana@test.com").activo(true).build();
+        Local local = Local.builder().id(10L).nombre("La Cocina").estaAbierto(true).build();
         Pedido pedido = Pedido.builder()
                 .id(77L)
                 .estado(EstadoPedido.Pendiente)
                 .pagado(false)
                 .medioDePago("Mercado Pago")
                 .cliente(cliente)
+                .local(local)
                 .build();
 
         when(usuarioRepositorio.buscarPorEmail("ana@test.com")).thenReturn(Optional.of(cliente));

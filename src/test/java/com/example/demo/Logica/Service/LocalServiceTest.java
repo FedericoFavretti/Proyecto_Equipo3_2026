@@ -29,6 +29,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.example.demo.Logica.Clases.Local;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.shared.DtDireccion;
+import com.example.demo.Logica.Clases.Categoria;
+import com.example.demo.Logica.DataTypes.shared.DtCategoria;
 import com.example.demo.Logica.DataTypes.shared.DtLocal;
 import com.example.demo.Logica.DataTypes.shared.DtPlato;
 import com.example.demo.Logica.DataTypes.shared.DtPromocion;
@@ -113,6 +115,7 @@ class LocalServiceTest {
         Local local = localHabilitado(false);
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
         when(platoRepositorio.buscarPorNombre("Milanesa al pan")).thenReturn(Optional.empty());
+        when(categoriaRepositorio.buscarPorId(30L)).thenReturn(Optional.of(categoriaValida()));
         when(platoRepositorio.guardar(org.mockito.ArgumentMatchers.any(Plato.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -189,6 +192,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(existente));
         when(platoRepositorio.buscarPorNombre("Milanesa completa")).thenReturn(Optional.empty());
+        when(categoriaRepositorio.buscarPorId(30L)).thenReturn(Optional.of(categoriaValida()));
         when(platoRepositorio.actualizar(org.mockito.ArgumentMatchers.any(Plato.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -223,6 +227,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(existente));
         when(platoRepositorio.buscarPorNombre("Milanesa al pan")).thenReturn(Optional.of(existente));
+        when(categoriaRepositorio.buscarPorId(30L)).thenReturn(Optional.of(categoriaValida()));
         when(platoRepositorio.actualizar(org.mockito.ArgumentMatchers.any(Plato.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -243,6 +248,7 @@ class LocalServiceTest {
         when(localRepositorio.buscarPorId(10L)).thenReturn(Optional.of(local));
         when(platoRepositorio.buscarPorId(20L)).thenReturn(Optional.of(existente));
         when(platoRepositorio.buscarPorNombre("Milanesa al pan")).thenReturn(Optional.of(existente));
+        when(categoriaRepositorio.buscarPorId(30L)).thenReturn(Optional.of(categoriaValida()));
         when(platoRepositorio.actualizar(org.mockito.ArgumentMatchers.any(Plato.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -551,7 +557,12 @@ class LocalServiceTest {
                 .imagen("milanesa.jpg")
                 .disponible(true)
                 .dtLocal(dtLocal)
+                .dtCategoria(DtCategoria.builder().id(30L).build())
                 .build();
+    }
+
+    private Categoria categoriaValida() {
+        return Categoria.builder().id(30L).nombre("Comidas").idLocal(10L).build();
     }
 
     private Local localHabilitado(boolean estaAbierto) {
