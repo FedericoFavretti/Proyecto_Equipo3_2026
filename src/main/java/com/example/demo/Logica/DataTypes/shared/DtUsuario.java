@@ -20,5 +20,6 @@ public  abstract class DtUsuario {
     private EstadoCuenta estadoCuenta;
     private String tipo;
     private LocalDateTime sesionesInvalidadasDesde;
+    private String celular;
 }
 

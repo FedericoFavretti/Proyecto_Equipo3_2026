@@ -52,10 +52,18 @@ import org.springframework.web.multipart.MultipartFile;
 public class LocalService {
     private static final Pattern FORMATO_EMAIL =
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern FORMATO_CELULAR =
+            Pattern.compile("^\\+[1-9]\\d{7,14}$");
+    private static final Pattern FORMATO_TELEFONO_FIJO =
+            Pattern.compile("^\\+598\\d{8}$");
     private static final String MENSAJE_CAMPOS_REQUERIDOS =
             "Los siguientes campos son requeridos. Por favor, completelos antes de enviar.";
     private static final String MENSAJE_EMAIL_INVALIDO =
             "El correo electronico ingresado no tiene un formato valido.";
+    private static final String MENSAJE_CELULAR_INVALIDO =
+            "El celular ingresado no es válido. Debe incluir el código de país, por ejemplo +59891234567.";
+    private static final String MENSAJE_TELEFONO_FIJO_INVALIDO =
+            "El teléfono fijo ingresado no es válido. Debe ser un número uruguayo, por ejemplo +59821234567.";
     private static final String MENSAJE_IMAGEN_INVALIDA =
             "Solo se aceptan imagenes en formato JPG o PNG de hasta 10 MB cada una.";
     private static final String TIPO_USUARIO_LOCAL = "local";
@@ -517,6 +525,14 @@ public class LocalService {
         }
         if (!FORMATO_EMAIL.matcher(dtLocal.getEmail()).matches()) {
             throw new BusinessRuleException(MENSAJE_EMAIL_INVALIDO);
+        }
+        if (dtLocal.getCelular() != null && !dtLocal.getCelular().isBlank()
+                && !FORMATO_CELULAR.matcher(dtLocal.getCelular()).matches()) {
+            throw new BusinessRuleException(MENSAJE_CELULAR_INVALIDO);
+        }
+        if (dtLocal.getTelefonoFijo() != null && !dtLocal.getTelefonoFijo().isBlank()
+                && !FORMATO_TELEFONO_FIJO.matcher(dtLocal.getTelefonoFijo()).matches()) {
+            throw new BusinessRuleException(MENSAJE_TELEFONO_FIJO_INVALIDO);
         }
         if (dtLocal.getImagenes().stream().anyMatch(this::imagenNoPermitida)) {
             throw new BusinessRuleException(MENSAJE_IMAGEN_INVALIDA);

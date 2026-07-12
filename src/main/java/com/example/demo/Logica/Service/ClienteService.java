@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,6 +58,10 @@ public class ClienteService {
             "El correo ya está asociado a una cuenta. ¿Desea iniciar sesión?";
     private static final String MENSAJE_DOCUMENTO_DUPLICADO =
             "El documento ya está asociado a una cuenta.";
+    private static final String MENSAJE_CELULAR_INVALIDO =
+            "El celular ingresado no es válido. Debe incluir el código de país, por ejemplo +59891234567.";
+    private static final Pattern FORMATO_CELULAR =
+            Pattern.compile("^\\+[1-9]\\d{7,14}$");
     private static final String MENSAJE_FILTRO_NULO = "El filtro no puede ser nulo.";
     private static final String MENSAJE_SIN_RESULTADOS =
             "No se encontraron platos o promociones que coincidan con su búsqueda.";
@@ -130,6 +135,10 @@ public class ClienteService {
         }
         if (!cumpleRequisitosPasswd(dtCliente.getPasswd())) {
             throw new BusinessRuleException(MENSAJE_PASSWD_INVALIDA);
+        }
+        if (dtCliente.getCelular() != null && !dtCliente.getCelular().isBlank()
+                && !FORMATO_CELULAR.matcher(dtCliente.getCelular()).matches()) {
+            throw new BusinessRuleException(MENSAJE_CELULAR_INVALIDO);
         }
         dtCliente.setActivo(false);
         dtCliente.setEstadoCuenta(EstadoCuenta.Pendiente);

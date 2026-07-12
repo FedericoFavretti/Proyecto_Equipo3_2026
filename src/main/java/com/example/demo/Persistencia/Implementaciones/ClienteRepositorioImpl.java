@@ -175,6 +175,7 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                 .sesionesInvalidadasDesde(
                         sesionesInvalidadasTs != null ? sesionesInvalidadasTs.toLocalDateTime() : null
                 )
+                .celular(rs.getString("celular"))
                 .documento(rs.getString("documento"))
                 .nombre(rs.getString("nombre"))
                 .apellido(rs.getString("apellido"))
@@ -186,8 +187,8 @@ public class ClienteRepositorioImpl implements ClienteRepositorio {
                         .build()
                 )
                 .calificacionGlobal(rs.getDouble("calificacionGlobal"))
-                .activo(rs.getBoolean("activo")
-                ).build();
+                .activo(rs.getBoolean("activo"))
+                .build();
     }
 
     @Override

@@ -21,4 +21,5 @@ public class DtLocalPerfilResponse {
     private Double calificacionGlobal;
     private Boolean estaAbierto;
     private List<String> imagenes;
+    private String telefonoFijo;
 }

@@ -22,4 +22,5 @@ public abstract class Usuario {
     private String tipo;
     private Boolean autenticadoConGoogle;
     private LocalDateTime sesionesInvalidadasDesde;
+    private String celular;
 }

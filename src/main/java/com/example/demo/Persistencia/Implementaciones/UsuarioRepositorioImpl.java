@@ -92,7 +92,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO usuario (email, passwd, foto, estado, tipo, autenticado_con_google) VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO usuario (email, passwd, foto, estado, tipo, autenticado_con_google, celular) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     new String[]{"id"}
             );
             ps.setString(1, usuario.getEmail());
@@ -101,6 +101,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
             ps.setString(4, usuario.getEstado().name());
             ps.setString(5, usuario.getTipo());
             ps.setBoolean(6, Boolean.TRUE.equals(usuario.getAutenticadoConGoogle()));
+            ps.setString(7, usuario.getCelular());
             return ps;
         }, keyHolder);
 
@@ -112,7 +113,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
 
     @Override
     public void actualizar(Usuario usuario) {
-        jdbcTemplate.update("UPDATE usuario SET email = ?, passwd = ?, foto = ?, estado = ?, tipo = ?, autenticado_con_google = ?, sesiones_invalidadas_desde = ? WHERE id = ?",
+        jdbcTemplate.update("UPDATE usuario SET email = ?, passwd = ?, foto = ?, estado = ?, tipo = ?, autenticado_con_google = ?, sesiones_invalidadas_desde = ?, celular = ? WHERE id = ?",
                 usuario.getEmail(),
                 usuario.getPasswd(),
                 usuario.getFoto(),
@@ -120,6 +121,7 @@ public class UsuarioRepositorioImpl implements UsuarioRepositorio {
                 usuario.getTipo(),
                 Boolean.TRUE.equals(usuario.getAutenticadoConGoogle()),
                 usuario.getSesionesInvalidadasDesde(),
+                usuario.getCelular(),
                 usuario.getId()
                 );
         if (usuario instanceof Local) {

@@ -17,6 +17,7 @@ public class LocalMapper {
                 .tipo(dtLocal.getTipo())
                 .passwd(dtLocal.getPasswd())
                 .foto(dtLocal.getFoto())
+                .celular(dtLocal.getCelular())
                 .nombre(dtLocal.getNombre())
                 .direccion(dtLocal.getDireccion())
                 .descripcion(dtLocal.getDescripcion())
@@ -24,6 +25,7 @@ public class LocalMapper {
                 .calificacionGlobal(dtLocal.getCalificacionGlobal())
                 .estaAbierto(dtLocal.getEstaAbierto())
                 .imagenes(dtLocal.getImagenes())
+                .telefonoFijo(dtLocal.getTelefonoFijo())
                 .build();
     }
 
@@ -34,6 +36,7 @@ public class LocalMapper {
                 .foto(local.getFoto())
                 .estadoCuenta(local.getEstado())
                 .tipo(local.getTipo())
+                .celular(local.getCelular())
                 .nombre(local.getNombre())
                 .direccion(local.getDireccion())
                 .descripcion(local.getDescripcion())
@@ -41,6 +44,7 @@ public class LocalMapper {
                 .calificacionGlobal(local.getCalificacionGlobal())
                 .estaAbierto(local.getEstaAbierto())
                 .imagenes(local.getImagenes())
+                .telefonoFijo(local.getTelefonoFijo())
                 .build();
     }
 
@@ -67,6 +71,7 @@ public class LocalMapper {
                 .calificacionGlobal(local.getCalificacionGlobal())
                 .estaAbierto(local.getEstaAbierto())
                 .imagenes(local.getImagenes())
+                .telefonoFijo(local.getTelefonoFijo())
                 .build();
     }
 }

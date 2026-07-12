@@ -60,12 +60,16 @@ public class UsuarioService {
 
     private static final Pattern FORMATO_EMAIL =
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern FORMATO_CELULAR =
+            Pattern.compile("^\\+[1-9]\\d{7,14}$");
+    private static final Pattern FORMATO_TELEFONO_FIJO =
+            Pattern.compile("^\\+598\\d{8}$");
     private static final long MAX_TAMANIO_FOTO_BYTES = 5L * 1024 * 1024;
     private static final Set<String> CAMPOS_EDITABLES_CLIENTE =
-            Set.of("nombre", "apellido", "email", "password",
+            Set.of("nombre", "apellido", "email", "password", "celular",
                     "direccion.calle", "direccion.numero", "direccion.ciudad", "direccion.codigoPostal");
     private static final Set<String> CAMPOS_EDITABLES_LOCAL =
-            Set.of("nombre", "descripcion", "email", "password",
+            Set.of("nombre", "descripcion", "email", "password", "celular", "telefonoFijo",
                     "direccion.calle", "direccion.numero", "direccion.ciudad", "direccion.codigoPostal");
     private static final Set<String> CAMPOS_EDITABLES_ADMIN =
             Set.of("email", "password");
@@ -695,6 +699,13 @@ public class UsuarioService {
         if (datosActualizacion.containsKey("apellido")) {
             cliente.setApellido(extraerTextoObligatorio(datosActualizacion, "apellido"));
         }
+        if (datosActualizacion.containsKey("celular")) {
+            String celular = extraerTextoObligatorio(datosActualizacion, "celular");
+            if (!FORMATO_CELULAR.matcher(celular).matches()) {
+                throw formatoInvalido("celular");
+            }
+            cliente.setCelular(celular);
+        }
         if (tieneCambiosEnDireccion(datosActualizacion)) {
             cliente.setDireccion(mapearDireccion(datosActualizacion));
         }
@@ -706,6 +717,20 @@ public class UsuarioService {
         }
         if (datosActualizacion.containsKey("descripcion")) {
             local.setDescripcion(extraerTextoObligatorio(datosActualizacion, "descripcion"));
+        }
+        if (datosActualizacion.containsKey("celular")) {
+            String celular = extraerTextoObligatorio(datosActualizacion, "celular");
+            if (!FORMATO_CELULAR.matcher(celular).matches()) {
+                throw formatoInvalido("celular");
+            }
+            local.setCelular(celular);
+        }
+        if (datosActualizacion.containsKey("telefonoFijo")) {
+            String telefonoFijo = extraerTextoObligatorio(datosActualizacion, "telefonoFijo");
+            if (!FORMATO_TELEFONO_FIJO.matcher(telefonoFijo).matches()) {
+                throw formatoInvalido("telefonoFijo");
+            }
+            local.setTelefonoFijo(telefonoFijo);
         }
         if (tieneCambiosEnDireccion(datosActualizacion)) {
             local.setDireccion(mapearDireccion(datosActualizacion));
@@ -786,6 +811,7 @@ public class UsuarioService {
         cliente.setApellido("");
         cliente.setDocumento("ANON-" + idCliente);
         cliente.setDireccion(DIRECCION_ANONIMIZADA);
+        cliente.setCelular(null);
     }
 
     private void anonimizarLocal(Local local) {
@@ -801,6 +827,8 @@ public class UsuarioService {
         local.setDescripcion("");
         local.setDireccion(DIRECCION_ANONIMIZADA);
         local.setImagenes(List.of());
+        local.setCelular(null);
+        local.setTelefonoFijo(null);
     }
 
     private void recalcularCalificacionGlobalLocales(List<Long> idsLocalesAfectados) {

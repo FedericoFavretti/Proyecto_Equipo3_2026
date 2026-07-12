@@ -21,7 +21,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class LocalRepositorioImpl implements LocalRepositorio {
     private static final String SELECT_LOCAL_CON_USUARIO = """
-            SELECT l.*, u.email, u.passwd, u.estado AS estado_cuenta, u.tipo, u.foto, u.autenticado_con_google, u.sesiones_invalidadas_desde
+            SELECT l.*, u.email, u.passwd, u.estado AS estado_cuenta, u.tipo, u.foto, u.autenticado_con_google, u.sesiones_invalidadas_desde, u.celular
             FROM Local l
             LEFT JOIN usuario u ON u.id = l.id 
             """;
@@ -163,7 +163,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     public void guardar(Local local) {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO Local (id, nombre, calle, numero, ciudad, codigoPostal, descripcion, estado, calificacionGlobal, estaAbierto, imagenes) VALUES (? ,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO Local (id, nombre, calle, numero, ciudad, codigoPostal, descripcion, estado, calificacionGlobal, estaAbierto, imagenes, telefonoFijo) VALUES (? ,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
             ps.setLong(1, local.getId());
             ps.setString(2, local.getNombre());
@@ -177,6 +177,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
             ps.setBoolean(10, local.getEstaAbierto());
             Array imagenesArray = connection.createArrayOf("varchar", local.getImagenes().toArray());
             ps.setArray(11, imagenesArray);
+            ps.setString(12, local.getTelefonoFijo());
             return ps;
         });
     }
@@ -185,7 +186,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
     public void actualizar(Local local) {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE Local SET  nombre = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, descripcion = ?, estado = ?, calificacionGlobal = ?, estaAbierto = ?, imagenes = ? WHERE id = ?"
+                    "UPDATE Local SET  nombre = ?, calle = ?, numero = ?, ciudad = ?, codigoPostal = ?, descripcion = ?, estado = ?, calificacionGlobal = ?, estaAbierto = ?, imagenes = ?, telefonoFijo = ? WHERE id = ?"
             );
             ps.setString(1, local.getNombre());
             ps.setString(2, local.getDireccion().getCalle());
@@ -198,7 +199,8 @@ public class LocalRepositorioImpl implements LocalRepositorio {
             ps.setBoolean(9, local.getEstaAbierto());
             Array imagenesArray = connection.createArrayOf("varchar", local.getImagenes().toArray());
             ps.setArray(10, imagenesArray);
-            ps.setLong(11, local.getId());
+            ps.setString(11, local.getTelefonoFijo());
+            ps.setLong(12, local.getId());
             return ps;
         });
     }
@@ -218,6 +220,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                 .passwd(rs.getString("passwd"))
                 .foto(rs.getString("foto"))
                 .tipo(rs.getString("tipo"))
+                .celular(rs.getString("celular"))
                 .autenticadoConGoogle(rs.getObject("autenticado_con_google", Boolean.class))
                 .estado(estadoCuenta != null && !estadoCuenta.isBlank()
                         ? EstadoCuenta.valueOf(estadoCuenta)
@@ -238,6 +241,7 @@ public class LocalRepositorioImpl implements LocalRepositorio {
                 .calificacionGlobal(rs.getDouble("calificacionGlobal"))
                 .estaAbierto(rs.getBoolean("estaAbierto"))
                 .imagenes(mapearImagenes(rs.getArray("imagenes")))
+                .telefonoFijo(rs.getString("telefonoFijo"))
                 .build();
     }
 
