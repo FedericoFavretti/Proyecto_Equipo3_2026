@@ -1,4 +1,5 @@
 package com.example.demo;
+
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -6,32 +7,32 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Clase base para las pruebas de integracion (*IT).
  *
- * Levanta un Postgres real en un contenedor Docker e inicializa el esquema
- * con schema-it.sql antes de correr los tests.
- *
- * OJO: no usamos @ServiceConnection porque el proyecto arma su propio
- * DataSource a mano en ConexionBd.java (leyendo spring.datasource.url por
- * @Value), y @ServiceConnection solo conecta con el DataSource autoconfigurado
- * por Spring Boot. En cambio, con @DynamicPropertySource pisamos
- * directamente esas propiedades, que es justo lo que ConexionBd lee.
+ * El contenedor de Postgres se arranca UNA sola vez, a mano, en el bloque
+ * estatico de abajo ("patron singleton container" recomendado por
+ * Testcontainers para cuando varias clases de test comparten el mismo
+ * contenedor). A proposito NO usamos @Testcontainers/@Container: esas
+ * anotaciones apagan el contenedor apenas termina la primera clase de test
+ * que lo usa, lo que rompe a la segunda clase (justo lo que estaba pasando).
+ * Sin ellas, el contenedor queda vivo para toda la corrida de mvn verify, y
+ * Testcontainers lo limpia solo cuando termina el proceso.
  */
-@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("it")
 @Transactional
 public abstract class IntegrationTestBase {
 
-    @Container
-    static final PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withInitScript("schema-it.sql");
+    protected static final PostgreSQLContainer<?> postgres;
+
+    static {
+        postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+                .withInitScript("schema-it.sql");
+        postgres.start();
+    }
 
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
