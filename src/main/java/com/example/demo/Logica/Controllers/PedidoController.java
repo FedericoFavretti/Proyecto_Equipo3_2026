@@ -24,6 +24,7 @@ import static com.example.demo.Utils.AuthUtils.autenticacionInvalida;
 @RestController
 @RequestMapping("/api/v1/pedidos")
 public class PedidoController implements iPedidoController {
+    private static final String CLIENTE_MOBILE = "mobile";
     private final PedidoService pedidoService;
     private final PedidoResponseMapper pedidoResponseMapper;
 
@@ -48,8 +49,11 @@ public class PedidoController implements iPedidoController {
 
     @PreAuthorize("hasRole('Cliente')")
     @PostMapping
-    public ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles) {
-        Pedido pedido = pedidoService.realizarPedido(dtPedidoConDetalles);
+    public ResponseEntity<DtPedidoResponse> realizarPedido(
+            @RequestBody DtPedidoConDetalles dtPedidoConDetalles,
+            @RequestHeader(value = "X-Foodly-Client", required = false) String clienteOrigen) {
+        boolean esClienteMobile = CLIENTE_MOBILE.equalsIgnoreCase(clienteOrigen);
+        Pedido pedido = pedidoService.realizarPedido(dtPedidoConDetalles, esClienteMobile);
         return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 
@@ -65,11 +69,15 @@ public class PedidoController implements iPedidoController {
 
     @PreAuthorize("hasRole('Cliente')")
     @PostMapping("/{idPedido}/reintentar-pago")
-    public ResponseEntity<DtPedidoResponse> reintentarPago(@PathVariable Long idPedido, Authentication authentication) {
+    public ResponseEntity<DtPedidoResponse> reintentarPago(
+            @PathVariable Long idPedido,
+            Authentication authentication,
+            @RequestHeader(value = "X-Foodly-Client", required = false) String clienteOrigen) {
         if (autenticacionInvalida(authentication)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Pedido pedido = pedidoService.reintentarPago(authentication.getName(), idPedido);
+        boolean esClienteMobile = CLIENTE_MOBILE.equalsIgnoreCase(clienteOrigen);
+        Pedido pedido = pedidoService.reintentarPago(authentication.getName(), idPedido, esClienteMobile);
         return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
     }
 
