@@ -69,15 +69,8 @@ class UsuarioLoginIT extends IntegrationTestBase {
     }
 
     @Test
+
     void loginConPasswordIncorrectaNoDevuelveOk() throws Exception {
-        // OJO: esto documenta el comportamiento ACTUAL, no el deseado.
-        // BadCredentialsException no tiene un @ExceptionHandler propio en
-        // GlobalExceptionHandler, asi que cae en el handler generico
-        // (Exception.class) y devuelve 500 en lugar de un 401/403. Es un
-        // hallazgo real de esta prueba: si lo quieren corregir, agregando
-        // un @ExceptionHandler(BadCredentialsException.class) -> 401 en
-        // GlobalExceptionHandler alcanza, y ahi este test pasa a esperar
-        // isUnauthorized().
         mockMvc.perform(post("/api/v1/usuarios/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -86,7 +79,7 @@ class UsuarioLoginIT extends IntegrationTestBase {
                                   "passwd": "otra-cosa"
                                 }
                                 """.formatted(EMAIL)))
-                .andExpect(status().is5xxServerError());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
