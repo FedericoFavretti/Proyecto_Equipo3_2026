@@ -11,15 +11,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.List;
 
 public interface iPedidoController {
     ResponseEntity<DtPedidoResponse> confirmarPedido(@PathVariable Long idPedido, @RequestBody DtConfirmarPedidoRequest request);
     ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido, @RequestBody DtRechazarPedidoRequest request);
-    ResponseEntity<DtPedidoResponse> realizarPedido(@RequestBody DtPedidoConDetalles dtPedidoConDetalles);
+    ResponseEntity<DtPedidoResponse> realizarPedido(
+            @RequestBody DtPedidoConDetalles dtPedidoConDetalles,
+            @RequestHeader(value = "X-Foodly-Client", required = false) String clienteOrigen);
     ResponseEntity<Void> cancelarPedido(@PathVariable Long idPedido, Authentication authentication);
-    ResponseEntity<DtPedidoResponse> reintentarPago(@PathVariable Long idPedido, Authentication authentication);
+    ResponseEntity<DtPedidoResponse> reintentarPago(
+            @PathVariable Long idPedido,
+            Authentication authentication,
+            @RequestHeader(value = "X-Foodly-Client", required = false) String clienteOrigen);
     ResponseEntity<DtPagina<DtPedidoListadoResponse>> listarPedidos(@PathVariable Long idLocal, DtPedidoListadoFiltro dtPedidoListadoFiltro);
     ResponseEntity<DtPagina<DtPedidoListadoResponse>> buscarYListarHistorialPedidosPropios(Authentication authentication, DtPedidoListadoFiltro dtPedidoListadoFiltro);
 }

@@ -103,6 +103,12 @@ public class PedidoService {
     private String backUrlFailure;
     @Value("${mercadopago.back-url-pending}")
     private String backUrlPending;
+    @Value("${mercadopago.back-url-success-mobile}")
+    private String backUrlSuccessMobile;
+    @Value("${mercadopago.back-url-failure-mobile}")
+    private String backUrlFailureMobile;
+    @Value("${mercadopago.back-url-pending-mobile}")
+    private String backUrlPendingMobile;
     @Value("${mercadopago.webhook-url}")
     private String webhookUrl;
     @Value("${mercadopago.access-token}")
@@ -194,6 +200,11 @@ public class PedidoService {
 
     @Transactional
     public Pedido realizarPedido(DtPedidoConDetalles dtPedidoConDetalles) {
+        return realizarPedido(dtPedidoConDetalles, false);
+    }
+
+    @Transactional
+    public Pedido realizarPedido(DtPedidoConDetalles dtPedidoConDetalles, boolean esClienteMobile) {
         validarPedidoConDetalles(dtPedidoConDetalles);
         DtPedido dtPedido = dtPedidoConDetalles.getDtPedido();
 
@@ -238,13 +249,13 @@ public class PedidoService {
 
             notificacionPedidoService.notificarPedido(pedido);
         } else {
-            crearPreferenciaPago(pedido, detalles);
+            crearPreferenciaPago(pedido, detalles, esClienteMobile);
         }
 
         return pedido;
     }
 
-    private void crearPreferenciaPago(Pedido pedido, List<DetallePedido> detalles) {
+    private void crearPreferenciaPago(Pedido pedido, List<DetallePedido> detalles, boolean esClienteMobile) {
         try {
             List<Map<String, Object>> items = detalles.stream()
                     .map(detalle -> {
@@ -256,10 +267,14 @@ public class PedidoService {
                         return item;
                     }).toList();
 
+            String successUrl = elegirBackUrl(esClienteMobile, backUrlSuccessMobile, backUrlSuccess);
+            String failureUrl = elegirBackUrl(esClienteMobile, backUrlFailureMobile, backUrlFailure);
+            String pendingUrl = elegirBackUrl(esClienteMobile, backUrlPendingMobile, backUrlPending);
+
             Map<String, Object> backUrls = new HashMap<>();
-            backUrls.put("success", backUrlSuccess);
-            backUrls.put("failure", backUrlFailure);
-            backUrls.put("pending", backUrlPending);
+            backUrls.put("success", successUrl);
+            backUrls.put("failure", failureUrl);
+            backUrls.put("pending", pendingUrl);
 
             Map<String, Object> body = new HashMap<>();
             body.put("items", items);
@@ -274,8 +289,8 @@ public class PedidoService {
 
             HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
 
-            LOGGER.info("Creando preferencia MP. backUrlSuccess={}, backUrlFailure={}, backUrlPending={}, webhookUrl={}",
-                    backUrlSuccess, backUrlFailure, backUrlPending, webhookUrl);
+            LOGGER.info("Creando preferencia MP. esClienteMobile={}, backUrlSuccess={}, backUrlFailure={}, backUrlPending={}, webhookUrl={}",
+                    esClienteMobile, successUrl, failureUrl, pendingUrl, webhookUrl);
 
             ResponseEntity<Map> response = restTemplate.postForEntity(
                     "https://api.mercadopago.com/checkout/preferences",
@@ -300,6 +315,14 @@ public class PedidoService {
             throw new ExternalServiceException("No se pudo generar la preferencia de pago en Mercado Pago.", e);
         }
     }
+
+    private String elegirBackUrl(boolean esClienteMobile, String urlMobile, String urlWeb) {
+        if (esClienteMobile && urlMobile != null && !urlMobile.isBlank()) {
+            return urlMobile;
+        }
+        return urlWeb;
+    }
+
     @Transactional
     public void cancelarPedido(Long idPedido) {
         Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
@@ -316,6 +339,11 @@ public class PedidoService {
 
     @Transactional
     public Pedido reintentarPago(String emailAutenticado, Long idPedido) {
+        return reintentarPago(emailAutenticado, idPedido, false);
+    }
+
+    @Transactional
+    public Pedido reintentarPago(String emailAutenticado, Long idPedido, boolean esClienteMobile) {
         Cliente cliente = obtenerClienteAutenticado(emailAutenticado);
         Pedido pedido = obtenerPedidoPropio(cliente, idPedido);
 
@@ -332,7 +360,7 @@ public class PedidoService {
             throw new BusinessRuleException(MENSAJE_REINTENTO_SIN_DETALLES);
         }
 
-        crearPreferenciaPago(pedido, detalles);
+        crearPreferenciaPago(pedido, detalles, esClienteMobile);
         return pedido;
     }
 
