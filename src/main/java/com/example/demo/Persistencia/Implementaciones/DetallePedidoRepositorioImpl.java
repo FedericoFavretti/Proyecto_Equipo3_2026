@@ -64,13 +64,8 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
 
 
     @Override
-    public Long buscarPorPlato(Long idPlato) {
-        List<Long> ids = jdbcTemplate.query(
-                "SELECT id FROM detallepedido WHERE idplato = ?",
-                (rs, rowNum) -> rs.getLong("id"),
-                idPlato
-        );
-        return ids.isEmpty() ? null : ids.get(0);
+    public void eliminarPorPlato(Long idPlato) {
+        jdbcTemplate.update("DELETE FROM DetallePedido WHERE idplato = ?", idPlato);
     }
 
     @Override

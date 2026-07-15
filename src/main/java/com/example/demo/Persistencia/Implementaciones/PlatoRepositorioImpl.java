@@ -201,8 +201,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     @Override
     public void eliminar(Long id) {
         if(detallePedidoRepositorio.platoTienePedidosAsociados(id)){
-            Long idDp = detallePedidoRepositorio.buscarPorPlato(id);
-            detallePedidoRepositorio.eliminar(id);
+            detallePedidoRepositorio.eliminarPorPlato(id);
         }
         jdbcTemplate.update("DELETE FROM plato WHERE id = ?", id);
     }

@@ -13,5 +13,5 @@ public interface DetallePedidoRepositorio {
     void eliminar(Long id);
     List<DetallePedido> buscarPorPedido(Long idPedido);
     boolean platoTienePedidosAsociados(Long idPlato);
-    Long buscarPorPlato(Long idPlato);
+    void eliminarPorPlato(Long idPlato);
 }
