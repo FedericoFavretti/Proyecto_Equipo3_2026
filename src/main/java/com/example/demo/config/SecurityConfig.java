@@ -37,7 +37,9 @@ public class SecurityConfig {
                                 "/api/v1/clientes/registro",
                                 "/api/v1/clientes/google",
                                 "/api/v1/clientes/google/registro/iniciar",
-                                "/api/v1/clientes/google/registro/completar"
+                                "/api/v1/clientes/google/registro/completar",
+                                "/api/v1/clientes/google/mobile",
+                                "/api/v1/clientes/google/mobile/registro/iniciar"
                         ).permitAll()
                         .requestMatchers("/api/v1/locales/solicitudes-habilitacion").permitAll()
                         .requestMatchers(

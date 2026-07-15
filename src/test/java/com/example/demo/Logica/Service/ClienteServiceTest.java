@@ -28,6 +28,8 @@ import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import com.example.demo.Persistencia.Repositorios.TokenActivacionCuentaRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
+import com.example.demo.Logica.Service.GoogleIdentityService;
+import com.example.demo.Logica.Service.GoogleMobileIdentityService;
 import com.example.demo.jwt.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,6 +99,9 @@ class ClienteServiceTest {
     private GoogleIdentityService googleIdentityService;
 
     @Mock
+    private GoogleMobileIdentityService googleMobileIdentityService;
+
+    @Mock
     private TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio;
 
     @Mock
@@ -121,6 +126,7 @@ class ClienteServiceTest {
                 jwtService,
                 userDetailsService,
                 googleIdentityService,
+                googleMobileIdentityService,
                 tokenActivacionCuentaRepositorio
         );
         ReflectionTestUtils.setField(clienteService, "activationFrontendBaseUrl", "https://foodly.com.uy");
