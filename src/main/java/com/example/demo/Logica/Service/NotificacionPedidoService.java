@@ -22,10 +22,14 @@ public class NotificacionPedidoService {
 
     private final EmailService emailService;
     private final NotificacionRepositorio notificacionRepositorio;
+    private final FcmService fcmService;
 
-    public NotificacionPedidoService(EmailService emailService, NotificacionRepositorio notificacionRepositorio) {
+    public NotificacionPedidoService(EmailService emailService,
+                                     NotificacionRepositorio notificacionRepositorio,
+                                     FcmService fcmService) {
         this.emailService = emailService;
         this.notificacionRepositorio = notificacionRepositorio;
+        this.fcmService = fcmService;
     }
 
     public void notificarPedido(Pedido pedido){
@@ -90,7 +94,14 @@ public class NotificacionPedidoService {
                 pedido.getCliente() != null ? pedido.getCliente().getId() : null
         );
 
-        logger.info("Notificación push pendiente para pedido {}", pedido.getId());
+        if (pedido.getCliente() != null) {
+            fcmService.enviarAUsuario(
+                    pedido.getCliente().getId(),
+                    "Pedido confirmado",
+                    mensaje,
+                    java.util.Map.of("tipo", "pedido_confirmado", "pedidoId", String.valueOf(pedido.getId()))
+            );
+        }
     }
 
     public void notificarFacturaGenerada(Factura factura, byte[] pdf) {
@@ -118,7 +129,15 @@ public class NotificacionPedidoService {
             );
         }
 
-        logger.info("Notificación push pendiente para factura {}", factura.getNumero());
+        if (factura.getPedido() != null && factura.getPedido().getCliente() != null) {
+            fcmService.enviarAUsuario(
+                    factura.getPedido().getCliente().getId(),
+                    "Factura disponible",
+                    mensaje,
+                    java.util.Map.of("tipo", "factura_generada", "pedidoId",
+                            String.valueOf(factura.getPedido().getId()))
+            );
+        }
     }
 
     public void notificarRechazo(Pedido pedido, String motivo) {
@@ -150,7 +169,14 @@ public class NotificacionPedidoService {
                 pedido.getCliente() != null ? pedido.getCliente().getId() : null
         );
 
-        logger.info("Notificación push pendiente para rechazo de pedido {}", pedido.getId());
+        if (pedido.getCliente() != null) {
+            fcmService.enviarAUsuario(
+                    pedido.getCliente().getId(),
+                    "Pedido rechazado",
+                    mensaje,
+                    java.util.Map.of("tipo", "pedido_rechazado", "pedidoId", String.valueOf(pedido.getId()))
+            );
+        }
     }
 
     private void guardarNotificacionWeb(String mensaje, Pedido pedido,

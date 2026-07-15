@@ -1,0 +1,21 @@
+package com.example.demo.Logica.Clases;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class DeviceToken {
+    private Long id;
+    private Long usuarioId;
+    private String token;
+    private String plataforma;
+    private LocalDateTime fechaRegistro;
+    private boolean activo;
+}
