@@ -5,6 +5,7 @@ import com.example.demo.Logica.Clases.Categoria;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
+import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Logica.Enums.EstadoPedido;
@@ -22,11 +23,13 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     private final LocalRepositorio localRepositorio;
     private final JdbcTemplate jdbcTemplate;
     private final CategoriaRepositorio categoriaRepositorio;
+    private final DetallePedidoRepositorio detallePedidoRepositorio;
 
-    public PlatoRepositorioImpl(JdbcTemplate jdbcTemplate, LocalRepositorio localRepo, CategoriaRepositorio categoriaRepositorio) {
+    public PlatoRepositorioImpl(JdbcTemplate jdbcTemplate, LocalRepositorio localRepo, CategoriaRepositorio categoriaRepositorio, DetallePedidoRepositorio detallePedidoRepositorio) {
         this.localRepositorio = localRepo;
         this.jdbcTemplate = jdbcTemplate;
         this.categoriaRepositorio = categoriaRepositorio;
+        this.detallePedidoRepositorio = detallePedidoRepositorio;
     }
 
     @Override
@@ -196,6 +199,10 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
     @Override
     public void eliminar(Long id) {
+        if(detallePedidoRepositorio.platoTienePedidosAsociados(id)){
+            Long idDp = detallePedidoRepositorio.buscarPorPlato(id);
+            detallePedidoRepositorio.eliminar(id);
+        }
         jdbcTemplate.update("DELETE FROM plato WHERE id = ?", id);
     }
 
