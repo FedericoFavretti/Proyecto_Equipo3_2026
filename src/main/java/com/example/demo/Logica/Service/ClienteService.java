@@ -91,6 +91,7 @@ public class ClienteService {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final GoogleIdentityService googleIdentityService;
+    private final GoogleMobileIdentityService googleMobileIdentityService;
     private final ClienteRepositorio clienteRepositorio;
     private final PlatoRepositorio platoRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
@@ -110,6 +111,7 @@ public class ClienteService {
                           PlatoMapper platoMapper, PromocionMapper promocionMapper, LocalRepositorio localRepositorio,
                           LocalMapper localMapper, JwtService jwtService, UserDetailsService userDetailsService,
                           GoogleIdentityService googleIdentityService,
+                          GoogleMobileIdentityService googleMobileIdentityService,
                           TokenActivacionCuentaRepositorio tokenActivacionCuentaRepositorio) {
         this.clienteRepositorio = clienteRepositorio;
         this.platoRepositorio = platoRepositorio;
@@ -125,6 +127,7 @@ public class ClienteService {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.googleIdentityService = googleIdentityService;
+        this.googleMobileIdentityService = googleMobileIdentityService;
         this.tokenActivacionCuentaRepositorio = tokenActivacionCuentaRepositorio;
     }
 
@@ -240,6 +243,41 @@ public class ClienteService {
     @Transactional
     public DtLoginResponseCliente loginConGoogle(DtGoogleAuthRequest request) {
         DtGoogleUserInfo datosGoogle = obtenerDatosGoogle(request);
+        Cliente cliente = clienteRepositorio.buscarPorEmail(datosGoogle.getEmail())
+                .orElseThrow(() -> new BusinessRuleException(
+                        String.format(MENSAJE_LOGIN_GOOGLE_SIN_CUENTA, datosGoogle.getEmail())));
+        validarAccesoGoogle(cliente, datosGoogle.getEmail());
+        return construirRespuestaLogin(cliente);
+    }
+
+    // --- Flujo móvil (google_sign_in v7 + Credential Manager): usa ID token JWT ---
+
+    @Transactional
+    public DtGoogleRegistroPendienteResponse iniciarRegistroConGoogleMobile(DtGoogleAuthRequest request) {
+        if (request == null || request.getIdToken() == null || request.getIdToken().isBlank()) {
+            throw new BusinessRuleException(MENSAJE_GOOGLE_TOKEN_REQUERIDO);
+        }
+        DtGoogleUserInfo datosGoogle = googleMobileIdentityService.obtenerDatosUsuario(request.getIdToken());
+        if (usuarioRepositorio.existeCorreo(datosGoogle.getEmail())) {
+            throw new ResourceConflictException(
+                    String.format(MENSAJE_CORREO_GOOGLE_EXISTENTE, datosGoogle.getEmail())
+            );
+        }
+        return DtGoogleRegistroPendienteResponse.builder()
+                .tokenRegistro(jwtService.generarTokenRegistroGoogle(datosGoogle))
+                .email(datosGoogle.getEmail())
+                .nombre(datosGoogle.getNombre())
+                .apellido(datosGoogle.getApellido())
+                .foto(datosGoogle.getFoto())
+                .build();
+    }
+
+    @Transactional
+    public DtLoginResponseCliente loginConGoogleMobile(DtGoogleAuthRequest request) {
+        if (request == null || request.getIdToken() == null || request.getIdToken().isBlank()) {
+            throw new BusinessRuleException(MENSAJE_GOOGLE_TOKEN_REQUERIDO);
+        }
+        DtGoogleUserInfo datosGoogle = googleMobileIdentityService.obtenerDatosUsuario(request.getIdToken());
         Cliente cliente = clienteRepositorio.buscarPorEmail(datosGoogle.getEmail())
                 .orElseThrow(() -> new BusinessRuleException(
                         String.format(MENSAJE_LOGIN_GOOGLE_SIN_CUENTA, datosGoogle.getEmail())));

@@ -21,6 +21,8 @@ public interface iClienteController {
     ResponseEntity<DtGoogleRegistroPendienteResponse> iniciarRegistroConGoogle(DtGoogleAuthRequest request);
     ResponseEntity<DtLoginResponseCliente> completarRegistroConGoogle(@RequestPart("datos") DtGoogleRegistroCompletarRequest datos,
                                                                       @RequestPart(value = "foto", required = false) MultipartFile foto);
+    ResponseEntity<DtLoginResponseCliente> loginConGoogleMobile(DtGoogleAuthRequest request);
+    ResponseEntity<DtGoogleRegistroPendienteResponse> iniciarRegistroConGoogleMobile(DtGoogleAuthRequest request);
     ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(
             String nombre, Boolean precioMasBajo, Boolean precioMasAlto,
             Boolean promocionActiva, Boolean alfabetico, Long localId, Integer pagina, Integer tamanio);

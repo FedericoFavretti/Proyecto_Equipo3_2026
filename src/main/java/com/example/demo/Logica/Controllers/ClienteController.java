@@ -62,6 +62,18 @@ public class ClienteController implements iClienteController {
         return ResponseEntity.ok(clienteService.completarRegistroConGoogle(datos));
     }
 
+    // --- Endpoints exclusivos para el flujo móvil (ID token JWT via Credential Manager) ---
+
+    @PostMapping("/google/mobile")
+    public ResponseEntity<DtLoginResponseCliente> loginConGoogleMobile(@RequestBody DtGoogleAuthRequest request) {
+        return ResponseEntity.ok(clienteService.loginConGoogleMobile(request));
+    }
+
+    @PostMapping("/google/mobile/registro/iniciar")
+    public ResponseEntity<DtGoogleRegistroPendienteResponse> iniciarRegistroConGoogleMobile(@RequestBody DtGoogleAuthRequest request) {
+        return ResponseEntity.ok(clienteService.iniciarRegistroConGoogleMobile(request));
+    }
+
     @PreAuthorize("hasRole('Cliente')")
     @GetMapping("/busqueda")
     public ResponseEntity<DtBusquedaPlatosPromocionesResponse> buscarPlatosYPromociones(
