@@ -75,7 +75,7 @@ public class LocalController implements iLocalController {
     }
 
     @PreAuthorize("hasRole('Local')")
-    @DeleteMapping("/platos/{idPlato}")
+    @DeleteMapping("/platos/eliminar/{idPlato}")
     public ResponseEntity<Void> gestionarPlatoBaja(@PathVariable("idPlato") Long idPlato) {
         localService.gestionarPlatoBaja(idPlato);
         return ResponseEntity.ok().build();
