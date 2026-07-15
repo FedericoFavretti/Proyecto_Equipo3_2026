@@ -9,6 +9,7 @@ import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -25,7 +26,7 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     private final CategoriaRepositorio categoriaRepositorio;
     private final DetallePedidoRepositorio detallePedidoRepositorio;
 
-    public PlatoRepositorioImpl(JdbcTemplate jdbcTemplate, LocalRepositorio localRepo, CategoriaRepositorio categoriaRepositorio, DetallePedidoRepositorio detallePedidoRepositorio) {
+    public PlatoRepositorioImpl(JdbcTemplate jdbcTemplate, LocalRepositorio localRepo, CategoriaRepositorio categoriaRepositorio, @Lazy DetallePedidoRepositorio detallePedidoRepositorio) {
         this.localRepositorio = localRepo;
         this.jdbcTemplate = jdbcTemplate;
         this.categoriaRepositorio = categoriaRepositorio;
