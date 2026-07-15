@@ -192,7 +192,7 @@ public class LocalService {
         Plato plato = platoRepositorio.buscarPorId(idPlato)
                 .orElseThrow(() -> new ResourceNotFoundException("Plato", idPlato));
         plato.setDisponible(false);
-        platoRepositorio.actualizar(plato);
+        platoRepositorio.eliminar(plato.getId());
     }
 
     @Transactional

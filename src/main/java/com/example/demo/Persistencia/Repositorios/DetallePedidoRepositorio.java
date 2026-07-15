@@ -12,4 +12,6 @@ public interface DetallePedidoRepositorio {
     void actualizar(DetallePedido detallePedido);
     void eliminar(Long id);
     List<DetallePedido> buscarPorPedido(Long idPedido);
+    boolean platoTienePedidosAsociados(Long idPlato);
+    void eliminarPorPlato(Long idPlato);
 }

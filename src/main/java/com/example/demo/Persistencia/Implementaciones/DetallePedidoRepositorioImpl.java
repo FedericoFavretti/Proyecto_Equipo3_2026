@@ -62,6 +62,12 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
         );
     }
 
+
+    @Override
+    public void eliminarPorPlato(Long idPlato) {
+        jdbcTemplate.update("DELETE FROM DetallePedido WHERE idplato = ?", idPlato);
+    }
+
     @Override
     public void eliminar(Long id) {
         jdbcTemplate.update("DELETE FROM DetallePedido WHERE id = ?", id);
@@ -72,6 +78,16 @@ public class DetallePedidoRepositorioImpl implements DetallePedidoRepositorio {
         return jdbcTemplate.query("SELECT * FROM DetallePedido WHERE idpedido = ?",
                 (rs, row)-> mapearDetallePedido(rs),idPedido
                 );
+    }
+
+    @Override
+    public boolean platoTienePedidosAsociados(Long idPlato){
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM detallepedido WHERE idplato = ?",
+                Integer.class,
+                idPlato
+        );
+        return count != null && count > 0;
     }
 
     private DetallePedido mapearDetallePedido(ResultSet rs) throws SQLException {

@@ -5,9 +5,11 @@ import com.example.demo.Logica.Clases.Categoria;
 import com.example.demo.Logica.Clases.Plato;
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
+import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Logica.Enums.EstadoPedido;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -22,11 +24,13 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
     private final LocalRepositorio localRepositorio;
     private final JdbcTemplate jdbcTemplate;
     private final CategoriaRepositorio categoriaRepositorio;
+    private final DetallePedidoRepositorio detallePedidoRepositorio;
 
-    public PlatoRepositorioImpl(JdbcTemplate jdbcTemplate, LocalRepositorio localRepo, CategoriaRepositorio categoriaRepositorio) {
+    public PlatoRepositorioImpl(JdbcTemplate jdbcTemplate, LocalRepositorio localRepo, CategoriaRepositorio categoriaRepositorio, @Lazy DetallePedidoRepositorio detallePedidoRepositorio) {
         this.localRepositorio = localRepo;
         this.jdbcTemplate = jdbcTemplate;
         this.categoriaRepositorio = categoriaRepositorio;
+        this.detallePedidoRepositorio = detallePedidoRepositorio;
     }
 
     @Override
@@ -196,6 +200,9 @@ public class PlatoRepositorioImpl implements PlatoRepositorio {
 
     @Override
     public void eliminar(Long id) {
+        if(detallePedidoRepositorio.platoTienePedidosAsociados(id)){
+            detallePedidoRepositorio.eliminarPorPlato(id);
+        }
         jdbcTemplate.update("DELETE FROM plato WHERE id = ?", id);
     }
 
