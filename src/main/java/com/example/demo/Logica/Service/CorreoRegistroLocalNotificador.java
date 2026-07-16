@@ -1,5 +1,3 @@
-
-
 package com.example.demo.Logica.Service;
 
 import com.example.demo.Logica.Interfaces.RegistroLocalNotificador;

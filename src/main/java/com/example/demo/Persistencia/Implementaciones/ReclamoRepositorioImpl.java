@@ -1,6 +1,5 @@
 package com.example.demo.Persistencia.Implementaciones;
 
-import com.example.demo.Logica.Clases.Pedido;
 import com.example.demo.Logica.Clases.Reclamo;
 import com.example.demo.Logica.DataTypes.request.DtFiltroReclamo;
 import com.example.demo.Logica.Enums.EstadoReclamo;

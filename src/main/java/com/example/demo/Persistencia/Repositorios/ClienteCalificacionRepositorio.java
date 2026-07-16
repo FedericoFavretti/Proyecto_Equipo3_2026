@@ -1,7 +1,5 @@
 package com.example.demo.Persistencia.Repositorios;
 
-import com.example.demo.Logica.Clases.Cliente;
-
 import java.util.List;
 
 public interface ClienteCalificacionRepositorio {

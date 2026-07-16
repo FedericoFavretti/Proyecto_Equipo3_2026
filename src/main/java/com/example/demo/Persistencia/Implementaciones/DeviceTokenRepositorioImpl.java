@@ -22,7 +22,7 @@ public class DeviceTokenRepositorioImpl implements DeviceTokenRepositorio {
 
     @Override
     public void guardarOActualizar(DeviceToken token) {
-        // INSERT si no existe; actualizar fecha y activar si ya existía.
+
         int updated = jdbcTemplate.update(
                 "UPDATE device_tokens SET activo = true, fecha_registro = ? WHERE usuario_id = ? AND token = ?",
                 Timestamp.valueOf(LocalDateTime.now()), token.getUsuarioId(), token.getToken()

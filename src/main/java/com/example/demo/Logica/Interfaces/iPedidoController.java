@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-import java.util.List;
-
 public interface iPedidoController {
     ResponseEntity<DtPedidoResponse> confirmarPedido(@PathVariable Long idPedido, @RequestBody DtConfirmarPedidoRequest request);
     ResponseEntity<Void> rechazarPedido(@PathVariable Long idPedido, @RequestBody DtRechazarPedidoRequest request);

@@ -105,8 +105,7 @@ class PedidoServiceTest {
                 pedidoListadoMapper,
                 usuarioRepositorio
         );
-        // "restTemplate" es @Autowired por campo (no por constructor), así que en un test
-        // unitario hay que inyectarlo a mano para poder simular la llamada a Mercado Pago.
+
         ReflectionTestUtils.setField(pedidoService, "restTemplate", restTemplate);
         ReflectionTestUtils.setField(pedidoService, "backUrlSuccess", "https://foodly.com/pago-ok");
         ReflectionTestUtils.setField(pedidoService, "backUrlFailure", "https://foodly.com/pago-error");

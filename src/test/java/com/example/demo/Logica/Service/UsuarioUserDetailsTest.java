@@ -25,8 +25,7 @@ class UsuarioUserDetailsTest {
 
         assertThat(details.getUsername()).isEqualTo("cliente@foodly.test");
         assertThat(details.getPassword()).isEqualTo("encoded-password");
-        // Cada tipo de usuario ahora expone un rol de Spring Security acorde a su clase,
-        // en vez de una lista vacía de autoridades.
+
         assertThat(details.getAuthorities())
                 .extracting(Object::toString)
                 .containsExactly("ROLE_Cliente");
@@ -69,9 +68,6 @@ class UsuarioUserDetailsTest {
                 .build();
 
         UsuarioUserDetails details = new UsuarioUserDetails(cliente);
-
-        // Una cuenta Bloqueada debe reportarse como bloqueada para Spring Security,
-        // no como un flag fijo en "true".
         assertThat(details.isAccountNonLocked()).isFalse();
         assertThat(details.isAccountNonExpired()).isTrue();
         assertThat(details.isCredentialsNonExpired()).isTrue();
@@ -85,9 +81,6 @@ class UsuarioUserDetailsTest {
                 .build();
 
         UsuarioUserDetails details = new UsuarioUserDetails(cliente);
-
-        // Una cuenta Pendiente (todavía no activó el correo) debe reportarse como
-        // deshabilitada, así Spring Security bloquea el login hasta que se active.
         assertThat(details.isEnabled()).isFalse();
         assertThat(details.isAccountNonLocked()).isTrue();
     }

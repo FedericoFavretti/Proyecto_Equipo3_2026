@@ -250,7 +250,6 @@ public class ClienteService {
         return construirRespuestaLogin(cliente);
     }
 
-    // --- Flujo móvil (google_sign_in v7 + Credential Manager): usa ID token JWT ---
 
     @Transactional
     public DtGoogleRegistroPendienteResponse iniciarRegistroConGoogleMobile(DtGoogleAuthRequest request) {

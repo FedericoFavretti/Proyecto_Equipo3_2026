@@ -21,7 +21,6 @@ import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -242,10 +241,7 @@ class CalificacionServiceTest {
         when(calificacionRepositorio.buscarCalificacionLocalACliente(20L, 10L)).thenReturn(Optional.of(existente));
         when(calificacionRepositorio.listarPorCliente(20L)).thenReturn(List.of(existente));
 
-        // Nota para testing: el documento de CU-L13 permite editar la calificación, pero
-        // CU-CL10 (el equivalente cuando quien califica es el cliente) todavía dice en su
-        // precondición "no debe haberlo calificado ya" - contradice lo que hace este mismo
-        // upsert en la práctica. Este test documenta el comportamiento real (permite editar).
+
         calificacionService.calificar(solicitud, "local@test.com");
 
         verify(calificacionRepositorio).actualizar(existente);

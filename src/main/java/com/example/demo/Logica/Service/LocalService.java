@@ -39,7 +39,6 @@ import com.example.demo.Logica.DataTypes.request.DtFiltroClienteLocal;
 import com.example.demo.Logica.DataTypes.response.DtClienteLocalResponse;
 import com.example.demo.Logica.DataTypes.response.DtLocalPerfilResponse;
 import com.example.demo.Logica.DataTypes.response.DtPromocionesLocalResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import com.example.demo.Persistencia.Repositorios.PedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;

@@ -9,8 +9,6 @@ import com.example.demo.Logica.Enums.EstadoReclamo;
 import com.example.demo.Logica.DataTypes.response.DtPagina;
 import java.time.LocalDate;
 
-import java.util.List;
-
 public interface iReclamoController {
     ResponseEntity<Void> reclamar(Authentication authentication, @RequestBody DtReclamo dtReclamo);
     ResponseEntity<DtPagina<DtReclamo>> buscarReclamos(

@@ -45,7 +45,6 @@ import com.example.demo.Persistencia.Repositorios.PlatoRepositorio;
 import com.example.demo.Persistencia.Repositorios.PromocionRepositorio;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
 import com.example.demo.Logica.Mappers.CategoriaMapper;
-import org.mockito.Mockito;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)

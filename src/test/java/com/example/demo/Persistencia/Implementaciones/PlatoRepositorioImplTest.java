@@ -2,6 +2,7 @@ package com.example.demo.Persistencia.Implementaciones;
 
 import com.example.demo.Logica.DataTypes.request.DtFiltro;
 import com.example.demo.Persistencia.Repositorios.CategoriaRepositorio;
+import com.example.demo.Persistencia.Repositorios.DetallePedidoRepositorio;
 import com.example.demo.Persistencia.Repositorios.LocalRepositorio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -29,12 +31,16 @@ class PlatoRepositorioImplTest {
     private LocalRepositorio localRepositorio;
     @Mock
     private CategoriaRepositorio categoriaRepositorio;
+    @Mock
+    @Lazy
+    private DetallePedidoRepositorio detallePedidoRepositorio;
+
 
     private PlatoRepositorioImpl platoRepositorio;
 
     @BeforeEach
     void setUp() {
-        platoRepositorio = new PlatoRepositorioImpl(jdbcTemplate, localRepositorio, categoriaRepositorio);
+        platoRepositorio = new PlatoRepositorioImpl(jdbcTemplate, localRepositorio, categoriaRepositorio, detallePedidoRepositorio);
     }
 
     @Test

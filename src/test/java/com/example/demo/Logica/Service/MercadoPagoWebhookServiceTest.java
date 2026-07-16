@@ -34,7 +34,6 @@ class MercadoPagoWebhookServiceTest {
 
     @Test
     void procesarWebhookProcesaPagoCuandoLlegaPorFormatoLegadoDeIpn() {
-        // Formato viejo de IPN: "topic" en vez de "type", "id" en vez de "data.id".
         mercadoPagoWebhookService.procesarWebhook(null, null, "payment", null, "12345");
 
         verify(pedidoService).procesarPagoConfirmado("12345");
@@ -82,15 +81,13 @@ class MercadoPagoWebhookServiceTest {
 
     @Test
     void procesarWebhookNoPropagaLaExcepcionSiFallaElProcesamientoDelPago() {
-        // Un error al consultar el pago (ej. Mercado Pago caído) no debe tirar abajo
-        // el endpoint del webhook: Mercado Pago reintenta igual si no responde 200.
+
         org.mockito.Mockito.doThrow(new RuntimeException("Error de red"))
                 .when(pedidoService).procesarPagoConfirmado("12345");
 
         mercadoPagoWebhookService.procesarWebhook(null, "payment", null, "12345", null);
 
         verify(pedidoService).procesarPagoConfirmado("12345");
-        // Si esta línea se alcanza sin que el test explote, la excepción quedó contenida.
     }
 
     @Test

@@ -56,9 +56,7 @@ class NotificacionPedidoServiceTest {
 
         notificacionPedidoService.notificarRechazo(pedido, "Sin disponibilidad");
 
-        // El servicio ahora persiste DOS registros de notificación por evento:
-        // uno para el canal Email y otro para el canal Web (soporta la campanita
-        // de notificaciones), además de enviar el correo real.
+
         ArgumentCaptor<Notificacion> notificacionCaptor = ArgumentCaptor.forClass(Notificacion.class);
         verify(notificacionRepositorio, times(2)).guardar(notificacionCaptor.capture());
         verify(emailService).enviarCorreo(

@@ -2,7 +2,6 @@ package com.example.demo.Logica.Controllers;
 
 import com.example.demo.Logica.DataTypes.request.*;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponse;
-import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;
 import com.example.demo.Logica.DataTypes.shared.DtUsuario;
 import com.example.demo.Logica.Interfaces.iUsuarioController;
 import com.example.demo.Logica.Service.UsuarioService;
@@ -14,7 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import static com.example.demo.Utils.AuthUtils.autenticacionInvalida;
 
 @RestController

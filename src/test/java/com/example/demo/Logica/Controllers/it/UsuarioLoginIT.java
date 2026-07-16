@@ -14,14 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Prueba de integracion real: Spring Boot + MockMvc + Postgres en
- * Testcontainers, sin mockear ni el repositorio ni el AuthenticationManager.
- *
- * A diferencia de UsuarioControllerTest (unitario, con Mockito), aca se
- * valida el flujo completo: JdbcTemplate -> Postgres -> UserDetailsService ->
- * AuthenticationManager -> JwtService -> respuesta HTTP.
- */
+
 class UsuarioLoginIT extends IntegrationTestBase {
 
     @Autowired

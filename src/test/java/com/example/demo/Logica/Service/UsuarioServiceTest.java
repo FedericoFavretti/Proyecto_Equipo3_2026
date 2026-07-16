@@ -9,7 +9,6 @@ import com.example.demo.Logica.Enums.EstadoCuenta;
 import com.example.demo.Logica.Enums.EstadoLocal;
 import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Logica.Exceptions.BusinessRuleException;
-import com.example.demo.Logica.Exceptions.ResourceNotFoundException;
 import com.example.demo.Persistencia.Repositorios.AdministradorRepositorio;
 import com.example.demo.Persistencia.Repositorios.CalificacionRepositorio;
 import com.example.demo.Persistencia.Repositorios.ClienteRepositorio;
@@ -32,8 +31,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -118,9 +115,6 @@ class UsuarioServiceTest {
         assertThat(cliente.getCalificacionGlobal()).isEqualTo(4.7);
 
         verify(usuarioRepositorio).actualizar(cliente);
-        // La invalidación de sesión ya no es "poner este token en una lista negra":
-        // ahora se marca una fecha en el propio usuario, que invalida TODAS sus sesiones
-        // activas (en cualquier dispositivo), no solo la del pedido actual.
         assertThat(cliente.getSesionesInvalidadasDesde()).isNotNull();
         verifyNoInteractions(tokenBlacklistRepositorio, jwtService);
     }
@@ -152,9 +146,7 @@ class UsuarioServiceTest {
         when(usuarioRepositorio.buscarPorEmail("admin@foodly.com")).thenReturn(Optional.of(administrador));
         when(passwordEncoder.encode("ClaveSegura123")).thenReturn("hash-admin");
 
-        // Decisión de producto: los administradores no editan sus propios datos por esta vía.
-        // editarDatosDeCuentaDeUsuario solo sabe construir la respuesta para Cliente o Local;
-        // para cualquier otro tipo de usuario (Administrador) rechaza la operación.
+
         assertThatThrownBy(() -> usuarioService.editarDatosDeCuentaDeUsuario(
                 "admin@foodly.com",
                 "Bearer token-admin",

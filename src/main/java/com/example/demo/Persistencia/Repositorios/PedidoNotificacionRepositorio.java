@@ -2,7 +2,7 @@ package com.example.demo.Persistencia.Repositorios;
 
 public interface PedidoNotificacionRepositorio {
 
-    public void guardar(Long idNotificion, Long idPedido);
+    void guardar(Long idNotificion, Long idPedido);
 
-    public Long buscarPedido(Long idNotificacion);
+    Long buscarPedido(Long idNotificacion);
 }

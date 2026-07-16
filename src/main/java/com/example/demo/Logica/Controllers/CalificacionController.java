@@ -1,6 +1,5 @@
 package com.example.demo.Logica.Controllers;
 
-import com.example.demo.Logica.Clases.Cliente;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionDetalleClienteResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionDetalleResponse;
 import com.example.demo.Logica.DataTypes.response.DtCalificacionGlobalResponse;

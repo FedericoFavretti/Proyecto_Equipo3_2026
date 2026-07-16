@@ -21,10 +21,7 @@ public class FcmService {
         this.deviceTokenRepositorio = deviceTokenRepositorio;
     }
 
-    /**
-     * Envía notificación push a todos los dispositivos activos de un usuario.
-     * Desactiva automáticamente los tokens inválidos.
-     */
+
     public void enviarAUsuario(Long usuarioId, String titulo, String cuerpo, Map<String, String> data) {
         if (!firebaseDisponible()) {
             logger.warn("Firebase no inicializado. No se enviará push al usuario {}.", usuarioId);
@@ -72,7 +69,7 @@ public class FcmService {
                     token.substring(0, Math.min(token.length(), 10)),
                     e.getMessage(), e.getMessagingErrorCode());
 
-            // Token inválido o no registrado → desactivar
+
             if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED
                     || e.getMessagingErrorCode() == MessagingErrorCode.INVALID_ARGUMENT) {
                 deviceTokenRepositorio.desactivarPorToken(token);

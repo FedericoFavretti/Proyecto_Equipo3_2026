@@ -47,11 +47,11 @@ public class FirebaseConfig {
     }
 
     private InputStream resolverCredenciales() throws IOException {
-        // Opción 1: JSON completo como variable de entorno (recomendado en Railway)
+
         if (credentialsJson != null && !credentialsJson.isBlank()) {
             return new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8));
         }
-        // Opción 2: ruta a archivo (para desarrollo local)
+
         if (credentialsPath != null && !credentialsPath.isBlank()) {
             return new FileInputStream(credentialsPath);
         }

@@ -76,9 +76,7 @@ class PagoControllerTest {
                         .param("data.id", "12345"))
                 .andExpect(status().isOk());
 
-        // El endpoint GET no recibe body (Mercado Pago solo lo manda en el POST real),
-        // pero igual delega en el servicio: es el servicio quien decide si el evento
-        // es válido o no, el controller ya no filtra nada.
+
         verify(mercadoPagoWebhookService).procesarWebhook(
                 isNull(),
                 eq("payment"),

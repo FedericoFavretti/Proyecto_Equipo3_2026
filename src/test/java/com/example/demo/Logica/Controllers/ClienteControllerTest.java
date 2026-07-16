@@ -1,6 +1,5 @@
 package com.example.demo.Logica.Controllers;
 
-import com.example.demo.Logica.DataTypes.request.DtGoogleAuthRequest;
 import com.example.demo.Logica.DataTypes.response.DtBusquedaPlatosPromocionesResponse;
 import com.example.demo.Logica.DataTypes.response.DtGoogleRegistroPendienteResponse;
 import com.example.demo.Logica.DataTypes.response.DtLoginResponseCliente;

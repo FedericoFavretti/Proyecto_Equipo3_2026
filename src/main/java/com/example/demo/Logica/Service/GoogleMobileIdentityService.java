@@ -11,12 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-/**
- * Valida ID tokens JWT de Google generados por el flujo móvil
- * (google_sign_in v7 con Credential Manager).
- * Usa el endpoint tokeninfo de Google, que acepta JWT y devuelve
- * los datos del usuario sin necesidad de un OAuth access token.
- */
+
 @Service
 public class GoogleMobileIdentityService {
 

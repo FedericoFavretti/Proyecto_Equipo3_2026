@@ -3,13 +3,10 @@ package com.example.demo.Persistencia.Implementaciones;
 import com.example.demo.Logica.Clases.Usuario;
 import com.example.demo.Logica.Service.UsuarioUserDetails;
 import com.example.demo.Persistencia.Repositorios.UsuarioRepositorio;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
