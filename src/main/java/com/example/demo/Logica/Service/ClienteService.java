@@ -78,7 +78,7 @@ public class ClienteService {
     private static final String MENSAJE_DATOS_FALTANTES =
             "Los siguientes campos son requeridos: %s. Por favor, complételos para finalizar el registro.";
     private static final String MENSAJE_LOGIN_GOOGLE_NO_VINCULADO =
-            "La cuenta asociada al correo %s no estÃ¡ vinculada a Google. Inicie sesiÃ³n con correo y contraseÃ±a.";
+            "La cuenta asociada al correo %s no está vinculada a Google. Inicie sesión con correo y contraseña.";
     private static final String MENSAJE_CUENTA_NO_ACTIVA =
             "Usuario no activado o bloqueado.";
     private static final String RUTA_ACTIVACION_CUENTA = "/activar-cuenta";
