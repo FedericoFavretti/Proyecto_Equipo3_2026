@@ -593,6 +593,11 @@ public class PedidoService {
         return cliente;
     }
 
+    public Pedido obtenerPedidoPropio(String emailAutenticado, Long idPedido) {
+        Cliente cliente = obtenerClienteAutenticado(emailAutenticado);
+        return obtenerPedidoPropio(cliente, idPedido);
+    }
+
     private Pedido obtenerPedidoPropio(Cliente cliente, Long idPedido) {
         Pedido pedido = pedidoRepositorio.buscarPorId(idPedido)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", idPedido));

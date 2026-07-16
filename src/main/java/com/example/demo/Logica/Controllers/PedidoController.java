@@ -100,4 +100,16 @@ public class PedidoController implements iPedidoController {
                 authentication.getName(), dtPedidoListadoFiltro);
         return ResponseEntity.ok(pedidos);
     }
+
+    @PreAuthorize("hasRole('Cliente')")
+    @GetMapping("/{idPedido}")
+    public ResponseEntity<DtPedidoResponse> obtenerPedido(
+            @PathVariable Long idPedido,
+            Authentication authentication) {
+        if (autenticacionInvalida(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Pedido pedido = pedidoService.obtenerPedidoPropio(authentication.getName(), idPedido);
+        return ResponseEntity.ok(pedidoResponseMapper.toResponse(pedido));
+    }
 }
