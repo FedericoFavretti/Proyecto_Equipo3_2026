@@ -16,4 +16,5 @@ public class DtGoogleRegistroCompletarRequest {
     private DtDireccion direccion;
     private Boolean aceptaTerminos;
     private String foto;
+    private String celular;
 }

@@ -230,6 +230,8 @@ public class ClienteService {
                 .nombre(datosGoogle.getNombre())
                 .apellido(datosGoogle.getApellido())
                 .direccion(request.getDireccion())
+                .celular(request.getCelular() != null && !request.getCelular().isBlank()
+                        ? request.getCelular().trim() : null)
                 .calificacionGlobal(0.0)
                 .activo(true)
                 .build();
