@@ -39,7 +39,7 @@ public class NotificacionPedidoService {
                     "Se ah recibido un pedido",
                     "Se recibio el pedido #"+ pedido.getId()
                             +" por el cliente "+pedido.getCliente().getNombre() +" "+  pedido.getCliente().getApellido()
-                            +"ingresa a la web para confirmar o rechazar el pedido. "
+                            +" ingresa a la web para confirmar o rechazar el pedido. "
                             +pedidiosUrl
 
             );
